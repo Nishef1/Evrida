@@ -422,6 +422,8 @@ export function validateFinanceBackup(t: Record<string, Row[]>, goalIds: Set<unk
   const ids = (rows: Row[]) => new Set(rows.map((r) => r.id));
   const accounts = ids(t.fin_accounts), categories = ids(t.fin_categories), tags = ids(t.fin_tags),
     txs = ids(t.fin_transactions), finGoals = ids(t.fin_goals);
+  const categoryRows = new Map(t.fin_categories.map((r) => [r.id, r]));
+  const transactionRows = new Map(t.fin_transactions.map((r) => [r.id, r]));
   for (const r of t.fin_settings) {
     if ((r.usd_rate_x100 !== null && (!int(r.usd_rate_x100) || r.usd_rate_x100 <= 0))
       || (r.usd_rate_date !== null && !isDateKey(String(r.usd_rate_date))) || (r.usd_rate_source !== null && !text(r.usd_rate_source, 80))
@@ -436,25 +438,75 @@ export function validateFinanceBackup(t: Record<string, Row[]>, goalIds: Set<unk
     if (!text(r.name, 80) || !String(r.name).trim() || !['income', 'expense'].includes(String(r.kind)) || !text(r.group_name, 80)) bad('category');
   }
   for (const r of t.fin_tags) if (!text(r.name, 40) || !String(r.name).trim()) bad('tag');
+
   for (const r of t.fin_transactions) {
     const type = r.type as TxType;
     if (!TX_TYPES.includes(type) || !int(r.amount) || (type === 'adjustment' ? r.amount === 0 : (r.amount as number) <= 0)
       || !isDateKey(String(r.date)) || !accounts.has(r.account_id) || !text(r.payee, 200) || !text(r.note, 2000)) bad('transaction');
     if (type === 'transfer' ? !accounts.has(r.to_account_id) || r.to_account_id === r.account_id : r.to_account_id !== null) bad('transfer');
     if (r.category_id !== null && !categories.has(r.category_id)) bad('transaction category');
-    if (r.refund_of_id !== null && (type !== 'income' || !txs.has(r.refund_of_id) || r.refund_of_id === r.id)) bad('refund link');
-    if ((type === 'transfer' || type === 'adjustment') && r.category_id !== null) bad('uncategorized type has a category');
+    if ((type === 'transfer' || type === 'adjustment') && (r.category_id !== null || r.refund_of_id !== null)) bad('uncategorized type');
+    if (r.refund_of_id !== null) {
+      const original = transactionRows.get(r.refund_of_id);
+      if (type !== 'income' || !original || original.type !== 'expense' || r.refund_of_id === r.id) bad('refund link');
+      if (r.category_id !== null && categoryRows.get(r.category_id)?.kind !== 'expense') bad('refund category');
+    } else if ((type === 'income' || type === 'expense') && r.category_id !== null
+      && categoryRows.get(r.category_id)?.kind !== type) bad('transaction category kind');
   }
+
+  const splitRows = new Map<unknown, { categoryId: unknown; amount: number }[]>();
   const splitSum = new Map<unknown, { sum: number; n: number }>();
   for (const r of t.fin_splits) {
-    if (!txs.has(r.tx_id) || !categories.has(r.category_id) || !int(r.amount) || (r.amount as number) <= 0) bad('split');
+    const tx = transactionRows.get(r.tx_id);
+    const category = categoryRows.get(r.category_id);
+    const expectedKind = tx?.refund_of_id !== null ? 'expense' : tx?.type;
+    if (!txs.has(r.tx_id) || !category || !int(r.amount) || (r.amount as number) <= 0
+      || (expectedKind !== 'income' && expectedKind !== 'expense') || category.kind !== expectedKind) bad('split');
     const s = splitSum.get(r.tx_id) ?? { sum: 0, n: 0 };
     splitSum.set(r.tx_id, { sum: s.sum + (r.amount as number), n: s.n + 1 });
+    splitRows.set(r.tx_id, [...(splitRows.get(r.tx_id) ?? []), { categoryId: r.category_id, amount: r.amount as number }]);
   }
+
+  const linesFor = (tx: Row): { categoryId: unknown; amount: number }[] => {
+    const split = splitRows.get(tx.id) ?? [];
+    if (split.length) {
+      if (tx.category_id !== null) bad('split totals');
+      return split;
+    }
+    return tx.category_id !== null ? [{ categoryId: tx.category_id, amount: Number(tx.amount) }] : [];
+  };
+  const refundsByOriginal = new Map<unknown, { total: number; lines: { categoryId: unknown; amount: number }[] }>();
   for (const tx of t.fin_transactions) {
-    const s = splitSum.get(tx.id);
-    if (s && (s.n < 2 || s.sum !== tx.amount || (tx.type !== 'income' && tx.type !== 'expense'))) bad('split totals');
+    const split = splitSum.get(tx.id);
+    if (split && (split.n < 2 || split.sum !== tx.amount || (tx.type !== 'income' && tx.type !== 'expense'))) bad('split totals');
+    if (tx.type === 'income' || tx.type === 'expense') {
+      const lines = linesFor(tx);
+      if (!lines.length || lines.reduce((sum, line) => sum + line.amount, 0) !== tx.amount) bad('transaction category lines');
+    }
+    if (tx.refund_of_id !== null) {
+      const original = transactionRows.get(tx.refund_of_id)!;
+      const group = refundsByOriginal.get(tx.refund_of_id) ?? { total: 0, lines: [] };
+      group.total += Number(tx.amount);
+      group.lines.push(...linesFor(tx));
+      if (group.total > Number(original.amount)) bad('refund totals');
+      refundsByOriginal.set(tx.refund_of_id, group);
+    }
   }
+  for (const [originalId, refunds] of refundsByOriginal) {
+    const original = transactionRows.get(originalId)!;
+    const originalLines = linesFor(original);
+    if (!originalLines.length || originalLines.reduce((sum, line) => sum + line.amount, 0) !== original.amount) bad('refund original category lines');
+    const capacity = new Map<unknown, number>();
+    for (const line of originalLines) capacity.set(line.categoryId, (capacity.get(line.categoryId) ?? 0) + line.amount);
+    const used = new Map<unknown, number>();
+    for (const line of refunds.lines) {
+      if (!capacity.has(line.categoryId)) bad('refund category');
+      const next = (used.get(line.categoryId) ?? 0) + line.amount;
+      if (next > capacity.get(line.categoryId)!) bad('refund category totals');
+      used.set(line.categoryId, next);
+    }
+  }
+
   const pairs = new Set<string>();
   for (const r of t.fin_tx_tags) {
     const key = JSON.stringify([r.tx_id, r.tag_id]);
@@ -471,11 +523,13 @@ export function validateFinanceBackup(t: Record<string, Row[]>, goalIds: Set<unk
     if (!finGoals.has(r.fin_goal_id) || !int(r.amount) || r.amount === 0 || !isDateKey(String(r.date)) || !text(r.note, 500)) bad('allocation');
   }
   for (const r of t.fin_budgets) {
-    if (!int(r.amount) || (r.amount as number) <= 0 || (r.category_id !== null && !categories.has(r.category_id))) bad('budget');
+    if (!int(r.amount) || (r.amount as number) <= 0 || (r.category_id !== null && (!categories.has(r.category_id)
+      || categoryRows.get(r.category_id)?.kind !== 'expense'))) bad('budget');
   }
   for (const r of t.fin_plans) {
     if (!text(r.title, 120) || !String(r.title).trim() || !['income', 'expense'].includes(String(r.direction)) || !int(r.amount) || (r.amount as number) <= 0
       || !CADENCES.includes(r.cadence as never) || !NATURES.includes(r.nature as never) || !isDateKey(String(r.due_date))
-      || (r.category_id !== null && !categories.has(r.category_id)) || (r.account_id !== null && !accounts.has(r.account_id))) bad('planned item');
+      || (r.category_id !== null && (!categories.has(r.category_id) || categoryRows.get(r.category_id)?.kind !== r.direction))
+      || (r.account_id !== null && !accounts.has(r.account_id))) bad('planned item');
   }
 }
