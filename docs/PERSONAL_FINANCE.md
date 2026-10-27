@@ -1,6 +1,6 @@
 # Personal Finance & Money Goals
 
-**Status:** Product specification; implementation not started as of 2026-10-27.  
+**Status:** Finance 1 and the core of Finance 2/3 are implemented as of 2026-10-27 (schema v9, backup v3). Reminders, bank/multi-currency and a dated price-index import are not.  
 **Product:** Evrida  
 **Principle:** Every day with Evrida.
 
@@ -139,28 +139,28 @@ Recommendations should be transparent arithmetic and trade-offs, not opaque comm
 
 ### Finance 1 — Trustworthy manual ledger
 
-- [ ] Optional finance entry point and progressive setup; allow users to skip the module.
-- [ ] Configure base currency/unit and opening balances.
-- [ ] Quick-add income, expense, transfer and adjustment records.
-- [ ] Editable category hierarchy, multiple tags, transaction notes and optional goal link.
-- [ ] Monthly income/expense/net-cash-flow totals and category/tag breakdown.
-- [ ] Correct handling of transfers, refunds, split transactions and card payments.
-- [ ] Export/restore, migrations and essential tests before real use.
+- [x] Optional finance entry point and progressive setup; allow users to skip the module.
+- [x] Configure base currency/unit and opening balances.
+- [x] Quick-add income, expense, transfer and adjustment records.
+- [x] Editable category hierarchy, multiple tags, transaction notes and optional goal link.
+- [x] Monthly income/expense/net-cash-flow totals and category/tag breakdown.
+- [x] Correct handling of transfers, refunds, split transactions and card payments.
+- [x] Export/restore, migrations and essential tests before real use.
 
 ### Finance 2 — Budgets, recurring costs and money goals
 
-- [ ] Optional monthly/category budgets, recurring bills and opt-in reminders.
-- [ ] Fixed/flexible/irregular expense views and sinking funds.
-- [ ] Goal allocations, target dates and monthly contribution plans.
-- [ ] Goal ETA and required-contribution calculations with transparent assumptions.
-- [ ] Monthly review and 3/6/12-month trends only when sufficient history exists.
+- [x] Optional monthly/category budgets and recurring planned items. _Reminders are not built yet._
+- [x] Fixed/flexible/irregular expense views and sinking funds.
+- [x] Goal allocations, target dates and monthly contribution plans.
+- [x] Goal ETA and required-contribution calculations with transparent assumptions.
+- [x] Six-month trend only when three months have records. _A dedicated monthly review screen is not built._
 
 ### Finance 3 — Inflation-aware forecasts
 
-- [ ] Nominal vs real values with explicit base date and dated price index.
-- [ ] User-configurable general-inflation and target-specific price-growth scenarios.
-- [ ] Best/base/slower forecast windows, sensitivity to one-off costs and income changes.
-- [ ] Data-quality/confidence indicators and explanations of what is missing.
+- [x] Nominal vs real values using a user-entered inflation scenario. _A dated price-index import is not built._
+- [x] User-configurable general-inflation and target-specific price-growth scenarios.
+- [x] Best/base/slower forecast windows, sensitivity to one-off costs and income changes.
+- [x] Data-quality/confidence indicators and explanations of what is missing.
 - [ ] Optional multi-currency reporting only after explicit exchange-rate provenance and rounding rules are designed.
 
 ### Deferred until validated need

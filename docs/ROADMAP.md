@@ -772,3 +772,5 @@ Target: implement the approved compact personal-planning direction and real offl
 - [ ] Widgets, incoming share capture, timeline drag/resize and external calendar sync remain separate platform work.
 
 Next three actions after this slice: (1) physical Android lifecycle/notification and accessibility acceptance; (2) decide and implement localization/calendar preferences; (3) implement widget/share capture against the stable capture workflow.
+
+- 2026-10-27: Money (optional personal finance) added: ledger with transfers, refunds, splits and tags; accounts and net worth; budgets; planned items with yearly reserves; money goals with explicit allocations and an assumption-labelled forecast. Verified on an emulator; physical-device verification and reminders are pending.

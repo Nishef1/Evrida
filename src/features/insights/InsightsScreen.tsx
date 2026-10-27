@@ -131,6 +131,14 @@ export function InsightsScreen() {
           </View>)}
         </View> : null}
       </>}
+      <Pressable accessibilityRole="button" accessibilityLabel="Open Money, optional personal finance" onPress={() => router.push('/money' as never)}
+        style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 72 }]}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '700' }}>Money</Text>
+          <Text style={[styles.caption, { color: palette.muted }]}>Optional. Track spending, budgets and goals on this device.</Text>
+        </View>
+        <Text style={{ color: palette.accent, fontWeight: '700' }}>Open →</Text>
+      </Pressable>
     </ScrollView>
   </SafeAreaView>;
 }
