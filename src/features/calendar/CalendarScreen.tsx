@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, AppState, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import type { Goal, GoalInput } from '../../domain/goals';
 import {
   analyzeDayLoad, analyzeRangeLoad, blockOverlapsRange, clockWithUtcOffset, localDayBounds, localDayKey, monthGridDays, parseLocalDay, shiftLocalDay, type BlockInput, type TimeBlock,
@@ -50,7 +50,7 @@ function durationLabel(minutes: number) {
 }
 
 export function CalendarScreen() {
-  const db = useEonwardDatabase();
+  const db = useEvridaDatabase();
   const focus = useFocusSession();
   const router = useRouter();
   const { goalId } = useLocalSearchParams<{ goalId?: string }>();
@@ -200,7 +200,7 @@ export function CalendarScreen() {
       setGoals(updated);
       setNewGoalOpen(false);
       refresh();
-      Alert.alert('Goal created', 'This goal is now available across Eonward.', [
+      Alert.alert('Goal created', 'This goal is now available across Evrida.', [
         { text: 'Keep planning', style: 'cancel' },
         { text: 'Schedule time', onPress: () => {
           setEditingBlock(null);
@@ -282,7 +282,7 @@ export function CalendarScreen() {
         <View style={styles.navigation}>
 
           <View style={styles.brandGroup}>
-            <Text style={[styles.brandLabel, { color: palette.muted }]}>EONWARD</Text>
+            <Text style={[styles.brandLabel, { color: palette.muted }]}>EVRIDA</Text>
             <Text style={[styles.brand, { color: foreground }]}>Calendar</Text>
           </View>
           <Pressable onPress={() => setNewGoalOpen(true)} accessibilityRole="button"
