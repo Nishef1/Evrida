@@ -107,14 +107,25 @@ export async function saveAccount(db: SQLiteDatabase, input: { id?: string; name
   const name = clean(input.name, 80, 'Account name');
   if (!ACCOUNT_KINDS.includes(input.kind) || !Number.isSafeInteger(input.opening)) throw new Error('Check the account details.');
   const stamp = now();
-  if (input.id) {
-    await db.runAsync('UPDATE fin_accounts SET name = ?, kind = ?, opening = ?, updated_at = ? WHERE id = ?',
-      [name, input.kind, input.opening, stamp, input.id]);
-    return input.id;
-  }
-  const id = randomUUID();
-  await db.runAsync(`INSERT INTO fin_accounts (id, name, kind, opening, archived_at, created_at, updated_at)
-    VALUES (?, ?, ?, ?, NULL, ?, ?)`, [id, name, input.kind, input.opening, stamp, stamp]);
+  const id = input.id ?? randomUUID();
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    if (input.id) {
+      const current = await tx.getFirstAsync<{ kind: AccountKind }>('SELECT kind FROM fin_accounts WHERE id = ?', [input.id]);
+      if (!current) throw new Error('This account no longer exists.');
+      if (current.kind !== input.kind) {
+        const hasTransactions = await tx.getFirstAsync('SELECT 1 FROM fin_transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1', [input.id, input.id]);
+        const hasPlans = await tx.getFirstAsync('SELECT 1 FROM fin_plans WHERE account_id = ? LIMIT 1', [input.id]);
+        if (hasTransactions || hasPlans) {
+          throw new Error('Account type is locked after it is used. Create a new account with the correct type and transfer the balance instead.');
+        }
+      }
+      await tx.runAsync('UPDATE fin_accounts SET name = ?, kind = ?, opening = ?, updated_at = ? WHERE id = ?',
+        [name, input.kind, input.opening, stamp, input.id]);
+      return;
+    }
+    await tx.runAsync(`INSERT INTO fin_accounts (id, name, kind, opening, archived_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, NULL, ?, ?)`, [id, name, input.kind, input.opening, stamp, stamp]);
+  });
   return id;
 }
 export async function setAccountArchived(db: SQLiteDatabase, id: string, archived: boolean): Promise<void> {
@@ -199,6 +210,13 @@ async function writeTransaction(tx: Writer, input: TxInput, tagNames: string[], 
   const stamp = now();
   const txId = id ?? randomUUID();
   const category = input.splits.length ? null : input.categoryId;
+  if (input.type === 'income' || input.type === 'expense') {
+    const expectedKind = input.refundOfId ? 'expense' : input.type;
+    for (const line of inputLines(input)) {
+      const row = await tx.getFirstAsync<{ kind: string }>('SELECT kind FROM fin_categories WHERE id = ?', [line.categoryId]);
+      if (row?.kind !== expectedKind) throw new Error(`Choose a valid ${expectedKind} category.`);
+    }
+  }
   if (input.refundOfId) {
     if (id && input.refundOfId === id) throw new Error('A transaction cannot be a refund of itself.');
     const original = await tx.getFirstAsync<{ id: string; type: string; amount: number; category_id: string | null }>(
@@ -324,6 +342,10 @@ export async function allocate(db: SQLiteDatabase, goalId: string, amount: numbe
 export async function setBudget(db: SQLiteDatabase, categoryId: string | null, amount: number | null): Promise<void> {
   if (amount !== null && (!Number.isSafeInteger(amount) || amount <= 0)) throw new Error('Enter a budget greater than zero.');
   await db.withExclusiveTransactionAsync(async (tx) => {
+    if (categoryId !== null) {
+      const category = await tx.getFirstAsync<{ kind: string }>('SELECT kind FROM fin_categories WHERE id = ?', [categoryId]);
+      if (category?.kind !== 'expense') throw new Error('A budget can only use a spending category.');
+    }
     const row = await tx.getFirstAsync<{ id: string }>(
       categoryId === null ? 'SELECT id FROM fin_budgets WHERE category_id IS NULL' : 'SELECT id FROM fin_budgets WHERE category_id = ?',
       categoryId === null ? [] : [categoryId]);
@@ -342,18 +364,30 @@ export interface PlanInput {
 export async function savePlan(db: SQLiteDatabase, input: PlanInput): Promise<string> {
   const title = clean(input.title, 120, 'Name');
   if (!Number.isSafeInteger(input.amount) || input.amount <= 0) throw new Error('Enter an amount.');
-  if (!isDateKey(input.dueDate)) throw new Error('Choose the next due date.');
+  if (!isDateKey(input.dueDate) || !CADENCES.includes(input.cadence) || !NATURES.includes(input.nature)
+    || (input.direction !== 'income' && input.direction !== 'expense')) throw new Error('Check the planned item details.');
   const stamp = now();
-  if (input.id) {
-    await db.runAsync(`UPDATE fin_plans SET title = ?, direction = ?, amount = ?, cadence = ?, nature = ?, due_date = ?,
-      category_id = ?, account_id = ?, updated_at = ? WHERE id = ?`,
-    [title, input.direction, input.amount, input.cadence, input.nature, input.dueDate, input.categoryId, input.accountId, stamp, input.id]);
-    return input.id;
-  }
-  const id = randomUUID();
-  await db.runAsync(`INSERT INTO fin_plans (id, title, direction, amount, cadence, nature, due_date, category_id, account_id, archived_at, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
-  [id, title, input.direction, input.amount, input.cadence, input.nature, input.dueDate, input.categoryId, input.accountId, stamp, stamp]);
+  const id = input.id ?? randomUUID();
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    if (input.categoryId !== null) {
+      const category = await tx.getFirstAsync<{ kind: string }>('SELECT kind FROM fin_categories WHERE id = ?', [input.categoryId]);
+      if (category?.kind !== input.direction) throw new Error('Choose a category matching the planned item direction.');
+    }
+    if (input.accountId !== null) {
+      const account = await tx.getFirstAsync('SELECT 1 FROM fin_accounts WHERE id = ?', [input.accountId]);
+      if (!account) throw new Error('Choose an existing account.');
+    }
+    if (input.id) {
+      const changed = await tx.runAsync(`UPDATE fin_plans SET title = ?, direction = ?, amount = ?, cadence = ?, nature = ?, due_date = ?,
+        category_id = ?, account_id = ?, updated_at = ? WHERE id = ?`,
+      [title, input.direction, input.amount, input.cadence, input.nature, input.dueDate, input.categoryId, input.accountId, stamp, input.id]);
+      if (!changed.changes) throw new Error('This planned item no longer exists.');
+      return;
+    }
+    await tx.runAsync(`INSERT INTO fin_plans (id, title, direction, amount, cadence, nature, due_date, category_id, account_id, archived_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
+    [id, title, input.direction, input.amount, input.cadence, input.nature, input.dueDate, input.categoryId, input.accountId, stamp, stamp]);
+  });
   return id;
 }
 export async function setPlanArchived(db: SQLiteDatabase, id: string, archived: boolean): Promise<void> {
