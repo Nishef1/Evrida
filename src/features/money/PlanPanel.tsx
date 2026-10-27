@@ -27,8 +27,9 @@ export function PlanPanel({ data, month, palette, onChanged }: { data: FinanceSn
   const perCategory = data.budgets.filter((b) => b.categoryId !== null);
   const plans = data.plans.filter((p) => !p.archived);
   const money = (n: number) => formatMoney(n, settings);
-  const reserve = plans.filter((p) => p.direction === 'expense' && p.nature !== 'fixed' || p.cadence === 'yearly' && p.direction === 'expense')
+  const reserve = plans.filter((p) => p.direction === 'expense' && (p.cadence === 'yearly' || p.nature === 'irregular'))
     .reduce((sum, p) => sum + monthlyReserve(p), 0);
+  const flexible = plans.filter((p) => p.direction === 'expense' && p.nature === 'flexible' && p.cadence === 'monthly').reduce((sum, p) => sum + p.amount, 0);
   const commitments = plans.filter((p) => p.direction === 'expense' && p.nature === 'fixed' && p.cadence === 'monthly').reduce((sum, p) => sum + p.amount, 0);
   const expectedIncome = plans.filter((p) => p.direction === 'income').reduce((sum, p) => sum + monthlyReserve(p), 0);
 
@@ -84,9 +85,10 @@ export function PlanPanel({ data, month, palette, onChanged }: { data: FinanceSn
         <Text style={[type.caption, { color: palette.muted }]}>Monthly picture from your planned items (a forecast)</Text>
         {expectedIncome > 0 ? <Text style={{ color: palette.foreground, fontSize: 14 }}>Expected income {money(expectedIncome)}</Text> : null}
         <Text style={{ color: palette.foreground, fontSize: 14 }}>Fixed commitments {money(commitments)}</Text>
+        {flexible > 0 ? <Text style={{ color: palette.foreground, fontSize: 14 }}>Planned flexible spending {money(flexible)}</Text> : null}
         <Text style={{ color: palette.foreground, fontSize: 14 }}>Set aside for yearly and irregular costs {money(reserve)}</Text>
-        {expectedIncome > 0 ? <Text style={[type.cardTitle, { color: expectedIncome - commitments - reserve < 0 ? palette.horizon.week : palette.foreground }]}>
-          Left to spend freely {money(expectedIncome - commitments - reserve)}</Text> : <Text style={[type.caption, { color: palette.muted }]}>Add expected income to see what is left after commitments.</Text>}
+        {expectedIncome > 0 ? <Text style={[type.cardTitle, { color: expectedIncome - commitments - reserve - flexible < 0 ? palette.horizon.week : palette.foreground }]}>
+          Left over {money(expectedIncome - commitments - reserve - flexible)}</Text> : <Text style={[type.caption, { color: palette.muted }]}>Add expected income to see what is left after commitments.</Text>}
         <Text style={[type.caption, { color: palette.muted }]}>Reserves are planning amounts. They are not recorded as spending until a real cost happens.</Text>
       </View> : null}
     </Card>

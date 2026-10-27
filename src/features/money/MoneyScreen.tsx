@@ -260,7 +260,7 @@ function Ledger({ data, month, palette, onEdit, onAdd }: { data: FinanceSnapshot
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{label(tx)}{tx.refundOfId ? ' · refund' : ''}</Text>
             <Text style={[type.caption, { color: palette.muted }]} numberOfLines={1}>
-              {[tx.payee || tx.note, data.accounts.find((a) => a.id === tx.accountId)?.name, tags].filter(Boolean).join(' · ')}</Text>
+              {[(tx.payee || tx.note) === label(tx) ? '' : tx.payee || tx.note, data.accounts.find((a) => a.id === tx.accountId)?.name, tags].filter(Boolean).join(' · ')}</Text>
           </View>
           <Text style={[type.numeral, { fontSize: 16, color: sign > 0 ? palette.accent : sign < 0 ? palette.foreground : palette.muted }]}>
             {sign > 0 ? '+' : sign < 0 ? '−' : ''}{formatAmount(Math.abs(tx.amount), settings)}</Text>

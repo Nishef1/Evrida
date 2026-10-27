@@ -135,51 +135,64 @@ export interface TxInput {
   tagNames: string[]; splits: { categoryId: string; amount: number }[];
 }
 
-/** Insert or replace one transaction with its splits and tags atomically. Tags are created on first use. */
-export async function saveTransaction(db: SQLiteDatabase, input: TxInput, id?: string): Promise<string> {
-  const accountCount = (await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM fin_accounts WHERE archived_at IS NULL'))?.n ?? 0;
+type Writer = Pick<SQLiteDatabase, 'getFirstAsync' | 'runAsync'>;
+
+function prepareTransaction(input: TxInput, accountCount: number): string[] {
   const tagNames = [...new Map(input.tagNames.map((n) => n.trim().replace(/\s+/g, ' ')).filter(Boolean)
     .map((n) => [n.toLowerCase(), n])).values()];
   if (tagNames.some((n) => n.length > 40)) throw new Error('Tags can be up to 40 characters.');
   const problem = validateTx({ ...input, tagIds: [] }, accountCount);
   if (problem) throw new Error(problem);
   if (input.payee.length > 200 || input.note.length > 2000) throw new Error('Payee or note is too long.');
+  return tagNames;
+}
+
+async function writeTransaction(tx: Writer, input: TxInput, tagNames: string[], id?: string): Promise<string> {
   const stamp = now();
   const txId = id ?? randomUUID();
   const category = input.splits.length ? null : input.categoryId;
-  await db.withExclusiveTransactionAsync(async (tx) => {
-    if (input.refundOfId) {
-      const original = await tx.getFirstAsync<{ type: string }>('SELECT type FROM fin_transactions WHERE id = ?', [input.refundOfId]);
-      if (original?.type !== 'expense') throw new Error('A refund must refer to an expense.');
+  if (input.refundOfId) {
+    const original = await tx.getFirstAsync<{ type: string }>('SELECT type FROM fin_transactions WHERE id = ?', [input.refundOfId]);
+    if (original?.type !== 'expense') throw new Error('A refund must refer to an expense.');
+  }
+  if (id) {
+    const changed = await tx.runAsync(`UPDATE fin_transactions SET type = ?, amount = ?, date = ?, account_id = ?, to_account_id = ?,
+      category_id = ?, refund_of_id = ?, payee = ?, note = ?, updated_at = ? WHERE id = ?`,
+    [input.type, input.amount, input.date, input.accountId, input.toAccountId, category,
+      input.refundOfId, input.payee.trim(), input.note.trim(), stamp, id]);
+    if (!changed.changes) throw new Error('This transaction no longer exists.');
+    await tx.runAsync('DELETE FROM fin_splits WHERE tx_id = ?', [id]);
+    await tx.runAsync('DELETE FROM fin_tx_tags WHERE tx_id = ?', [id]);
+  } else {
+    await tx.runAsync(`INSERT INTO fin_transactions (id, type, amount, date, account_id, to_account_id, category_id, refund_of_id,
+      payee, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [txId, input.type, input.amount, input.date, input.accountId, input.toAccountId, category,
+      input.refundOfId, input.payee.trim(), input.note.trim(), stamp, stamp]);
+  }
+  for (const split of input.splits) {
+    await tx.runAsync('INSERT INTO fin_splits (id, tx_id, category_id, amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [randomUUID(), txId, split.categoryId, split.amount, stamp, stamp]);
+  }
+  for (const name of tagNames) {
+    let tag = await tx.getFirstAsync<{ id: string }>('SELECT id FROM fin_tags WHERE name = ?', [name]);
+    if (!tag) {
+      tag = { id: randomUUID() };
+      await tx.runAsync('INSERT INTO fin_tags (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)', [tag.id, name, stamp, stamp]);
     }
-    if (id) {
-      const changed = await tx.runAsync(`UPDATE fin_transactions SET type = ?, amount = ?, date = ?, account_id = ?, to_account_id = ?,
-        category_id = ?, refund_of_id = ?, payee = ?, note = ?, updated_at = ? WHERE id = ?`,
-      [input.type, input.amount, input.date, input.accountId, input.toAccountId, category,
-        input.refundOfId, input.payee.trim(), input.note.trim(), stamp, id]);
-      if (!changed.changes) throw new Error('This transaction no longer exists.');
-      await tx.runAsync('DELETE FROM fin_splits WHERE tx_id = ?', [id]);
-      await tx.runAsync('DELETE FROM fin_tx_tags WHERE tx_id = ?', [id]);
-    } else {
-      await tx.runAsync(`INSERT INTO fin_transactions (id, type, amount, date, account_id, to_account_id, category_id, refund_of_id,
-        payee, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [txId, input.type, input.amount, input.date, input.accountId, input.toAccountId, category,
-        input.refundOfId, input.payee.trim(), input.note.trim(), stamp, stamp]);
-    }
-    for (const split of input.splits) {
-      await tx.runAsync('INSERT INTO fin_splits (id, tx_id, category_id, amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [randomUUID(), txId, split.categoryId, split.amount, stamp, stamp]);
-    }
-    for (const name of tagNames) {
-      let tag = await tx.getFirstAsync<{ id: string }>('SELECT id FROM fin_tags WHERE name = ?', [name]);
-      if (!tag) {
-        tag = { id: randomUUID() };
-        await tx.runAsync('INSERT INTO fin_tags (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)', [tag.id, name, stamp, stamp]);
-      }
-      await tx.runAsync('INSERT INTO fin_tx_tags (id, tx_id, tag_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-        [randomUUID(), txId, tag.id, stamp, stamp]);
-    }
-  });
+    await tx.runAsync('INSERT INTO fin_tx_tags (id, tx_id, tag_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [randomUUID(), txId, tag.id, stamp, stamp]);
+  }
+  return txId;
+}
+
+const activeAccounts = async (db: Reader): Promise<number> =>
+  (await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM fin_accounts WHERE archived_at IS NULL'))?.n ?? 0;
+
+/** Insert or replace one transaction with its splits and tags atomically. Tags are created on first use. */
+export async function saveTransaction(db: SQLiteDatabase, input: TxInput, id?: string): Promise<string> {
+  const tagNames = prepareTransaction(input, await activeAccounts(db));
+  let txId = id ?? '';
+  await db.withExclusiveTransactionAsync(async (tx) => { txId = await writeTransaction(tx, input, tagNames, id); });
   return txId;
 }
 export async function deleteTransaction(db: SQLiteDatabase, id: string): Promise<void> {
@@ -273,13 +286,17 @@ export async function setPlanArchived(db: SQLiteDatabase, id: string, archived: 
   await db.runAsync('UPDATE fin_plans SET archived_at = ?, updated_at = ? WHERE id = ?', [archived ? now() : null, now(), id]);
 }
 
-/** Confirming a planned item records one real transaction and moves the item to its next due date. */
+/** Confirming a planned item records one real transaction and moves the item to its next due date, together or not at all. */
 export async function confirmPlan(db: SQLiteDatabase, plan: FinPlan, accountId: string, date: string, amount = plan.amount): Promise<void> {
   if (!plan.categoryId) throw new Error('Choose a category for this item before confirming it.');
-  await saveTransaction(db, {
+  const input: TxInput = {
     type: plan.direction, amount, date, accountId, toAccountId: null, categoryId: plan.categoryId, refundOfId: null,
     payee: '', note: plan.title, tagNames: [], splits: [],
+  };
+  const tagNames = prepareTransaction(input, await activeAccounts(db));
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    await writeTransaction(tx, input, tagNames);
+    await tx.runAsync('UPDATE fin_plans SET due_date = ?, updated_at = ? WHERE id = ?',
+      [addMonthsToDate(plan.dueDate, plan.cadence === 'yearly' ? 12 : 1), now(), plan.id]);
   });
-  await db.runAsync('UPDATE fin_plans SET due_date = ?, updated_at = ? WHERE id = ?',
-    [addMonthsToDate(plan.dueDate, plan.cadence === 'yearly' ? 12 : 1), now(), plan.id]);
 }
