@@ -28,7 +28,7 @@ Issue: [#2](https://github.com/Nishef1/Evrida/issues/2). External Expo reports [
 1. Install an **isolated Evrida QA** Android APK on an emulator, create a synthetic goal and leave its editor with unsaved text.
 2. Make sure `adb` is installed, then run `bash scripts/android-sqlite-stress.sh` from the project root. The script explicitly rejects physical devices, changes font scale/night theme, and restores their previous values on exit. It neither wipes data nor changes the main app's ID.
 3. Review the local `.qa-evidence/` crash-buffer output, Android Studio logcat and device tombstones. **Do not upload unsanitized logs or personal data to public GitHub.**
-4. Repeat with background/foreground, rotation, runtime reloads, active/paused Focus and a populated migrated v5→v8 database. Verify database integrity, preserved goal IDs and relationships across process restart.
+4. Repeat with background/foreground, rotation, runtime reloads, active/paused Focus and a populated migrated v5→v13 database. Verify database integrity, preserved goal IDs and relationships across process restart.
 5. If native `SIGSEGV`, `exsqlite3_step`, `pthread_mutex_lock`, NPE or duplicate close appears, keep P0 open with exact device/API/SDK version and native stack. A one-off clean run cannot close it.
 
 The current source-level SQLite queue is a mitigation. It cannot guarantee safety against native shared-object teardown/garbage-collection races.
@@ -41,7 +41,7 @@ The current source-level SQLite queue is a mitigation. It cannot guarantee safet
 - [ ] Extend Focus time via Recovery preview, confirm only flexible reservations move, then test undo immediately and after expiration. Editing a moved block must invalidate the old undo.
 - [ ] Complete a goal while Focus is running and paused; global mini-timer must disappear and history must persist without duplicate recordings.
 - [ ] Inspect overlap and DST cases (23/25-hour local days), timezone changes, midnight rollover and date selection in both themes and at max font scale.
-- [ ] Export a plaintext v2 backup to a deliberately chosen external destination, verify that destination really contains the file, then restore missing records on an isolated QA installation. Also validate v1 import, cancel and partial merge. Never use the user's only copy.
+- [ ] Export a plaintext v7 backup to a deliberately chosen external destination, verify that destination really contains the file, then restore missing records on an isolated QA installation. Also validate v1 import, cancel and partial merge. Never use the user's only copy.
 - [ ] On Android: TalkBack, font scaling, navigation bar, Gboard, exact-alert permissions, battery restrictions and native crash stress.
 - [ ] On iOS: Simulator smoke, then real-device VoiceOver, date/time pickers, safe area, background notifications and native signing.
 - [ ] On both: 100+ goals, dense Boards, long notes and slow hardware. Profile before adding virtualization or unnecessary caching.
