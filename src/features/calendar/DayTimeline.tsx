@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ComponentRef } from 'react';
 import { Alert, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { blockClockRangeForDay, layoutBlocks, localClock, localDayBounds, localDayKey, peakOverlap, type TimeBlock } from '../../domain/timeblocks';
 import { colors, radius, semantic, type Palette } from '../../theme/tokens';
@@ -36,7 +37,7 @@ interface Props {
   onApplyTimeEdit: (preview: TimelineEditPreview, onSaved: () => void) => void;
 }
 export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit }: Props) {
-  const ref = useRef<ScrollView>(null);
+  const ref = useRef<ComponentRef<typeof ScrollView>>(null);
   const didScroll = useRef<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [zoomIndex, setZoomIndex] = useState(1);

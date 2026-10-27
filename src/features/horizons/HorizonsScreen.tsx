@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ComponentRef } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, AppState, Keyboard, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -67,7 +68,7 @@ export function HorizonsScreen() {
   const [guidedVisible, setGuidedVisible] = useState(false);
   const [horizonsVisible, setHorizonsVisible] = useState(false);
   const [search, setSearch] = useState('');
-  const quickInput = useRef<TextInput>(null);
+  const quickInput = useRef<ComponentRef<typeof TextInput>>(null);
   const [clockDay, setClockDay] = useState(() => periodKey('day', new Date()));
   useEffect(() => {
     const update = () => { setClockDay(periodKey('day', new Date())); setRevision((n) => n + 1); };
@@ -548,7 +549,7 @@ export function HorizonsScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={!showingList ? null : (
+        ListEmptyComponent={!showingList ? undefined : (
           waitingForList ? (
             <ActivityIndicator color={palette.accent} size="large" style={styles.wait} />
           ) : failure ? (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ComponentRef } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, parseDateInput, periodKey, periodLabel, shiftPeriod, type Horizon } from '../../domain/horizons';
@@ -52,8 +53,8 @@ export function GoalEditor({
   const [inbox, setInbox] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [repeatRule, setRepeatRule] = useState<RepeatRule>('none');
-  const scrollRef = useRef<ScrollView>(null);
-  const notesRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const notesRef = useRef<ComponentRef<typeof TextInput>>(null);
   const anchorTime = anchorDate.getTime();
   const originalDraft = useRef('');
 
