@@ -24,9 +24,9 @@ Evrida should support learning as a measurable, long-running project rather than
 - Track content completed, actual minutes, assessment/recall results and long-range milestones. Time spent alone must not be represented as proof of mastery.
 - Keep the core workflow local/offline. Resource parsing with AI, cloud sync and external calendar integration are later optional decisions, not prerequisites.
 
-## Personal Finance & Money Goals (planned, optional)
+## Personal Finance & Money Goals (partially implemented, optional)
 
-Evrida may include a lightweight, offline-first personal-finance workspace for manual balances, income, expenses, categories/tags, budgets and savings goals. It should connect money goals to the existing long-range goal system without turning Evrida into a full accounting or investment product.
+Evrida includes an initial lightweight, offline-first personal-finance workspace for manual balances, income, expenses, categories/tags, budgets, planned items and savings goals. Basic forecasts use explicit user-entered assumptions. It is not a full accounting or investment product; dated inflation-index data, finance reminders and native acceptance remain incomplete.
 
 - Keep finance optional and onboarding progressive; core planning must work without financial data.
 - Distinguish transaction type, category and cross-cutting tags; transfers between the user's own accounts must not count as income or expenses.
@@ -47,7 +47,8 @@ See [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md) for the full specification and ac
 | Boards and ordering | M3 | References, not duplicate item records |
 | Calendar and time blocks | M3 | Do not confuse due dates with blocks |
 | Notes, recurring goals and habits | M4 | Rich editor choice deferred |
-| Templates, guided plans and insights | M4 | Personal and offline |\n| Personal finance and money goals | Planned | Optional, manual-first ledger; budgeting, goal forecasts and inflation-aware scenarios |
+| Templates, guided plans and insights | M4 | Personal and offline |
+| Personal finance and money goals | Partially implemented | Optional manual ledger, budgets, planned items, savings goals and assumption-based forecasts |
 | Notifications, widgets and quick-add | M5 | Native integration where necessary |
 | Backup/restore | M5 | Must precede release |
 | Localization and Jalali presentation | M5 | Logical storage separate from display |
