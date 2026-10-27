@@ -25,6 +25,7 @@ import { GoalsPanel } from './GoalsPanel';
 import { PlanPanel } from './PlanPanel';
 import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, dateName, monthName, useBusy } from './ui';
 import { fetchUsdRate } from './rates';
+import { CategoriesSheet } from './CategoriesSheet';
 
 type Tab = 'overview' | 'ledger' | 'goals' | 'plan';
 const monthLabel = monthName;
@@ -45,6 +46,7 @@ export function MoneyScreen() {
   const [editing, setEditing] = useState<{ tx: FinTx | null; preset?: TxPreset } | null>(null);
   const [account, setAccount] = useState<FinAccount | 'new' | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
 
   const reload = useCallback(() => {
     loadFinance(db).then((value) => { setData(value); setFailure(null); },
@@ -98,7 +100,9 @@ export function MoneyScreen() {
       onClose={() => setEditing(null)} onChanged={reload}
       onRefund={(tx) => setEditing({ tx: null, preset: { type: 'income', refundOfId: tx.id, categoryId: tx.splits.length ? undefined : tx.categoryId ?? undefined, splits: tx.splits, amount: tx.amount, accountId: tx.accountId, note: 'Refund' } })} />
     <AccountSheet data={data} target={account} palette={palette} onClose={() => setAccount(null)} onChanged={reload} />
-    <SettingsSheet data={data} visible={settingsOpen} palette={palette} onClose={() => setSettingsOpen(false)} onChanged={reload} />
+    <SettingsSheet data={data} visible={settingsOpen} palette={palette} onClose={() => setSettingsOpen(false)} onChanged={reload}
+      onCategories={() => { setSettingsOpen(false); setCategoriesOpen(true); }} />
+    <CategoriesSheet data={data} visible={categoriesOpen} palette={palette} onClose={() => setCategoriesOpen(false)} onChanged={reload} />
   </SafeAreaView>;
 }
 
@@ -313,7 +317,7 @@ function AccountSheet({ data, target, palette, onClose, onChanged }: { data: Fin
   </Sheet>;
 }
 
-function SettingsSheet({ data, visible, palette, onClose, onChanged }: { data: FinanceSnapshot; visible: boolean; palette: Palette; onClose: () => void; onChanged: () => void }) {
+function SettingsSheet({ data, visible, palette, onClose, onChanged, onCategories }: { data: FinanceSnapshot; visible: boolean; palette: Palette; onClose: () => void; onChanged: () => void; onCategories: () => void }) {
   const db = useEvridaDatabase();
   const { busy, run } = useBusy();
   const [unit, setUnit] = useState('');
@@ -365,6 +369,7 @@ function SettingsSheet({ data, visible, palette, onClose, onChanged }: { data: F
       <Text style={[type.caption, { color: palette.muted }]}>
         Only a request for the public rate is sent; none of your records leave this device. For Toman and Rial the rate is the market price of a dollar-pegged token (USDT) on a public exchange, which tracks the open-market dollar but may be wrong or out of date. A fetched number only fills the box; nothing changes until you press Save, and you can overwrite it with your own.</Text>
     </>}
+    <TextButton label="Manage categories" onPress={onCategories} palette={palette} />
     <Field label="General inflation scenario (per year)" value={inflation} onChangeText={setInflation} palette={palette} keyboardType="decimal-pad" suffix="%"
       hint={s.inflationBp === null ? 'Optional. Your own assumption, used only to express future amounts in today’s purchasing power. Evrida does not look up inflation figures.'
         : `Currently ${bpToPercent(s.inflationBp)} a year. This is a scenario you entered, not observed inflation.`} />

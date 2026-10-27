@@ -7,7 +7,7 @@ import {
   deleteCheckin, deleteTopic, loadLearning, saveCheckin, saveTopic, setTopicArchived, setTopicFocus, type LearningSnapshot,
 } from '../../storage/learning';
 import {
-  MAX_SCORE, MIN_SCORE, addDays, bandLabel, daysBetween, focusSuggestions, groupBySubject, historyOf, parseMinutes, topicProgress,
+  MAX_SCORE, MIN_SCORE, addDays, bandLabel, daysBetween, focusSuggestions, paceEstimate, groupBySubject, historyOf, parseMinutes, topicProgress,
   trendPoints, weekStart, weeklyReview, type LearnCheckin, type LearnTopic,
 } from '../../domain/learning';
 import { isDateKey } from '../../domain/finance';
@@ -20,10 +20,21 @@ import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import Plus from 'lucide-react-native/icons/plus';
 import BookOpenCheck from 'lucide-react-native/icons/book-open-check';
+import { REMINDER_HOURS, WEEKDAYS, getReminder, reminderText, resyncReminder, setReminder, type ReminderPref } from './reminder';
 import { Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, dateName, useBusy } from '../money/ui';
 
 type Tab = 'topics' | 'week';
 const hours = (minutes: number) => minutes >= 60 ? `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ''}` : `${minutes} min`;
+/** One honest sentence about the user's own goal for a topic, or null when no target is set. */
+function targetLine(topic: LearnTopic, history: LearnCheckin[], today: string): string | null {
+  if (topic.targetScore === null) return null;
+  const head = `Target ${topic.targetScore}/10${topic.targetDate ? ` by ${dateName(topic.targetDate)}` : ''}`;
+  const pace = paceEstimate(history, topic.targetScore, today);
+  if (pace.status === 'reached') return `${head}. Reached by your own rating.`;
+  if (pace.status === 'unknown') return `${head}. ${pace.reason}`;
+  const late = topic.targetDate && pace.likely! > topic.targetDate ? ' That is after your target date.' : '';
+  return `${head}. At about ${pace.perWeek!.toFixed(1)} points a week you could get there around ${dateName(pace.likely!)}, possibly as late as ${dateName(pace.late!)}.${late} ${pace.reason}`;
+}
 const changeText = (change: number | null) => change === null ? null : change > 0 ? `▲ +${change}` : change < 0 ? `▼ ${change}` : '＝ same';
 
 /** Scores over time, one bar per check-in on a fixed 1–10 scale so a small change is not exaggerated. */
@@ -52,12 +63,14 @@ export function LearningScreen() {
   const [topicSheet, setTopicSheet] = useState<LearnTopic | 'new' | null>(null);
   const [checkin, setCheckin] = useState<{ topic: LearnTopic; entry: LearnCheckin | null } | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
+  const [reminder, setReminderState] = useState<ReminderPref | null>(null);
+  const [reminderOpen, setReminderOpen] = useState(false);
 
   const reload = useCallback(() => {
     loadLearning(db).then((value) => { setData(value); setFailure(null); },
       (error) => setFailure(error instanceof Error ? error.message : 'Learning could not be loaded.'));
   }, [db]);
-  useFocusEffect(useCallback(() => { reload(); }, [reload]));
+  useFocusEffect(useCallback(() => { reload(); void resyncReminder().then(getReminder).then(setReminderState); }, [reload]));
 
   const open = useMemo(() => (data?.topics ?? []).filter((t) => !t.archived), [data]);
   const review = useMemo(() => data ? weeklyReview(data.topics, data.checkins, week) : null, [data, week]);
@@ -100,6 +113,7 @@ export function LearningScreen() {
       </View>
       {p.latest ? <Text style={[type.caption, { color: palette.muted }]}>{bandLabel(p.latest.score)}</Text> : null}
       <Trend history={history} palette={palette} />
+      {targetLine(topic, history, today) ? <Text style={[type.caption, { color: palette.muted }]}>{targetLine(topic, history, today)}</Text> : null}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
         <TextButton label={p.latest ? 'Check in' : 'Rate it'} onPress={() => setCheckin({ topic, entry: null })} palette={palette} />
       </View>
@@ -124,6 +138,15 @@ export function LearningScreen() {
           <Text style={{ color: palette.foreground, fontSize: 16, fontWeight: '700' }}>{dateName(week)} – {dateName(addDays(week, 6))}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Next week" onPress={() => setWeek(addDays(week, 7))} style={styles.navBtn}><ChevronRight size={20} color={palette.foreground} /></Pressable>
         </View>
+        <Card palette={palette} onPress={() => setReminderOpen(true)} label="Weekly review reminder">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '700' }}>Weekly reminder</Text>
+              <Text style={[type.caption, { color: palette.muted }]}>{reminder ? `Every ${reminderText(reminder)}` : 'Off. Get a nudge to rate your topics once a week.'}</Text>
+            </View>
+            <Text style={{ color: palette.accent, fontWeight: '700' }}>{reminder ? 'Change' : 'Set up'}</Text>
+          </View>
+        </Card>
         {review.open === 0 ? <Text style={{ color: palette.muted }}>Add a topic first, then review it here each week.</Text> : <>
           <Card palette={palette}>
             <Text style={{ color: palette.foreground, fontSize: 16, fontWeight: '700' }}>{review.checkedIn} of {review.open} topics rated this week</Text>
@@ -170,12 +193,37 @@ export function LearningScreen() {
       </>}
     </ScrollView>
 
+    <ReminderSheet visible={reminderOpen} current={reminder} palette={palette} onClose={() => setReminderOpen(false)}
+      onSaved={(pref) => { setReminderState(pref); setReminderOpen(false); }} />
     <TopicSheet visible={topicSheet !== null} topic={topicSheet === 'new' ? null : topicSheet} subjects={[...new Set(data.topics.map((t) => t.subject))]}
       palette={palette} onClose={() => setTopicSheet(null)} onSaved={() => { setTopicSheet(null); reload(); }} />
     <CheckinSheet state={checkin} data={data} today={today} palette={palette} onClose={() => setCheckin(null)} onSaved={() => { setCheckin(null); reload(); }} />
-    <DetailSheet topicId={detail} data={data} palette={palette} onClose={() => setDetail(null)}
+    <DetailSheet topicId={detail} data={data} today={today} palette={palette} onClose={() => setDetail(null)}
       onEdit={(topic) => { setDetail(null); setTopicSheet(topic); }} onCheckin={(topic, entry) => { setDetail(null); setCheckin({ topic, entry }); }} onChanged={reload} />
   </SafeAreaView>;
+}
+
+function ReminderSheet({ visible, current, palette, onClose, onSaved }: {
+  visible: boolean; current: ReminderPref | null; palette: Palette; onClose: () => void; onSaved: (pref: ReminderPref | null) => void;
+}) {
+  const { busy, run } = useBusy();
+  const [weekday, setWeekday] = useState(1);
+  const [hour, setHour] = useState(20);
+  const [error, setError] = useState<string | null>(null);
+  const [shown, setShown] = useState(false);
+  if (visible !== shown) { setShown(visible); if (visible) { setWeekday(current?.weekday ?? 1); setHour(current?.hour ?? 20); setError(null); } }
+  const apply = (pref: ReminderPref | null) => void run(async () => { await setReminder(pref); onSaved(pref); }, setError);
+  return <Sheet visible={visible} title="Weekly reminder" onClose={onClose} palette={palette}
+    footer={<><PrimaryButton label={busy ? 'Saving…' : 'Remind me weekly'} onPress={() => apply({ weekday, hour })} palette={palette} disabled={busy} />
+      {current ? <TextButton label="Turn reminder off" muted onPress={() => apply(null)} palette={palette} /> : null}</>}>
+    {error ? <Text style={{ color: '#C0392B' }} accessibilityLiveRegion="polite">{error}</Text> : null}
+    <Label palette={palette}>DAY</Label>
+    <ChipRow>{WEEKDAYS.map((d) => <Chip key={d.weekday} label={d.label} selected={weekday === d.weekday} onPress={() => setWeekday(d.weekday)} palette={palette} />)}</ChipRow>
+    <Label palette={palette}>TIME</Label>
+    <ChipRow>{REMINDER_HOURS.map((h) => <Chip key={h} label={`${String(h).padStart(2, '0')}:00`} selected={hour === h} onPress={() => setHour(h)} palette={palette} />)}</ChipRow>
+    <Text style={[type.caption, { color: palette.muted }]}>
+      A notification repeats every week at this time, even when Evrida is closed. Your phone decides exact delivery, and battery saving or turned-off notifications can delay or block it. It contains no study data.</Text>
+  </Sheet>;
 }
 
 function TopicSheet({ visible, topic, subjects, palette, onClose, onSaved }: {
@@ -186,14 +234,20 @@ function TopicSheet({ visible, topic, subjects, palette, onClose, onSaved }: {
   const [subject, setSubject] = useState('');
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
+  const [target, setTarget] = useState<number | null>(null);
+  const [targetDate, setTargetDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [shownFor, setShownFor] = useState<string | null | undefined>(undefined);
   const key = visible ? (topic?.id ?? 'new') : null;
   if (key !== shownFor) { // reset the form whenever the sheet opens for a different topic
     setShownFor(key);
-    if (key) { setSubject(topic?.subject ?? ''); setName(topic?.name ?? ''); setNote(topic?.note ?? ''); setError(null); }
+    if (key) { setSubject(topic?.subject ?? ''); setName(topic?.name ?? ''); setNote(topic?.note ?? ''); setTarget(topic?.targetScore ?? null); setTargetDate(topic?.targetDate ?? ''); setError(null); }
   }
-  const save = () => void run(async () => { await saveTopic(db, { id: topic?.id, subject, name, note }); onSaved(); }, setError);
+  const save = () => void run(async () => {
+    if (targetDate.trim() && !isDateKey(targetDate.trim())) throw new Error('Enter the target date as YYYY-MM-DD, or leave it empty.');
+    await saveTopic(db, { id: topic?.id, subject, name, note, targetScore: target, targetDate: targetDate.trim() || null });
+    onSaved();
+  }, setError);
   const remove = () => Alert.alert('Delete this topic?', 'Its whole rating history is deleted too. Archive it instead to keep the history.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: () => void run(async () => { await deleteTopic(db, topic!.id); onSaved(); }, setError) },
@@ -210,6 +264,10 @@ function TopicSheet({ visible, topic, subjects, palette, onClose, onSaved }: {
     <Field label="Topic" value={name} onChangeText={setName} palette={palette} maxLength={120} placeholder="For example: Past perfect" />
     <Field label="Notes (optional)" value={note} onChangeText={setNote} palette={palette} multiline maxLength={2000}
       hint="What you want to be able to do, what confuses you, or where to find material." />
+    <Label palette={palette}>YOUR TARGET SCORE (OPTIONAL)</Label>
+    <ChipRow>{Array.from({ length: MAX_SCORE }, (_, i) => i + 1).map((n) => <Chip key={n} label={String(n)} selected={target === n} onPress={() => setTarget(target === n ? null : n)} palette={palette} />)}</ChipRow>
+    {target !== null ? <Field label="Target date (optional)" value={targetDate} onChangeText={setTargetDate} palette={palette} placeholder="YYYY-MM-DD" maxLength={10}
+      hint="Once you have three ratings over two weeks, Evrida shows a rough date from your own pace." /> : null}
   </Sheet>;
 }
 
@@ -269,8 +327,8 @@ function CheckinSheet({ state, data, today, palette, onClose, onSaved }: {
   </Sheet>;
 }
 
-function DetailSheet({ topicId, data, palette, onClose, onEdit, onCheckin, onChanged }: {
-  topicId: string | null; data: LearningSnapshot; palette: Palette; onClose: () => void;
+function DetailSheet({ topicId, data, today, palette, onClose, onEdit, onCheckin, onChanged }: {
+  topicId: string | null; today: string; data: LearningSnapshot; palette: Palette; onClose: () => void;
   onEdit: (topic: LearnTopic) => void; onCheckin: (topic: LearnTopic, entry: LearnCheckin | null) => void; onChanged: () => void;
 }) {
   const db = useEvridaDatabase();
@@ -286,6 +344,7 @@ function DetailSheet({ topicId, data, palette, onClose, onEdit, onCheckin, onCha
       {topic.note ? <Text style={{ color: palette.foreground, fontSize: 14 }}>{topic.note}</Text> : null}
       {p.latest ? <Text style={{ color: palette.foreground, fontSize: 28, fontWeight: '700' }}>{p.latest.score}<Text style={{ fontSize: 14, color: palette.muted }}>/10 now{changeText(p.change) ? `  ${changeText(p.change)}` : ''}</Text></Text> : null}
       <Trend history={history} palette={palette} />
+      {targetLine(topic, history, today) ? <Text style={{ color: palette.foreground, fontSize: 13 }}>{targetLine(topic, history, today)}</Text> : null}
       {p.minutes ? <Text style={[type.caption, { color: palette.muted }]}>{hours(p.minutes)} practised across {p.count} check-ins. Time is shown for context, not as proof of mastery.</Text> : null}
       <Label palette={palette}>HISTORY</Label>
       {history.length === 0 ? <Text style={{ color: palette.muted }}>No check-ins yet.</Text> : [...history].reverse().map((c) => <Pressable key={c.id} accessibilityRole="button"

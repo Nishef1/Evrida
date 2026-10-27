@@ -63,7 +63,7 @@ test('native links reject malformed and oversized input before tolerant URI deco
 });
 
 test('newer database is rejected and SQLite gate serializes native calls', async () => {
-  const fake = fakeDatabase(12);
+  const fake = fakeDatabase(13);
   await assert.rejects(() => migrateDatabase(fake.db), /newer Evrida database/);
   assert.equal(fake.transactionCalls, 0);
   let inFlight = 0, maximum = 0, calls = 0;
@@ -105,11 +105,11 @@ test('newer database is rejected and SQLite gate serializes native calls', async
   assert.deepEqual(eventLog, ['begin', 'inside', 'commit', 'outside']);
 });
 
-test('real SQLite migrates populated v5 data to v11 without losing goals, boards or timer state', async () => {
+test('real SQLite migrates populated v5 data to v12 without losing goals, boards or timer state', async () => {
   const { sqlite, db } = realDatabase();
   try {
     await migrateDatabase(db);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 11);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 12);
     const stamp = '2026-10-14T21:00:00.000Z';
     sqlite.prepare(`INSERT INTO goals
       (id, title, notes, horizon, period_key, created_at, updated_at)
@@ -151,7 +151,7 @@ test('real SQLite migrates populated v5 data to v11 without losing goals, boards
       (id, block_id, status, duration_ms, remaining_ms, deadline_ms, updated_at_ms)
       VALUES (1, ?, 'paused', ?, ?, ?, ?)`).run('t1', 1200000, 720000, 1500000, 1500000);
     await migrateDatabase(db);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 11);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 12);
     assert.equal(sqlite.prepare('SELECT notes FROM goals WHERE id = ?').get('g1').notes, 'Keep this note');
     assert.equal(sqlite.prepare('SELECT count(*) AS n FROM board_goals').get().n, 1);
     assert.equal(sqlite.prepare('SELECT intention FROM time_blocks WHERE id = ?').get('t1').intention, 'Deep work');
@@ -404,7 +404,7 @@ test('offline planning lifecycle preserves identity, recurrence, completion hist
     assert.equal((await getGoal(source.db, step)).dueDate, '2026-02-02');
     await archiveGoal(source.db, parent); await restoreGoal(source.db, parent);
     const snapshot = await exportBackup(source.db), text = JSON.stringify(snapshot);
-    assert.equal(snapshot.version, 5);
+    assert.equal(snapshot.version, 6);
     // The backup size contract applies to the serialized file itself, not
     // a compact validation copy followed by a larger pretty-printed export.
     assert.doesNotThrow(() => parseBackup(JSON.stringify(snapshot)));

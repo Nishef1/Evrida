@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { validateCheckin, type LearnCheckin, type LearnTopic } from '../domain/learning';
+import { isDateKey } from '../domain/finance';
+import { MAX_SCORE, MIN_SCORE, validateCheckin, type LearnCheckin, type LearnTopic } from '../domain/learning';
 
 export interface LearningSnapshot { topics: LearnTopic[]; checkins: LearnCheckin[] }
 type Row = Record<string, any>;
@@ -17,27 +18,35 @@ export async function loadLearning(db: Reader): Promise<LearningSnapshot> {
   const topics = await db.getAllAsync<Row>('SELECT * FROM learn_topics ORDER BY subject COLLATE NOCASE, created_at, id');
   const checkins = await db.getAllAsync<Row>('SELECT * FROM learn_checkins ORDER BY date, created_at');
   return {
-    topics: topics.map((r) => ({ id: r.id, subject: r.subject, name: r.name, note: r.note, focus: !!r.focus, archived: !!r.archived_at })),
+    topics: topics.map((r) => ({ id: r.id, subject: r.subject, name: r.name, note: r.note, focus: !!r.focus, archived: !!r.archived_at,
+      targetScore: r.target_score, targetDate: r.target_date })),
     checkins: checkins.map((r) => ({
       id: r.id, topicId: r.topic_id, date: r.date, score: r.score, minutes: r.minutes, covered: r.covered, note: r.note, createdAt: r.created_at,
     })),
   };
 }
 
-export async function saveTopic(db: SQLiteDatabase, input: { id?: string; subject: string; name: string; note: string }): Promise<string> {
+export async function saveTopic(db: SQLiteDatabase, input: {
+  id?: string; subject: string; name: string; note: string; targetScore?: number | null; targetDate?: string | null;
+}): Promise<string> {
   const subject = clean(input.subject, 80, 'Subject');
   const name = clean(input.name, 120, 'Topic');
   const note = input.note.trim();
   if (note.length > 2000) throw new Error('The description is too long.');
+  const targetScore = input.targetScore ?? null;
+  const targetDate = targetScore === null ? null : input.targetDate ?? null;
+  if (targetScore !== null && (!Number.isInteger(targetScore) || targetScore < MIN_SCORE || targetScore > MAX_SCORE)) throw new Error('Choose a target score from 1 to 10.');
+  if (targetDate !== null && !isDateKey(targetDate)) throw new Error('Enter the target date as YYYY-MM-DD, or leave it empty.');
   const stamp = now();
   if (input.id) {
-    const result = await db.runAsync('UPDATE learn_topics SET subject = ?, name = ?, note = ?, updated_at = ? WHERE id = ?', [subject, name, note, stamp, input.id]);
+    const result = await db.runAsync('UPDATE learn_topics SET subject = ?, name = ?, note = ?, target_score = ?, target_date = ?, updated_at = ? WHERE id = ?',
+      [subject, name, note, targetScore, targetDate, stamp, input.id]);
     if (!result.changes) throw new Error('This topic no longer exists.');
     return input.id;
   }
   const id = randomUUID();
-  await db.runAsync(`INSERT INTO learn_topics (id, subject, name, note, focus, archived_at, created_at, updated_at)
-    VALUES (?, ?, ?, ?, 0, NULL, ?, ?)`, [id, subject, name, note, stamp, stamp]);
+  await db.runAsync(`INSERT INTO learn_topics (id, subject, name, note, focus, target_score, target_date, archived_at, created_at, updated_at)
+    VALUES (?, ?, ?, ?, 0, ?, ?, NULL, ?, ?)`, [id, subject, name, note, targetScore, targetDate, stamp, stamp]);
   return id;
 }
 

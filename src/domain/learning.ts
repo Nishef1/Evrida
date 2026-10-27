@@ -4,7 +4,10 @@ import { isDateKey } from './finance';
  * Learning topics are tracked by the user's own honest self-rating (1–10). Evrida keeps the history and shows
  * the trend; it never judges mastery, and time practised is stored separately from the score.
  */
-export interface LearnTopic { id: string; subject: string; name: string; note: string; focus: boolean; archived: boolean }
+export interface LearnTopic {
+  id: string; subject: string; name: string; note: string; focus: boolean; archived: boolean;
+  targetScore: number | null; targetDate: string | null;
+}
 export interface LearnCheckin {
   id: string; topicId: string; date: string; score: number; minutes: number | null; covered: string; note: string; createdAt: string;
 }
@@ -107,6 +110,31 @@ export function focusSuggestions(topics: LearnTopic[], checkins: LearnCheckin[],
   return out.sort((a, b) => a.rank - b.rank).slice(0, limit).map(({ topic, reason }) => ({ topic, reason }));
 }
 
+export interface PaceEstimate {
+  status: 'reached' | 'estimate' | 'unknown'; perWeek: number | null; likely: string | null; late: string | null; reason: string;
+}
+/**
+ * A rough projection from the user's own last ratings (least-squares slope over up to six check-ins).
+ * It needs at least three ratings spanning two weeks, is always provisional, and says why when it cannot estimate.
+ */
+export function paceEstimate(history: LearnCheckin[], targetScore: number, today: string): PaceEstimate {
+  const latest = history[history.length - 1];
+  if (!latest) return { status: 'unknown', perWeek: null, likely: null, late: null, reason: 'Rate this topic to start a trend.' };
+  if (latest.score >= targetScore) return { status: 'reached', perWeek: null, likely: null, late: null, reason: 'You rated yourself at or above your target.' };
+  const recent = history.slice(-6);
+  const span = daysBetween(recent[0].date, recent[recent.length - 1].date);
+  if (recent.length < 3 || span < 14) return { status: 'unknown', perWeek: null, likely: null, late: null, reason: 'Needs at least three ratings over two weeks before a date can be estimated.' };
+  const xs = recent.map((c) => daysBetween(recent[0].date, c.date));
+  const meanX = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const meanY = recent.reduce((a, c) => a + c.score, 0) / recent.length;
+  const denominator = xs.reduce((a, x) => a + (x - meanX) ** 2, 0);
+  const slope = denominator === 0 ? 0 : xs.reduce((a, x, i) => a + (x - meanX) * (recent[i].score - meanY), 0) / denominator;
+  if (slope < 0.01) return { status: 'unknown', perWeek: slope * 7, likely: null, late: null, reason: 'Your recent ratings have not been rising, so no date can be estimated.' };
+  const days = (targetScore - latest.score) / slope;
+  return { status: 'estimate', perWeek: slope * 7, likely: addDays(today, Math.ceil(days)), late: addDays(today, Math.ceil(days * 2)),
+    reason: 'A rough projection from your own recent ratings. Progress often slows near the top, so treat it as a guide.' };
+}
+
 type Row = Record<string, unknown>;
 const bad = (what: string): never => { throw new Error(`Invalid backup: invalid learning ${what}.`); };
 const text = (v: unknown, max: number) => typeof v === 'string' && v.length <= max;
@@ -114,7 +142,10 @@ export function validateLearningBackup(t: Record<string, Row[]>): void {
   const topics = new Set<unknown>();
   for (const r of t.learn_topics) {
     if (!text(r.subject, 80) || !String(r.subject).trim() || !text(r.name, 120) || !String(r.name).trim() || !text(r.note, 2000)
-      || ![0, 1].includes(r.focus as number)) bad('topic');
+      || ![0, 1].includes(r.focus as number)
+      || (r.target_score !== null && (!Number.isInteger(r.target_score) || Number(r.target_score) < MIN_SCORE || Number(r.target_score) > MAX_SCORE))
+      || (r.target_date !== null && (typeof r.target_date !== 'string' || !isDateKey(r.target_date)))
+      || (r.target_date !== null && r.target_score === null)) bad('topic');
     topics.add(r.id);
   }
   for (const r of t.learn_checkins) {

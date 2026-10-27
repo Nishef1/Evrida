@@ -5,7 +5,7 @@ import { migrateDatabase } from '../src/storage/database.ts';
 import { exportBackup, restoreBackup } from '../src/storage/backup.ts';
 import { parseBackup } from '../src/domain/backup.ts';
 import {
-  bandLabel, focusSuggestions, historyOf, parseMinutes, parseScore, topicProgress, trendPoints, validateCheckin, weekStart, weeklyReview,
+  bandLabel, focusSuggestions, paceEstimate, historyOf, parseMinutes, parseScore, topicProgress, trendPoints, validateCheckin, weekStart, weeklyReview,
 } from '../src/domain/learning.ts';
 import {
   deleteCheckin, deleteTopic, loadLearning, saveCheckin, saveTopic, setTopicArchived, setTopicFocus,
@@ -67,6 +67,14 @@ test('learning keeps honest self-ratings, separates practice time, reviews weeks
     const picks = focusSuggestions(data.topics, data.checkins, '2026-10-28');
     assert.deepEqual(picks.map((p) => p.topic.id), [perfect, continuous], 'lowest recent ratings come first, from the user\'s own numbers only');
 
+    await saveTopic(db, { id: perfect, subject: 'English', name: 'Past perfect', note: '', targetScore: 8, targetDate: '2027-03-01' });
+    assert.deepEqual([(await loadLearning(db)).topics.find((t) => t.id === perfect).targetScore, (await loadLearning(db)).topics.find((t) => t.id === perfect).targetDate], [8, '2027-03-01']);
+    await assert.rejects(() => saveTopic(db, { id: perfect, subject: 'English', name: 'Past perfect', note: '', targetScore: 11 }), /1 to 10/);
+    const pace = paceEstimate(historyOf(perfect, data.checkins), 8, '2026-10-28');
+    assert.equal(pace.status, 'estimate');
+    assert.ok(pace.late > pace.likely && pace.perWeek > 0, 'an estimate gives a likely date and a later one');
+    assert.equal(paceEstimate(historyOf(perfect, data.checkins).slice(0, 2), 8, '2026-10-28').status, 'unknown', 'two ratings are not enough');
+    assert.equal(paceEstimate(historyOf(perfect, data.checkins), 4, '2026-10-28').status, 'reached');
     await setTopicFocus(db, perfect, true);
     assert.equal((await loadLearning(db)).topics.find((t) => t.id === perfect).focus, true);
     await setTopicArchived(db, perfect, true);
@@ -84,6 +92,9 @@ test('learning keeps honest self-ratings, separates practice time, reviews weeks
     assert.throws(() => parseBackup(JSON.stringify(orphan)), /learning check-in/);
     const badScore = structuredClone(backup); badScore.tables.learn_checkins[0].score = 11;
     assert.throws(() => parseBackup(JSON.stringify(badScore)), /learning check-in/);
+    const v5 = structuredClone(backup); v5.version = 5; v5.schemaVersion = 11;
+    for (const row of v5.tables.learn_topics) { delete row.target_score; delete row.target_date; }
+    assert.equal(parseBackup(JSON.stringify(v5)).tables.learn_topics[0].target_score, null, 'version 5 backups gain empty targets');
     const v4 = structuredClone(backup); v4.version = 4; v4.schemaVersion = 10;
     delete v4.tables.learn_topics; delete v4.tables.learn_checkins;
     assert.equal(parseBackup(JSON.stringify(v4)).tables.learn_topics.length, 0, 'version 4 backups gain empty learning tables');

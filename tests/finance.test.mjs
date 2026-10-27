@@ -156,7 +156,7 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(data.txs.filter((t) => t.note === 'Rent').length, 1);
 
     const backup = await exportBackup(source.db);
-    assert.equal(backup.version, 5);
+    assert.equal(backup.version, 6);
     await updateFinanceSettings(source.db, { unit: 'Toman', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
     const withRate = await exportBackup(source.db);
     assert.equal(withRate.tables.fin_settings[0].usd_rate_x100, 16000000);

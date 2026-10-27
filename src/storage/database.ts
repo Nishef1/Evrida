@@ -277,7 +277,12 @@ const V11_SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS learn_checkins_by_topic_date ON learn_checkins(topic_id, date);
 `;
-export const SCHEMA_VERSION = 11;
+const V12_SCHEMA = `
+  -- Optional personal target for a learning topic: the score the user wants and an optional date.
+  ALTER TABLE learn_topics ADD COLUMN target_score INTEGER CHECK (target_score IS NULL OR (target_score BETWEEN 1 AND 10));
+  ALTER TABLE learn_topics ADD COLUMN target_date TEXT;
+`;
+export const SCHEMA_VERSION = 12;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
@@ -301,6 +306,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     if (version <= 8) await tx.execAsync(V9_SCHEMA);
     if (version <= 9) await tx.execAsync(V10_SCHEMA);
     if (version <= 10) await tx.execAsync(V11_SCHEMA);
+    if (version <= 11) await tx.execAsync(V12_SCHEMA);
     await tx.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   });
 }

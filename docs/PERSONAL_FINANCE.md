@@ -194,3 +194,7 @@ This design borrows established patterns—not proprietary implementation—from
 ## Dollar view (added 2026-10-27)
 
 An optional, dated USD rate (units of the reporting currency per 1 US dollar) lets amount fields and account balances show a dollar value. It never changes a stored amount and is not a second currency in the ledger. The rate can be typed or fetched on request from a public source: for Toman/Rial the market price of USDT on Bitpin (fallback Wallex), otherwise a daily reference rate from open.er-api.com. Only a request for the rate leaves the device. The source and date are stored with the rate and shown wherever it is used. Native-currency amounts always remain the source of truth.
+
+## Category management
+
+Money settings → Manage categories: add, rename, regroup, and hide or show categories. Renaming updates past records that use the category; hiding only removes it from pickers and never changes history or reports.
