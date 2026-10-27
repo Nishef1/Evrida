@@ -470,7 +470,7 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the full implementation inventory, in
 
 ## Personal Finance & Money Goals — implementation status (2026-10-27)
 
-**Status: partially implemented on main.** The optional Money module now has a manual ledger, accounts, editable categories and tags, budgets, planned items, explicit savings-goal allocations, and assumption-based target forecasts. The implementation has domain/SQLite test coverage; CI now includes those tests. Native device acceptance and some forecast capabilities remain incomplete. Full rules live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
+**Status: partially implemented on main.** The optional Money module now has a manual ledger, accounts, editable categories and tags, budgets, planned items, explicit savings-goal allocations, assumption-based target forecasts, and an optional dated USD comparison rate. The implementation has domain/SQLite test coverage; CI now includes those tests. Native device acceptance and some forecast capabilities remain incomplete. Full rules live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
 
 ### Finance 1 — Trustworthy manual ledger
 
@@ -497,6 +497,7 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the full implementation inventory, in
 - [x] Accept a user-entered general-inflation scenario and keep it separate from target-specific price growth.
 - [x] Show a future target's nominal price and, when an inflation assumption exists, its value in today's purchasing power.
 - [x] Expose assumptions, missing inputs and provisional status in the forecast.
+- [x] Allow an optional dated dollar comparison rate for reporting-currency amounts, with source/date metadata; this is separate from inflation and does not convert stored records.
 - [ ] Add dated historical price-index data from a trustworthy, explicitly selected source.
 - [ ] Add broader what-if scenarios for income changes, one-off expenses and different inflation/contribution assumptions.
 - [ ] Improve forecast ranges and sensitivity explanations; do not imply certainty or a guaranteed completion date.
