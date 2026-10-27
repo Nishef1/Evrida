@@ -1,6 +1,6 @@
 # Learning Projects
 
-**Status:** Product specification; implementation not started as of 2026-10-27.  
+**Status:** First slice implemented (2026-10-27): self-rated mastery tracker (below). Resources, workload estimates and adaptive scheduling in this specification are still not started.  
 **Product:** Evrida  
 **Principle:** Every day with Evrida.
 
@@ -108,3 +108,16 @@ The first version can use configurable review intervals and simple recall outcom
 ## Explicitly not promised
 
 LP1 cannot know how long a learner will need to master a skill solely from a book title, page count or minutes studied. Estimates improve only when the user provides workload information and Evrida observes actual pace. Learning outcomes need evidence beyond task completion.
+
+## Implemented slice: self-rated mastery tracker (Learning, schema v11)
+
+Reached from Review → Learning. Optional and offline; nothing is required by planning.
+
+- **Topics** grouped by a free-text subject (for example English → Past perfect), each with a description.
+- **Check-ins**: the user's own 1–10 score, optional minutes practised, what was covered, notes and a date. Score bands are a personal guide, not a standard test. Practice time and mastery are stored and shown separately.
+- **Trend**: scores over time on a fixed 1–10 scale; change since the previous check-in.
+- **Weekly review**: per-topic result for the chosen Monday-based week, topics not yet rated, total practice time, and a note when long practice did not raise the score.
+- **Next week's focus**: topics can be marked manually; suggestions come only from the user's own ratings (low or stale), never from an automatic assessment.
+- **Backup**: backup format v5 / schema 11 (`learn_topics`, `learn_checkins`); v4 and older backups upgrade with empty tables.
+
+Not implemented: linking topics to goals or calendar sessions, study reminders/notifications, resources and time estimates, charts beyond the score trend.

@@ -156,12 +156,13 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(data.txs.filter((t) => t.note === 'Rent').length, 1);
 
     const backup = await exportBackup(source.db);
-    assert.equal(backup.version, 4);
+    assert.equal(backup.version, 5);
     await updateFinanceSettings(source.db, { unit: 'Toman', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
     const withRate = await exportBackup(source.db);
     assert.equal(withRate.tables.fin_settings[0].usd_rate_x100, 16000000);
     const v3 = structuredClone(withRate);
     v3.version = 3; v3.schemaVersion = 9;
+    delete v3.tables.learn_topics; delete v3.tables.learn_checkins;
     for (const row of v3.tables.fin_settings) { delete row.usd_rate_x100; delete row.usd_rate_date; delete row.usd_rate_source; }
     assert.equal(parseBackup(JSON.stringify(v3)).tables.fin_settings[0].usd_rate_x100, null, 'version 3 backups gain an empty rate');
     const badRate = structuredClone(withRate);
@@ -184,7 +185,7 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.throws(() => parseBackup(JSON.stringify(orphan)), /allocation/);
     const older = structuredClone(backup);
     older.version = 2; older.schemaVersion = 8;
-    for (const name of Object.keys(older.tables).filter((n) => n.startsWith('fin_'))) delete older.tables[name];
+    for (const name of Object.keys(older.tables).filter((n) => n.startsWith('fin_') || n.startsWith('learn_'))) delete older.tables[name];
     assert.equal(parseBackup(JSON.stringify(older)).tables.fin_transactions.length, 0, 'pre-finance backups still restore');
     await restoreBackup(legacy.db, JSON.stringify(older));
     assert.equal(await loadFinance(legacy.db), null, 'finance stays off unless it was set up');

@@ -251,7 +251,33 @@ const V10_SCHEMA = `
   ALTER TABLE fin_settings ADD COLUMN usd_rate_source TEXT;
 `;
 
-export const SCHEMA_VERSION = 10;
+const V11_SCHEMA = `
+  -- Optional learning tracker. Scores are the user's own self-ratings (1-10); minutes practised
+  -- are stored separately because time spent is not mastery.
+  CREATE TABLE IF NOT EXISTS learn_topics (
+    id TEXT PRIMARY KEY NOT NULL,
+    subject TEXT NOT NULL CHECK (length(trim(subject)) > 0),
+    name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    note TEXT NOT NULL DEFAULT '',
+    focus INTEGER NOT NULL DEFAULT 0 CHECK (focus IN (0, 1)),
+    archived_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS learn_checkins (
+    id TEXT PRIMARY KEY NOT NULL,
+    topic_id TEXT NOT NULL REFERENCES learn_topics(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    score INTEGER NOT NULL CHECK (score BETWEEN 1 AND 10),
+    minutes INTEGER CHECK (minutes IS NULL OR (minutes >= 0 AND minutes <= 10080)),
+    covered TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS learn_checkins_by_topic_date ON learn_checkins(topic_id, date);
+`;
+export const SCHEMA_VERSION = 11;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
@@ -274,6 +300,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     if (version <= 7) await tx.execAsync(V8_SCHEMA);
     if (version <= 8) await tx.execAsync(V9_SCHEMA);
     if (version <= 9) await tx.execAsync(V10_SCHEMA);
+    if (version <= 10) await tx.execAsync(V11_SCHEMA);
     await tx.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   });
 }

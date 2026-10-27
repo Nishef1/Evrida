@@ -23,7 +23,7 @@ This file is the single source of truth for **planned vs completed** work. It is
 | M1 — Product UX | Information architecture, design tokens, prototypes | Daybreak refinement implemented; Android renders sampled; user aesthetic acceptance open | Approved screen map and verified interactions |
 | M2 — Goals & horizons | Persistent data, hierarchy, seven horizons | SQLite v8; real SQLite integration and sampled native flows pass | Complete device acceptance matrix |
 | M3 — Planning views | Boards, calendar, time blocks, fast capture | Implemented; native keyboard, time editing and cross-view Focus sampled | Full cross-view and device matrix |
-| M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates and Learning Projects remain planned | Accepted offline workflow scope |
+| M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates remain planned; a self-rated Learning tracker (topics, 1–10 check-ins, weekly review, trend; schema v11) is implemented, while resources, estimates and reminders remain planned | Accepted offline workflow scope |
 | M5 — Mobile integration | Notifications, widgets, localization, backup | Native picker/backup/reminders implemented; widgets/localization remain open | Physical-device and Apple acceptance |
 | M6 — Quality & release | Performance, accessibility, testing, release build | Isolated Android release QA APK built; iOS JS export passes | Store signing, native iOS, physical-device and accessibility gates |
 

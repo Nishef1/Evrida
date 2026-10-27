@@ -37,7 +37,12 @@ test('week boundaries, ISO week-year and period navigation stay on the right cal
   assert.match(periodLabel('week', date), /Oct 12/);
 });
 
-test('name normalization rejects empty and overlong goals', () => {
+test('names and strict dates reject empty, overlong and impossible input', () => {
+  assert.equal(periodKey('day', parseDateInput('2024-02-29')), '2024-02-29');
+  assert.equal(parseDateInput('2025-02-29'), null);
+  assert.equal(parseDateInput('2026-13-01'), null);
+  assert.equal(parseDateInput('2026-04-31'), null);
+  assert.equal(parseDateInput('2026/10/14'), null);
   assert.equal(normalizeGoalTitle('  Learn   to build  '), 'Learn to build');
   assert.throws(() => normalizeGoalTitle('   '), /needs a title/);
   assert.throws(() => normalizeGoalTitle('x'.repeat(181)), /180 characters/);
@@ -51,14 +56,6 @@ test('saved period can be recovered accurately for editing', () => {
   }
   assert.equal(periodKey('week', dateFromPeriodKey('week', '2020-W53', fallback)), '2020-W53');
   assert.equal(periodKey('week', dateFromPeriodKey('week', '2021-W01', fallback)), '2021-W01');
-});
-
-test('strict date input rejects impossible calendar days', () => {
-  assert.equal(periodKey('day', parseDateInput('2024-02-29')), '2024-02-29');
-  assert.equal(parseDateInput('2025-02-29'), null);
-  assert.equal(parseDateInput('2026-13-01'), null);
-  assert.equal(parseDateInput('2026-04-31'), null);
-  assert.equal(parseDateInput('2026/10/14'), null);
 });
 
 test('parent choices cannot contain the edited goal or any descendants', () => {
