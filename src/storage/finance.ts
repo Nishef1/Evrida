@@ -97,10 +97,20 @@ export async function updateFinanceSettings(db: SQLiteDatabase, input: {
   if (input.inflationBp !== null && (!Number.isSafeInteger(input.inflationBp) || input.inflationBp < 0 || input.inflationBp > 1000000)) {
     throw new Error('Enter an inflation rate between 0% and 10,000%.');
   }
-  const dated = input.usdRateX100 === null;
-  await db.runAsync(`UPDATE fin_settings SET unit = ?, inflation_bp = ?, usd_rate_x100 = ?, usd_rate_date = ?, usd_rate_source = ?, updated_at = ?
-    WHERE id = 'main'`, [unit, input.inflationBp, input.usdRateX100, dated ? null : input.usdRateDate,
-    dated ? null : (input.usdRateSource ?? '').slice(0, 80) || null, now()]);
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    const current = await tx.getFirstAsync<{ unit: string; usd_rate_x100: number | null; usd_rate_date: string | null }>(
+      "SELECT unit, usd_rate_x100, usd_rate_date FROM fin_settings WHERE id = 'main'");
+    if (!current) throw new Error('Set up Money first.');
+    const unitChanged = current.unit.trim().toLowerCase() !== unit.trim().toLowerCase();
+    const reusedOldRate = input.usdRateX100 !== null && input.usdRateX100 === current.usd_rate_x100
+      && input.usdRateDate === current.usd_rate_date;
+    const clearRate = unitChanged && reusedOldRate;
+    const rate = clearRate ? null : input.usdRateX100;
+    const dated = rate === null;
+    await tx.runAsync(`UPDATE fin_settings SET unit = ?, inflation_bp = ?, usd_rate_x100 = ?, usd_rate_date = ?, usd_rate_source = ?, updated_at = ?
+      WHERE id = 'main'`, [unit, input.inflationBp, rate, dated ? null : input.usdRateDate,
+      dated ? null : (input.usdRateSource ?? '').slice(0, 80) || null, now()]);
+  });
 }
 
 export async function saveAccount(db: SQLiteDatabase, input: { id?: string; name: string; kind: AccountKind; opening: number }): Promise<string> {
