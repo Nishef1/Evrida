@@ -1,6 +1,6 @@
 # Personal Finance & Money Goals
 
-**Status:** Finance 1 and the core of Finance 2/3 are implemented as of 2026-10-27 (schema v9, backup v3). Reminders, bank/multi-currency and a dated price-index import are not.  
+**Status:** Finance 1 and the core of Finance 2/3 are implemented as of 2026-10-27 (schema v10, backup v4). The app also supports an optional dated USD comparison rate; historical CPI import, finance reminders, broad what-if scenarios and multi-currency aggregation are not implemented.  
 **Product:** Evrida  
 **Principle:** Every day with Evrida.
 
@@ -55,7 +55,7 @@ Suggested starter categories include Housing (rent, utilities, maintenance), Foo
 - Support manually maintained cash/bank/wallet accounts and optional liabilities in the data model; bank connection is not required.
 - Show account balances and total net worth only when the user has entered enough assets and liabilities to make that summary meaningful.
 - A transfer must be represented as one linked movement with an outgoing and incoming side, or an equivalent atomic record, to prevent double counting.
-- Configure the user's reporting currency and display precision explicitly. For currencies with common major/minor-unit ambiguity (for example, Rial vs Toman), require an explicit unit label and never silently multiply or divide by ten.
+- Configure the user's reporting currency and display precision explicitly. For currencies with common major/minor-unit ambiguity (for example, Rial vs Toman), require an explicit unit label and never silently multiply or divide by ten. An optional dated USD comparison rate may display an approximate dollar equivalent without changing stored balances; it is not multi-currency accounting.
 - The first usable release may operate in one reporting currency. Do not add or sum a second currency without an explicit, dated exchange rate. Multi-currency reporting and bank imports are later scope unless needed by the user.
 - Record transaction date, amount, currency/unit, type, category, tags, account, optional payee/description, optional note, and optional link to a goal or recurring rule.
 - Local-first storage, export/restore and schema migration are mandatory before real financial use. No financial records may be sent to a server or AI service in the initial implementation.
@@ -103,7 +103,7 @@ Do not assume all cash is available for every goal. If several goals exist, show
 - **General inflation and target-specific price growth are different inputs.** General inflation expresses purchasing power. A home-price growth assumption estimates how the price of that specific target may change. Do not apply both to the same target price as if they were the same adjustment.
 - When calculating a future target, apply the target-specific growth assumption to today's target price. When presenting that future amount in today's purchasing power, deflate it using the general price-level assumption/index. Label both values and dates.
 - Estimate savings from allocated starting funds and planned contributions. In the first version, assume no investment return unless the user explicitly enters a scenario. Never imply that cash savings automatically earn a return.
-- Use dated historical price-index values for retrospective real-value comparisons when a trustworthy source exists. For forward-looking forecasts, allow manual scenario rates and label their source/date. Never fabricate current inflation data or silently substitute another country's index.
+- Use dated historical price-index values for retrospective real-value comparisons when a trustworthy source exists. For forward-looking forecasts, allow manual scenario rates and label their source/date. Never fabricate current inflation data or silently substitute another country's index. A dollar exchange rate is not an inflation index and must not be used as a proxy for purchasing-power change.
 - Show ranges rather than false precision when income, expenses, target growth or inflation are uncertain. If there is insufficient history, label the estimate provisional and state which user input would improve it.
 - Do not claim an exact goal date if the projected contribution is zero/negative, data is missing, or the target is not feasible. Explain the gap and show options such as changing the date, contribution, target or spending assumptions.
 
