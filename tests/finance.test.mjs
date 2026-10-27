@@ -57,6 +57,16 @@ test('finance math keeps transfers, refunds, splits, history gaps, inflation and
   assert.equal(netWorth(accounts, rows), 3700);
   assert.equal(unallocatedFunds(accounts, rows, [{ id: 'x', goalId: 'g', amount: 1000, date: '2026-10-06', note: '' }]), 2700);
 
+  const card = { id: 'card', name: 'Credit card', kind: 'liability', opening: 1000, archived: false };
+  const cardRows = [
+    tx({ id: 'card-purchase', accountId: 'card', amount: 200, categoryId: 'food' }),
+    tx({ id: 'card-payment', type: 'transfer', amount: 300, accountId: 'a', toAccountId: 'card', categoryId: null }),
+    tx({ id: 'cash-advance', type: 'transfer', amount: 100, accountId: 'card', toAccountId: 'a', categoryId: null }),
+  ];
+  assert.equal(accountBalance(card, cardRows), 1000, 'credit purchases increase debt, payments reduce it, and advances increase it');
+  assert.equal(accountBalance(accounts[0], cardRows), 800, 'payments and advances move the asset balance correctly');
+  assert.equal(netWorth([accounts[0], card], cardRows), -200, 'transfers do not change net worth; the purchase does');
+
   assert.match(validateTx({ ...tx({ type: 'transfer', amount: 5, toAccountId: 'a', categoryId: null }) }), /different destination/);
   assert.match(validateTx({ ...tx({ amount: 300, categoryId: null, splits: [{ categoryId: 'food', amount: 100 }, { categoryId: 'x', amount: 100 }] }) }), /add up/);
   assert.equal(validateTx(tx({ type: 'adjustment', amount: -50, categoryId: null })), null);
