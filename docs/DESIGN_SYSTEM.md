@@ -1,4 +1,7 @@
-# Eonward design system
+# Evrida design system
+
+**Product name:** Evrida  
+**Tagline:** Every day with Evrida
 
 Direction: **Studio** — a personal planning workspace with neutral surfaces, restrained depth and clear time horizons. This replaces the provisional warm/green styling. It is an implemented direction awaiting user aesthetic review, not a release or accessibility sign-off.
 
