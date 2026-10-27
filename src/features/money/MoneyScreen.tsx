@@ -95,7 +95,7 @@ export function MoneyScreen() {
 
     <TransactionSheet visible={!!editing} data={data} initial={editing?.tx ?? null} preset={editing?.preset} palette={palette}
       onClose={() => setEditing(null)} onChanged={reload}
-      onRefund={(tx) => setEditing({ tx: null, preset: { type: 'income', refundOfId: tx.id, categoryId: tx.splits.length ? undefined : tx.categoryId ?? undefined, splits: tx.splits, amount: tx.amount, accountId: tx.accountId, note: 'Refund' } })} />
+      onRefund={(tx) => setEditing({ tx: null, preset: { type: 'income', refundOfId: tx.id, categoryId: tx.splits.length ? undefined : tx.categoryId ?? undefined, splits: tx.splits, amount: tx.amount, accountId: tx.accountId, note: 'Refund', tags: tx.tagIds.map((id) => data.tags.find((tag) => tag.id === id)?.name).filter((name): name is string => !!name) } })} />
     <AccountSheet data={data} target={account} palette={palette} onClose={() => setAccount(null)} onChanged={reload} />
     <SettingsSheet data={data} visible={settingsOpen} palette={palette} onClose={() => setSettingsOpen(false)} onChanged={reload}
       onCategories={() => { setSettingsOpen(false); setCategoriesOpen(true); }} />
