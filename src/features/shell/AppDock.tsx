@@ -4,8 +4,10 @@ import { useEvridaDatabase } from '../../storage/use-database';
 import { getGoalPath } from '../../storage/goals';
 import { AppState, Alert, Keyboard, Linking, Modal, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { getFocusRemainingMs, formatFocusTime } from '../../domain/focus';
 import { useFocusSession } from '../focus/FocusProvider';
+import { motion } from '../../theme/motion';
 import { colors, radius, semantic } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import CalendarDays from 'lucide-react-native/icons/calendar-days';
@@ -22,6 +24,14 @@ const routes = [
   { path: '/boards', label: 'Boards', icon: LayoutGrid },
   { path: '/insights', label: 'Review', icon: ChartNoAxesCombined },
 ] as const;
+
+/** The selected destination's pill grows in from the center instead of switching on. */
+function NavPill({ selected, color, reduced }: { selected: boolean; color: string; reduced: boolean }) {
+  const progress = useSharedValue(selected ? 1 : 0);
+  useEffect(() => { progress.value = reduced ? (selected ? 1 : 0) : withTiming(selected ? 1 : 0, { duration: motion.base }); }, [selected, reduced, progress]);
+  const style = useAnimatedStyle(() => ({ opacity: progress.value, transform: [{ scaleX: 0.55 + 0.45 * progress.value }] }));
+  return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: color, borderRadius: 16 }, style]} />;
+}
 
 export function AppDock() {
   const reducedMotion = useReducedMotion();
@@ -118,7 +128,8 @@ export function AppDock() {
                 accessibilityLabel={route.label}
                 onPress={() => { if (pathname !== route.path) router.navigate(route.path); }}
                 style={styles.navItem}>
-                <View style={[styles.navIndicator, { backgroundColor: selected ? palette.accentSoft : 'transparent' }]}>
+                <View style={styles.navIndicator}>
+                  <NavPill selected={selected} color={palette.accentSoft} reduced={reducedMotion} />
                   <route.icon size={22} strokeWidth={selected ? 2 : 1.7} color={selected ? palette.accent : palette.muted} />
                 </View>
                 <Text style={[styles.navLabel, { color: selected ? palette.foreground : palette.muted, fontWeight: selected ? '700' : '500' }]}>

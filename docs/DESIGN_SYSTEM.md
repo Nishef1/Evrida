@@ -70,6 +70,10 @@ Use `onAccent` for filled primary controls, not hard-coded white. Completion mus
 - Review uses recorded Focus time and actual completion history. No create/edit-count productivity score or compulsory streak. Empty progress is an invitation, not a wall of zeroes.
 - An active Focus session remains above the dock. Its expanded sheet separates Pause/Resume/End from completing the goal.
 
+## Motion (2026-10-27)
+
+Motion is short and functional, built on `react-native-reanimated` (already a dependency) with durations in `src/theme/motion.ts` (160/240 ms). It is on goal rows (fade in/out and re-flow when a row is added, completed or moved), the completion ring (a small press-and-settle pop), the horizon spectrum (the active band grows and shrinks) and the dock's selected pill (grows from the center). Every one of them is skipped when system reduced motion is on, and no state is conveyed by motion alone. Verified on an Android emulator by screen recording the strip and a newly added row; the completion pop and 60 fps behavior on real hardware are not verified.
+
 ## Platform and accessibility contract
 
 - Respect safe areas, keyboard insets, dynamic fonts and platform back behavior. Touch targets aim for at least 48dp on both platforms.

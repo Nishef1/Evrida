@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Check from 'lucide-react-native/icons/check';
 import ChevronDown from 'lucide-react-native/icons/chevron-down';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
@@ -10,10 +11,28 @@ import type { Goal } from '../../domain/goals';
 import { HORIZON_TITLES, dateFromPeriodKey, periodLabel } from '../../domain/horizons';
 import { listChildGoals } from '../../storage/goals';
 import { useEvridaDatabase } from '../../storage/use-database';
+import { listMotion } from '../../theme/motion';
 import { colors, depth, radius, type Palette } from '../../theme/tokens';
+import { useReducedMotion } from '../../theme/useReducedMotion';
 
 function planningLabel(goal: Goal) {
   return goal.inbox ? 'Inbox · not yet planned' : `${HORIZON_TITLES[goal.horizon]} · ${periodLabel(goal.horizon, dateFromPeriodKey(goal.horizon, goal.periodKey, new Date()))}`;
+}
+
+/** The completion ring gives a small tactile pop when its state changes, never on first paint. */
+function CheckRing({ goal, palette, reduced }: { goal: Goal; palette: Palette; reduced: boolean }) {
+  const scale = useSharedValue(1);
+  const painted = useRef(false);
+  useEffect(() => {
+    if (!painted.current) { painted.current = true; return; }
+    if (reduced) return;
+    scale.value = withSequence(withTiming(0.8, { duration: 70 }), withSpring(1, { damping: 9, stiffness: 280 }));
+  }, [goal.completed, reduced, scale]);
+  const pop = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return <Animated.View style={[styles.checkbox, { borderColor: goal.completed ? palette.accent : palette.horizon[goal.horizon],
+    backgroundColor: goal.completed ? palette.accent : 'transparent' }, pop]}>
+    {goal.completed ? <Check size={15} color={palette.onAccent} strokeWidth={2.75} /> : null}
+  </Animated.View>;
 }
 
 export function GoalCard({ goal, palette, revision, showContext, disabled, onOpen, onToggle, onOrganize }: {
@@ -27,6 +46,7 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
   onOrganize: () => void;
 }) {
   const db = useEvridaDatabase();
+  const reduced = useReducedMotion();
   const [expanded, setExpanded] = useState(false);
   const [steps, setSteps] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,14 +72,11 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
     return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.completed, disabled }}
       accessibilityLabel={`${item.completed ? 'Reopen' : 'Complete'} ${item.title}`} disabled={disabled}
       onPress={() => onToggle(item)} style={styles.checkboxTouch}>
-      <View style={[styles.checkbox, { borderColor: item.completed ? palette.accent : palette.horizon[item.horizon],
-        backgroundColor: item.completed ? palette.accent : 'transparent' }]}>
-        {item.completed ? <Check size={15} color={palette.onAccent} strokeWidth={2.75} /> : null}
-      </View>
+      <CheckRing goal={item} palette={palette} reduced={reduced} />
     </Pressable>;
   }
 
-  return <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border,
+  return <Animated.View {...listMotion(reduced)}><View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border,
     boxShadow: palette === colors.dark ? depth.dark.card : depth.light.card }]}>
     <View style={styles.row}>
       {checkbox(goal)}
@@ -114,7 +131,7 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
         </Pressable> : null}
       </View> : null}
     </> : null}
-  </View>;
+  </View></Animated.View>;
 }
 
 const styles = StyleSheet.create({
