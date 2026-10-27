@@ -65,6 +65,8 @@ test('finance math keeps transfers, refunds, splits, history gaps, inflation and
   assert.equal(afterSplitRefund.get('food'), 630, 'a split refund reduces the correct food amount');
   assert.equal(afterSplitRefund.get('health'), 70, 'a split refund reduces the correct health amount');
   assert.equal(tagTotals(rows, '2026-10').get('trip'), 900);
+  const taggedRefund = tx({ id: 'tagged-refund', type: 'income', amount: 100, categoryId: 'food', refundOfId: 'groc', tagIds: ['trip'] });
+  assert.equal(tagTotals([...rows, taggedRefund], '2026-10').get('trip'), 800, 'a tagged refund reduces the same tag total');
   assert.equal(accountBalance(accounts[0], rows, accounts) + accountBalance(accounts[1], rows, accounts), 1000 + 5000 - 2100 - 300 + 100, 'transfer moves money without changing the total');
   assert.equal(netWorth(accounts, rows), 3700);
   assert.equal(unallocatedFunds(accounts, rows, [{ id: 'x', goalId: 'g', amount: 1000, date: '2026-10-06', note: '' }]), 2700);
