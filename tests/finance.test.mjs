@@ -192,6 +192,10 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(backup.version, 7);
     await updateFinanceSettings(source.db, { unit: 'Toman', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
     const withRate = await exportBackup(source.db);
+    await updateFinanceSettings(source.db, { unit: 'Rial', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
+    const changedUnit = await loadFinance(source.db);
+    assert.equal(changedUnit.settings.usdRateX100, null, 'a rate in the old unit is never reused for a new unit');
+    assert.equal(changedUnit.settings.usdRateDate, null);
     assert.equal(withRate.tables.fin_settings[0].usd_rate_x100, 16000000);
     const v3 = structuredClone(withRate);
     v3.version = 3; v3.schemaVersion = 9;
