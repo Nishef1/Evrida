@@ -107,7 +107,7 @@ Expo issues [#48999](https://github.com/expo/expo/issues/48999) and [#48995](htt
 
 All seven UI/Focus consumers now receive `serializeDatabase(useSQLiteContext())` via `src/storage/use-database.ts`. The pure gate serializes `getFirstAsync`, `getAllAsync`, `runAsync`, `execAsync` and full exclusive transactions per native handle. Each exclusive callback receives an independently gated transaction object, and startup initialization remains on SQLiteProvider's original connection. Do not use the raw provider hook from feature code or call back into the parent database object from inside its own guarded exclusive transaction: that can deadlock the queue.
 
-A JS serialization gate cannot prevent an independent native GC/teardown use-after-free; issue [#2](https://github.com/Nishef1/Evrida/issues/2) remains a **P0 release blocker**. Run physical/emulator lifecycle stress and capture logcat tombstones before considering an SDK upgrade or native patch. Do not silently mask connection errors with destructive database replacement or resets.
+A JS serialization gate cannot prevent an independent native GC/teardown use-after-free; issue [#2](https://github.com/Nishef1/Eonward/issues/2) remains a **P0 release blocker**. Run physical/emulator lifecycle stress and capture logcat tombstones before considering an SDK upgrade or native patch. Do not silently mask connection errors with destructive database replacement or resets.
 
 ## 2026-10-15 — Native acceptance toolchain
 
