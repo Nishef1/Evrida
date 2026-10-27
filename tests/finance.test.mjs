@@ -69,6 +69,12 @@ test('finance math keeps transfers, refunds, splits, history gaps, inflation and
   assert.equal(tagTotals([...rows, taggedRefund], '2026-10').get('trip'), 800, 'a tagged refund reduces the same tag total');
   assert.equal(accountBalance(accounts[0], rows, accounts) + accountBalance(accounts[1], rows, accounts), 1000 + 5000 - 2100 - 300 + 100, 'transfer moves money without changing the total');
   assert.equal(netWorth(accounts, rows), 3700);
+  const hiddenAccounts = [
+    { id: 'hidden-cash', name: 'Hidden cash', kind: 'bank', opening: 1000, archived: true },
+    { id: 'hidden-debt', name: 'Hidden debt', kind: 'liability', opening: 200, archived: true },
+  ];
+  assert.equal(netWorth(hiddenAccounts, []), 800, 'hiding accounts does not erase assets or debts from net worth');
+  assert.equal(unallocatedFunds(hiddenAccounts, [], []), 1000, 'hidden asset balances remain in available funds');
   assert.equal(unallocatedFunds(accounts, rows, [{ id: 'x', goalId: 'g', amount: 1000, date: '2026-10-06', note: '' }]), 2700);
 
   const card = { id: 'card', name: 'Credit card', kind: 'liability', opening: 1000, archived: false };
