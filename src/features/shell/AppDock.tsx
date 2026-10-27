@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import { getGoalPath } from '../../storage/goals';
 import { AppState, Alert, Keyboard, Linking, Modal, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +26,7 @@ const routes = [
 export function AppDock() {
   const reducedMotion = useReducedMotion();
   const router = useRouter();
-  const db = useEonwardDatabase();
+  const db = useEvridaDatabase();
   const pathname = usePathname();
   const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
   const { session, busy, error, notificationNotice, pause, resume, finish, refresh } = useFocusSession();
@@ -164,7 +164,7 @@ export function AppDock() {
                   <Text style={[styles.warning, { color: palette === colors.dark ? semantic.dark.warning : semantic.light.warning }]}>{notificationNotice}</Text>
                   <Pressable accessibilityRole="button" accessibilityLabel="Open system app settings"
                     onPress={() => { void Linking.openSettings().catch(() =>
-                      Alert.alert('Settings unavailable', 'Open your device settings and choose Eonward → Notifications.')); }}
+                      Alert.alert('Settings unavailable', 'Open your device settings and choose Evrida → Notifications.')); }}
                     style={[styles.settingsButton, { borderColor: palette.border }]}>
                     <Text style={[styles.settingsText, { color: palette.accent }]}>Open app settings</Text>
                   </Pressable>
