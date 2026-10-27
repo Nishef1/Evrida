@@ -43,7 +43,7 @@ import ExportIcon from 'lucide-react-native/icons/share';
 import DownloadIcon from 'lucide-react-native/icons/download';
 import ShieldCheckIcon from 'lucide-react-native/icons/shield-check';
 import HeartbeatIcon from 'lucide-react-native/icons/activity';
-import TrashIcon from 'lucide-react-native/icons/trash-2';
+import TrashIcon from 'lucide-react-native/icons/trash';
 import PencilIcon from 'lucide-react-native/icons/pencil';
 import FlagIcon from 'lucide-react-native/icons/flag';
 import StarIcon from 'lucide-react-native/icons/star';
