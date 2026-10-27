@@ -110,14 +110,15 @@ export async function saveAccount(db: SQLiteDatabase, input: { id?: string; name
   const id = input.id ?? randomUUID();
   await db.withExclusiveTransactionAsync(async (tx) => {
     if (input.id) {
-      const current = await tx.getFirstAsync<{ kind: AccountKind }>('SELECT kind FROM fin_accounts WHERE id = ?', [input.id]);
+      const current = await tx.getFirstAsync<{ kind: AccountKind; opening: number }>('SELECT kind, opening FROM fin_accounts WHERE id = ?', [input.id]);
       if (!current) throw new Error('This account no longer exists.');
-      if (current.kind !== input.kind) {
-        const hasTransactions = await tx.getFirstAsync('SELECT 1 FROM fin_transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1', [input.id, input.id]);
-        const hasPlans = await tx.getFirstAsync('SELECT 1 FROM fin_plans WHERE account_id = ? LIMIT 1', [input.id]);
-        if (hasTransactions || hasPlans) {
-          throw new Error('Account type is locked after it is used. Create a new account with the correct type and transfer the balance instead.');
-        }
+      const hasTransactions = await tx.getFirstAsync('SELECT 1 FROM fin_transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1', [input.id, input.id]);
+      const hasPlans = await tx.getFirstAsync('SELECT 1 FROM fin_plans WHERE account_id = ? LIMIT 1', [input.id]);
+      if (hasTransactions && current.opening !== input.opening) {
+        throw new Error('Opening balance is locked after transactions exist. Add an adjustment to correct the balance.');
+      }
+      if (current.kind !== input.kind && (hasTransactions || hasPlans)) {
+        throw new Error('Account type is locked after it is used. Create a new account with the correct type and transfer the balance instead.');
       }
       await tx.runAsync('UPDATE fin_accounts SET name = ?, kind = ?, opening = ?, updated_at = ? WHERE id = ?',
         [name, input.kind, input.opening, stamp, input.id]);
