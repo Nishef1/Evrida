@@ -216,13 +216,13 @@ export function accountBalance(account: FinAccount, txs: FinTx[], accounts: FinA
 export function netWorth(accounts: FinAccount[], txs: FinTx[]): number | null {
   const open = accounts.filter((a) => !a.archived);
   if (!open.length) return null;
-  return open.reduce((sum, a) => sum + (a.kind === 'liability' ? -accountBalance(a, txs) : accountBalance(a, txs)), 0);
+  return open.reduce((sum, a) => sum + (a.kind === 'liability' ? -accountBalance(a, txs, accounts) : accountBalance(a, txs, accounts)), 0);
 }
 
 /** Cash held in asset accounts that is not yet explicitly allocated to a money goal. */
 export function unallocatedFunds(accounts: FinAccount[], txs: FinTx[], allocations: FinAllocation[]): number {
   const assets = accounts.filter((a) => !a.archived && a.kind !== 'liability')
-    .reduce((sum, a) => sum + accountBalance(a, txs), 0);
+    .reduce((sum, a) => sum + accountBalance(a, txs, accounts), 0);
   return assets - allocations.reduce((sum, a) => sum + a.amount, 0);
 }
 export const allocatedTo = (goalId: string, allocations: FinAllocation[]): number =>
