@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState, Platform } from 'react-native';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import { getFocusSession, beginFocusSession, beginQuickFocus, pauseFocusSession, resumeFocusSession, stopFocusSession } from '../../storage/focus';
 import type { FocusSession } from '../../domain/focus';
 import { askForFocusNotificationPermission, reconcileFocusNotification } from './notifications';
@@ -21,7 +21,7 @@ interface FocusContextValue {
 const FocusContext = createContext<FocusContextValue | null>(null);
 
 export function FocusProvider({ children }: { children: ReactNode }) {
-  const db = useEonwardDatabase();
+  const db = useEvridaDatabase();
   const [session, setSession] = useState<FocusSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
