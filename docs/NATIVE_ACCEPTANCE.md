@@ -23,7 +23,7 @@ Only run `eas init` when linking a new project is actually necessary. If already
 
 ## Android P0 database crash reproduction
 
-Issue: [#2](https://github.com/Nishef1/Evrida/issues/2). External Expo reports [#48999](https://github.com/expo/expo/issues/48999) and [#48995](https://github.com/expo/expo/issues/48995) are plausible related cases, not proof of identical causes.
+Issue: [#2](https://github.com/Nishef1/Eonward/issues/2). External Expo reports [#48999](https://github.com/expo/expo/issues/48999) and [#48995](https://github.com/expo/expo/issues/48995) are plausible related cases, not proof of identical causes.
 
 1. Install an **isolated Evrida QA** Android APK on an emulator, create a synthetic goal and leave its editor with unsaved text.
 2. Make sure `adb` is installed, then run `bash scripts/android-sqlite-stress.sh` from the project root. The script explicitly rejects physical devices, changes font scale/night theme, and restores their previous values on exit. It neither wipes data nor changes the main app's ID.
