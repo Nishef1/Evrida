@@ -46,10 +46,10 @@ export function usdNote(value: string, settings: FinSettings): string | null {
   return `≈ ${formatUsd(usd)} at ${formatAmount(settings.usdRateX100, { decimals: 2 }).replace(/\.00$/, '')} ${settings.unit} per $ · ${dateName(settings.usdRateDate)}${stale}`;
 }
 
-export function Field({ label, value, onChangeText, palette, placeholder, keyboardType, multiline, suffix, maxLength, hint, money, negative }: {
+export function Field({ label, value, onChangeText, palette, placeholder, keyboardType, multiline, suffix, maxLength, hint, money, negative, disabled }: {
   label: string; value: string; onChangeText: (text: string) => void; palette: Palette; placeholder?: string;
   keyboardType?: KeyboardTypeOptions; multiline?: boolean; suffix?: string; maxLength?: number; hint?: string;
-  money?: FinSettings; negative?: boolean;
+  money?: FinSettings; negative?: boolean; disabled?: boolean;
 }) {
   const shown = money ? groupDigits(value, money.decimals, negative) : value;
   const note = money ? usdNote(value, money) : null;
@@ -57,8 +57,8 @@ export function Field({ label, value, onChangeText, palette, placeholder, keyboa
     <Label palette={palette}>{label.toUpperCase()}</Label>
     <View style={[styles.field, multiline && { minHeight: 84, alignItems: 'flex-start' }, { backgroundColor: palette.surface, borderColor: palette.border }]}>
       <TextInput value={shown} onChangeText={money ? (text) => onChangeText(groupDigits(text, money.decimals, negative)) : onChangeText} placeholder={placeholder} placeholderTextColor={palette.muted}
-        keyboardType={keyboardType} multiline={multiline} maxLength={maxLength} accessibilityLabel={label}
-        style={[styles.input, { color: palette.foreground }, multiline && { textAlignVertical: 'top' }]} />
+        keyboardType={keyboardType} multiline={multiline} maxLength={maxLength} editable={!disabled} accessibilityLabel={label}
+        style={[styles.input, { color: palette.foreground, opacity: disabled ? 0.6 : 1 }, multiline && { textAlignVertical: 'top' }]} />
       {suffix ? <Text style={{ color: palette.muted, fontSize: 13 }}>{suffix}</Text> : null}
     </View>
     {note ? <Text accessibilityLiveRegion="polite" style={[type.caption, { color: palette.accent, fontWeight: '600' }]}>{note}</Text> : null}
