@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentRef } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, AppState, Keyboard, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Keyboard, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, periodKey, periodLabel, shiftPeriod, type Horizon } from '../../domain/horizons';
@@ -22,7 +22,7 @@ import Plus from 'lucide-react-native/icons/plus';
 import Search from 'lucide-react-native/icons/search';
 import Settings2 from 'lucide-react-native/icons/settings-2';
 import X from 'lucide-react-native/icons/x';
-import { HorizonSpectrum } from '../shared/HorizonSpectrum';
+import { CompletionProgress } from '../shared/CompletionProgress';
 import { GoalDetails } from './GoalDetails';
 import { GoalCard } from './GoalCard';
 import { GoalEditor } from './GoalEditor';
@@ -40,6 +40,8 @@ import { useDockInset } from '../shell/DockInset';
 export function HorizonsScreen() {
   const reducedMotion = useReducedMotion();
   const dockInset = useDockInset();
+  const { width, fontScale } = useWindowDimensions();
+  const compactHeading = width / fontScale < 330;
   const db = useEvridaDatabase();
   const router = useRouter();
   const focus = useFocusSession();
@@ -447,12 +449,9 @@ export function HorizonsScreen() {
     <View>
       <View style={styles.topBar}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.pageTitle, { color: palette.foreground }]}>
+          <Text style={[styles.pageTitle, compactHeading && type.title, { color: palette.foreground }]}>
             {searching ? 'Search your plans' : view === 'inbox' ? 'Inbox' : view === 'perspective' ? 'Your horizons' : view === 'archive' ? 'Archive' : horizon === 'day' && key === clockDay ? 'Today' : HORIZON_TITLES[horizon]}
           </Text>
-          {!searching ? <Text style={[styles.caption, { color: palette.muted }]}>
-            {view === 'inbox' ? 'Capture now. Decide when later.' : view === 'perspective' ? 'Daily steps. Longer-term direction.' : view === 'archive' ? 'Saved for another season.' : openGoals.length ? `${caption} · ${openGoals.length} open` : caption}
-          </Text> : null}
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={searching ? 'Close search' : 'Search all goals and notes'}
           onPress={() => { setSearching(!searching); setSearch(''); }} style={styles.utility}>
@@ -462,8 +461,9 @@ export function HorizonsScreen() {
           <MoreHorizontal size={23} color={palette.foreground} strokeWidth={1.8} />
         </Pressable>
       </View>
-      {!searching ? <View style={styles.spectrum}><HorizonSpectrum palette={palette} active={view === 'focus' ? horizon : undefined}
-          onSelect={(target) => { setView('focus'); setHorizon(target); }} /></View> : null}
+      {!searching ? <Text style={[styles.caption, { color: palette.muted }]}>
+        {view === 'inbox' ? 'Capture now. Decide when later.' : view === 'perspective' ? 'Daily steps. Longer-term direction.' : view === 'archive' ? 'Saved for another season.' : caption}
+      </Text> : null}
       {searching ? <TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search goals, notes or parent goals"
         accessibilityLabel="Search goals and notes" placeholderTextColor={palette.muted}
         style={[styles.searchInput, { color: palette.foreground, backgroundColor: palette.surface, borderColor: palette.border }]} /> : <>
@@ -499,10 +499,11 @@ export function HorizonsScreen() {
           </View>
         </> : null}
       </>}
-      {showingList && !searching && !waitingForList && !failure && goals.length > 0 && openGoals.length === 0 ?
-        <View style={[styles.planSummary, { borderColor: palette.border }]}>
-          <Text style={[styles.summaryText, { color: palette.foreground }]}>Room to breathe.</Text>
-          <Text style={[styles.summaryDetail, { color: palette.muted }]}>Everything planned here is done. Leave some space for yourself.</Text>
+      {view === 'focus' && !searching && !waitingForList && !failure && goals.length > 0 ?
+        <View style={[styles.planSummary, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+          <CompletionProgress label={horizon === 'day' && key === clockDay ? "Today's plan" : 'This plan'}
+            completed={doneGoals.length} total={goals.length} palette={palette} />
+          {openGoals.length === 0 ? <Text style={[styles.summaryDetail, { color: palette.muted }]}>Room to breathe. Everything here is done.</Text> : null}
         </View> : null}
       {!showingList && view === 'perspective' ? <PerspectiveView sections={perspectiveSections} palette={palette}
         loading={perspectiveLoading} error={perspectiveError} onRetry={() => setPerspectiveRevision((n) => n + 1)}
@@ -611,13 +612,16 @@ export function HorizonsScreen() {
           <SafeAreaView edges={['bottom']} style={[styles.organizePanel, { backgroundColor: palette.background }]}>
             <View style={[styles.grabber, { backgroundColor: palette.border }]} />
             <Text style={[styles.organizeTitle, { color: palette.foreground }]}>Choose your horizon</Text>
+            <ScrollView contentContainerStyle={{ gap: 10 }} showsVerticalScrollIndicator={false}>
             {HORIZONS.map((item) => <Pressable key={item} accessibilityRole="button" accessibilityState={{ selected: horizon === item }}
               onPress={() => { setHorizon(item); setHorizonsVisible(false); }}
               style={[styles.horizonOption, { backgroundColor: horizon === item ? palette.accentSoft : palette.surface, borderColor: horizon === item ? palette.accent : palette.border }]}>
+              <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: palette.horizon[item] }} />
               <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600', minWidth: 70 }}>{HORIZON_TITLES[item]}</Text>
               <Text style={{ color: palette.muted, fontSize: 12, flex: 1 }}>{periodLabel(item, anchor)}</Text>
               {horizon === item ? <Check size={18} color={palette.accent} /> : <ChevronRight size={17} color={palette.muted} />}
             </Pressable>)}
+            </ScrollView>
           </SafeAreaView>
         </View></SafeAreaProvider>
       </Modal>
@@ -757,7 +761,7 @@ const styles = StyleSheet.create({
   guidedPrompt: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 70,
     padding: 14, borderRadius: radius.lg, borderWidth: 1, marginTop: 10 },
   organizeOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
-  organizePanel: { padding: spacing.lg, paddingBottom: 35, borderTopLeftRadius: 28, borderTopRightRadius: 28, gap: 10 },
+  organizePanel: { maxHeight: '88%', padding: spacing.lg, paddingBottom: 35, borderTopLeftRadius: 28, borderTopRightRadius: 28, gap: 10 },
   grabber: { width: 36, height: 4, borderRadius: 4, alignSelf: 'center', marginBottom: 10 },
   horizonOption: { minHeight: 54, borderWidth: 1, borderRadius: radius.md, flexDirection: 'row', gap: 10, alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8 },
   organizeTitle: { ...type.title },
@@ -768,20 +772,18 @@ const styles = StyleSheet.create({
   organizeCancelText: { fontSize: 14, fontWeight: '600' },
   screen: { flex: 1 },
   listContent: { paddingHorizontal: 20, paddingBottom: 28, flexGrow: 1 },
-  topBar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingTop: 12, paddingBottom: 16 },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingTop: 12, paddingBottom: 6 },
   pageTitle: { ...type.display },
-  spectrum: { marginBottom: 4, marginTop: -8 },
-  caption: { fontSize: 13, lineHeight: 20, marginTop: 6 },
+  caption: { fontSize: 13, lineHeight: 20, marginBottom: 12 },
   utility: { minHeight: 48, minWidth: 48, alignItems: 'center', justifyContent: 'center' },
-  modes: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 20, marginBottom: 16 },
+  modes: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 20, marginBottom: 10 },
   modeTab: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 16, paddingHorizontal: 8, paddingVertical: 8 },
   horizonSelect: { minHeight: 48, paddingHorizontal: 14, borderRadius: radius.full, alignItems: 'center', flexDirection: 'row', gap: 8, borderWidth: 1 },
   horizonChipText: { fontSize: 13, fontWeight: '600' },
   periodRow: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingVertical: 2, marginBottom: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 14, marginBottom: 14 },
   sectionTitle: { ...type.label },
-  planSummary: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 16, paddingBottom: 4, gap: 4 },
-  summaryText: { fontSize: 17, lineHeight: 25, fontWeight: '600', letterSpacing: -.25 },
+  planSummary: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, padding: 14, marginBottom: 16, gap: 8 },
   summaryDetail: { fontSize: 13, lineHeight: 20 },
   completedHeader: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 9, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 14, paddingVertical: 12 },
   captureContext: { fontSize: 11, lineHeight: 17, marginHorizontal: 24, marginTop: 8 },

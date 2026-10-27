@@ -3,15 +3,15 @@
 **Product name:** Evrida  
 **Tagline:** Every day with Evrida
 
-Direction: **Daybreak** (2026-10-27) — warm paper by day, ink-blue night, and one sunrise-to-midnight spectrum that gives each of the seven planning horizons its own color (Day sunrise orange → Life midnight blue). It replaces the cool grey Studio direction, which read as generic and lifeless. The spectrum is the product-specific signature: the same hue marks a horizon in the Plan strip, the horizon chip and each goal's check ring. It is implemented and rendered on an Android emulator in light, dark and 130% font; user aesthetic acceptance, physical-device and iOS review are still open.
+Direction: **Daybreak** (2026-10-27) — warm paper by day, ink-blue night, and one sunrise-to-midnight spectrum that gives each of the seven planning horizons its own color (Day sunrise orange → Life midnight blue). It replaces the cool grey Studio direction, which read as generic and lifeless. The spectrum is the product-specific signature: the same hue marks a horizon in the horizon chip, overview rail, completion bars and each goal's check ring. It is implemented and rendered on an Android emulator in light, dark and 130% font; user aesthetic acceptance, physical-device and iOS review are still open.
 
 ## Visual grammar
 
 - A warm paper canvas supports white cards in light mode; dark mode is an ink-blue night with lifted horizon colors.
-- Turquoise (firouzeh, deep teal by day, luminous by night) is the single action color — calm and focused, the natural complement of the sunrise-orange Day hue, and a color with long standing in Persian art: selected destination, primary buttons, links and completion fill. Horizon colors appear only as small marks (dot, ring, strip). Do not tint whole surfaces with them, and never rely on a horizon color alone to carry meaning.
+- Turquoise (firouzeh, deep teal by day, luminous by night) is the single action color — calm and focused, the natural complement of the sunrise-orange Day hue, and a color with long standing in Persian art: selected destination, primary buttons, links and completion fill. Horizon colors appear as small marks (dot, ring, completion bar) and quiet Calendar block tints. Never rely on color alone to carry meaning.
 - Small layered shadows distinguish cards and selected controls. Dark mode relies primarily on border and surface separation. Shadows must never carry essential state alone.
 - Keep controls soft and rounded: 14dp controls, 20dp cards, 28dp sheets, full pills for capture, chips and the dock indicator. Nested radii should follow the actual inset rather than matching outer radii indiscriminately.
-- Typography uses the native system family. Screen titles are 28–32sp, goal titles 15–16sp, ordinary copy 13–15sp. Supporting text may be smaller, while respecting dynamic font scaling. Decorative brand labels are secondary.
+- Typography follows `src/theme/type.ts`: Fraunces for page/sheet titles and focus numerals, the native system family for task titles, controls and body copy. Supporting text may be smaller, while respecting dynamic font scaling. Decorative brand labels are secondary.
 - Icons use Lucide vectors with consistent 1.5–2 stroke weights. Keep root navigation labels visible; a clever symbol must not replace the destination name.
 - Use a 4/8dp spacing rhythm, 20dp screen gutters and generous separation between groups. Dense content still needs readable task titles and 48dp touch targets.
 
@@ -49,7 +49,7 @@ Use `onAccent` for filled primary controls, not hard-coded white. Completion mus
 - Plan separates open goals from a collapsed Completed section with a real count and an explicit show/hide control. Completed goals stay searchable and can be reopened. The count describes the selected planning context, not when completion happened.
 - A goal's next steps can expand inline: show up to three canonical children, their actual planning contexts and independent completion controls, with access to all steps through goal details. Read children on expansion and refresh an expanded preview after writes; avoid replacing the entire list during a same-context refresh.
 - Capture names its destination above the input and announces a successful save there; the line is omitted only for the obvious default (Today) when nothing is being announced. Changing planning context must not carry a previous destination's success message. Keep the keyboard available for consecutive captures and retain the typed title when opening Details.
-- The Plan screen's seven-band spectrum strip is also a quick horizon switch (44dp bands, tab role); the chip beside it names the horizon and opens the full picker. The list leads with the date and open count in the subtitle instead of separate summary and section-header blocks. Horizons displays the seven time scales along a quiet rail. The rail connects time scales, not arbitrary goal entities. Actual parent relationships are shown only from stored relationships.
+- Plan has one labeled horizon picker rather than two parallel horizon selectors. The picker scrolls at larger text sizes and keeps a colored dot beside each written horizon name. The date uses the full width below the title; one completion summary describes the selected plan without repeating an open count in the subtitle. At constrained effective widths, the title uses the smaller shared title scale while retaining system font scaling. Horizons displays the seven time scales along a quiet rail. The rail connects time scales, not arbitrary goal entities. Actual parent relationships are shown only from stored relationships.
 - Empty states guide one useful action without fake progress, sample goals inserted into user data, or a second competing primary button.
 
 ## Goal detail and editing
@@ -74,7 +74,7 @@ Use `onAccent` for filled primary controls, not hard-coded white. Completion mus
 
 ## Motion (2026-10-27)
 
-Motion is short and functional, built on `react-native-reanimated` (already a dependency) with durations in `src/theme/motion.ts` (160/240 ms). It is on goal rows (fade in/out and re-flow when a row is added, completed or moved), the completion ring (a small press-and-settle pop), the horizon spectrum (the active band grows and shrinks) and the dock's selected pill (grows from the center). Every one of them is skipped when system reduced motion is on, and no state is conveyed by motion alone. Verified on an Android emulator by screen recording the strip and a newly added row; the completion pop and 60 fps behavior on real hardware are not verified.
+Motion is short and functional, built on `react-native-reanimated` (already a dependency) with durations in `src/theme/motion.ts` (160/240 ms). It is on goal rows (fade in/out and re-flow when a row is added, completed or moved), the completion ring (a small press-and-settle pop) and the dock's selected pill (grows from the center). Every one of them is skipped when system reduced motion is on, and no state is conveyed by motion alone. The earlier motion pass was sampled on an Android emulator with a newly added row; the completion pop and 60 fps behavior on real hardware are not verified.
 
 ## Type, glass, icons and the timebox view (2026-10-27)
 
@@ -143,3 +143,11 @@ The CI source contract `scripts/check-design-ssot.mjs` blocks repeated Palette d
 - Research notes: reviewer write-ups and design-library guidance agree that an empty state should say what it is, why it is empty and the next step, and that a review should be able to end ("nothing needs a decision") rather than keep asking. Pinterest was login-walled and Dribbble returned generic dashboards, so these come from articles, not from copied layouts.
 - The Timebox editor's goal picker marks each goal with its horizon dot (and the chosen goal in the field), so a reader sees which timeline hue the block will wear before saving.
 - Settings copy is one or two short sentences per card; platform caveats stay but lose repetition. Technical claims (not a backup, nothing uploaded, running timers excluded) are unchanged.
+
+## Reference synthesis — 2026-10-27
+
+Keep Daybreak's warm paper, ink-blue dark surfaces, Fraunces titles, turquoise actions, horizon spectrum and glass dock. Take the supplied reference's clear completion summaries and title-first hierarchy; do not replace the product with generic purple dashboard cards or fabricate mastery/finance data. Plan / Calendar / Boards / Review remains the implemented navigation. Dedicated Learning and optional Finance remain separate product implementations, with persistence and backup requirements, rather than empty navigation destinations.
+
+`CompletionProgress` is the shared presentation for explicit completed/total counts in the selected plan, each current horizon, the board's full active collection and a goal's direct next steps. Zero-item collections omit the bar. These are task counts, never learning mastery, elapsed effort or a weighted claim that a parent goal is achieved. Changing a board filter does not change its whole-board denominator; marking every child complete does not automatically complete the parent. The progress row wraps for larger fonts and exposes a labeled accessibility value.
+
+Goal details put direct next steps before the Focus panel. A goal card leads with its own title, then its parent context. Archive uses the semantic danger tone for the current theme. Existing exact-time Calendar geometry, Focus persistence and explicit completion decisions remain the operating contracts.

@@ -7,6 +7,7 @@ import Check from 'lucide-react-native/icons/check';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import Circle from 'lucide-react-native/icons/circle';
 import Plus from 'lucide-react-native/icons/plus';
+import { CompletionProgress } from '../shared/CompletionProgress';
 
 
 
@@ -31,7 +32,7 @@ export function PerspectiveView({ sections, palette, loading, error, onRetry, on
   return <View style={styles.container}>
     <View style={[styles.rail, { backgroundColor: palette.border }]} />
     {sections.map((section) => <View key={section.horizon} style={[styles.card, { borderColor: palette.border, backgroundColor: palette.surface, boxShadow: palette === colors.dark ? depth.dark.card : depth.light.card }]}>
-      <View style={[styles.railDot, { backgroundColor: section.total ? palette.accent : palette.border, borderColor: palette.background }]} />
+      <View style={[styles.railDot, { backgroundColor: palette.horizon[section.horizon], borderColor: palette.background }]} />
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel={`Open ${HORIZON_TITLES[section.horizon]}, ${section.total} goals`}
           onPress={() => onOpenHorizon(section.horizon)} style={styles.headerCopy}>
@@ -46,6 +47,9 @@ export function PerspectiveView({ sections, palette, loading, error, onRetry, on
           <Plus size={19} color={palette.accent} strokeWidth={1.8} />
         </Pressable>
       </View>
+      {section.total > 0 ? <View style={styles.progress}>
+        <CompletionProgress label="Goals" completed={section.completed} total={section.total} palette={palette} color={palette.horizon[section.horizon]} />
+      </View> : null}
       {section.preview.map((goal) => <Pressable key={goal.id} accessibilityRole="button" onPress={() => onOpenGoal(goal)}
         accessibilityLabel={`Open ${goal.title}`} style={[styles.preview, { borderTopColor: palette.border }]}>
         {goal.completed ? <Check size={15} color={palette.accent} /> : <Circle size={13} color={palette.muted} strokeWidth={1.8} />}
@@ -67,5 +71,6 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }, title: { fontSize: 16, fontWeight: '600', letterSpacing: -.2 },
   count: { fontSize: 11 }, caption: { fontSize: 12, lineHeight: 18 }, action: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   preview: { minHeight: 54, marginHorizontal: 14, paddingVertical: 12, flexDirection: 'row', gap: 10, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
+  progress: { paddingHorizontal: 14, paddingBottom: 14 },
   error: { paddingVertical: 20, gap: 10 },
 });

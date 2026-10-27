@@ -1,6 +1,6 @@
 # Evrida development roadmap
 
-Last reviewed: 2026-10-16
+Last reviewed: 2026-10-27
 Status: **M0 complete; M1–M6 partially implemented and verified at the levels below. Store release is not approved.**
 Release targets: **Android and iOS**. Native Android can be built locally; native iOS acceptance needs Apple tooling. Desktop is deferred.
 
@@ -20,12 +20,22 @@ This file is the single source of truth for **planned vs completed** work. It is
 | Milestone | Scope | State | Exit gate |
 | --- | --- | --- | --- |
 | M0 — Foundation | Documentation, repository hygiene, Expo shell | Complete — emulator screenshot + CI | Clean install, typecheck, successful device startup |
-| M1 — Product UX | Information architecture, design tokens, prototypes | Studio direction implemented; Android renders sampled; user aesthetic acceptance open | Approved screen map and verified interactions |
+| M1 — Product UX | Information architecture, design tokens, prototypes | Daybreak refinement implemented; Android renders sampled; user aesthetic acceptance open | Approved screen map and verified interactions |
 | M2 — Goals & horizons | Persistent data, hierarchy, seven horizons | SQLite v8; real SQLite integration and sampled native flows pass | Complete device acceptance matrix |
 | M3 — Planning views | Boards, calendar, time blocks, fast capture | Implemented; native keyboard, time editing and cross-view Focus sampled | Full cross-view and device matrix |
 | M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates and Learning Projects remain planned | Accepted offline workflow scope |
 | M5 — Mobile integration | Notifications, widgets, localization, backup | Native picker/backup/reminders implemented; widgets/localization remain open | Physical-device and Apple acceptance |
 | M6 — Quality & release | Performance, accessibility, testing, release build | Isolated Android release QA APK built; iOS JS export passes | Store signing, native iOS, physical-device and accessibility gates |
+
+## Reference synthesis and completion hierarchy — 2026-10-27
+
+Implemented the design synthesis of the current Daybreak app and the supplied light/dark planner reference. Kept the warm paper / ink-blue foundation, Fraunces, turquoise actions, horizon colors, glass dock and the four implemented destinations. Removed the duplicate unlabeled horizon strip; the labeled picker now scrolls and retains the seven horizon hues. A shared explicit completed/total indicator serves Plan, horizon overview, Boards and direct next steps. Goal titles precede parent badges, direct next steps precede Focus in details, and civil planning keys use human-readable period labels. Boards places its single create action in the header and keeps the selected board title beside Back.
+
+Checked in this slice: TypeScript; all 20 domain/real-SQLite tests and the database/design source guards; QA identity check; standalone Android x86_64 release APK built and installed in place; iOS Hermes export. Sampled native light/dark Plan, Horizons, goal hierarchy and Boards; 320dp dark Plan/Boards at 130% text; 320dp Plan progress wrapping and picker scroll to Life at 200%; long quick-capture draft continuity into Details and back; completion/reopen changing Plan from 6/8 to 7/8 and back; child completion to 1/4 without parent auto-completion; saved child state after reinstall/cold start; and a newly started Focus timer restored after force-stop and still present in Calendar. This is emulator evidence, not physical-device, TalkBack, native iOS or user aesthetic acceptance. At 200% text, the header needs scrolling to reach task content; the controls and progress labels reflow rather than suppressing system text scaling.
+
+The initial local native build failed because the SDK's copied WinLibs Ninja could not find matching runtime DLLs. Prefixing this build process's PATH with the existing WinLibs bin directory allowed the native build to complete, with no SDK files or dependency versions changed. The pre-existing App checks failure is still the Expo alignment gate: seven installed package versions differ from SDK recommendations. `deps:check` fails on this candidate too; other passing checks do not make CI green. Native SQLite issue #2 remains open for the physical/ARM acceptance matrix.
+
+Learning mastery/resources/reviews and optional Finance remain planned product implementations. This design slice adds no placeholder destination, invented progress or schema; a task-completion bar does not claim subject mastery. Next: (1) resolve the existing Expo compatibility/CI decision and physical Android/ARM lifecycle acceptance; (2) complete native iOS and screen-reader/large-text acceptance; (3) implement Learning and optional Finance with domain data, versioned backup and their own device evidence before expanding root navigation.
 
 ## Plan interaction refinement — Oct 16, 2026
 

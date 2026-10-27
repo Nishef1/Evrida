@@ -5,6 +5,7 @@ import { Alert, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressa
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { EmptyState } from '../shared/EmptyState';
+import { CompletionProgress } from '../shared/CompletionProgress';
 import { colors, depth, radius, spacing, semantic, scrim } from '../../theme/tokens';
 import Check from 'lucide-react-native/icons/check';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
@@ -218,15 +219,17 @@ export function BoardsScreen() {
     <SafeAreaView edges={['top', 'left', 'right']} style={[styles.screen, { backgroundColor: palette.background }]}>
       <ScrollView contentContainerStyle={[styles.page, { paddingBottom: 40 + dockInset }]} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
-          <View style={{ flex: 1 }} />
           {current ? <Pressable onPress={() => { setCurrent(null); setBoardLens('open'); }}
             accessibilityRole="button" accessibilityLabel="Back to boards"
             style={[styles.back, { backgroundColor: palette.surface, borderColor: palette.border }]}>
             <ChevronLeft size={21} color={controlColor} />
           </Pressable> : null}
+          <Text style={[styles.heading, current && type.title, { color: palette.foreground, flex: 1 }]}>{current ? current.title : 'Boards'}</Text>
+          {!current ? <Pressable onPress={createFromList} accessibilityRole="button" accessibilityLabel="Create a board"
+            style={[styles.back, { backgroundColor: palette.accent, borderColor: palette.accent }]}>
+            <Plus size={23} color={palette.onAccent} strokeWidth={1.8} />
+          </Pressable> : null}
         </View>
-
-        <Text style={[styles.heading, { color: palette.foreground }]}>{current ? current.title : 'Boards'}</Text>
         <Text style={[styles.subtitle, { color: palette.muted }]}>
           {current ? current.description || 'Keep related goals together, across every horizon.' :
             'A home for projects, topics and plans beyond a single date.'}
@@ -241,10 +244,9 @@ export function BoardsScreen() {
           </View>
         ) : loading ? <ActivityIndicator color={palette.accent} style={styles.loading} /> : current ? (
           <>
+            <CompletionProgress label="Board goals" completed={items.filter((goal) => goal.completed).length} total={items.length} palette={palette} />
             <View style={styles.boardTools}>
-              <Text style={[styles.count, { color: palette.muted }]}>
-                {items.length} goals · {items.filter((goal) => goal.completed).length} completed
-              </Text>
+              <View style={{ flex: 1 }} />
               <Pressable onPress={editCurrent} accessibilityRole="button" style={styles.smallAction}>
                 <Text style={[styles.actionText, { color: palette.accent }]}>Edit</Text>
               </Pressable>
@@ -333,25 +335,18 @@ export function BoardsScreen() {
           </>
         ) : (
           <>
-            <Pressable onPress={createFromList} accessibilityRole="button"
-              style={[styles.primary, { backgroundColor: palette.accent }]}>
-              <Plus size={19} color={palette.onAccent} /><Text style={[styles.primaryText, { color: palette.onAccent }]}>Create a board</Text>
-            </Pressable>
             {boards.length === 0 ? (
               <EmptyState Icon={FolderOpen} palette={palette} title="Every project needs a space."
                 copy="A board gathers related goals from any horizon in one place. Goals stay where they are; the board only points at them." />
             ) : boards.map((board) => (
-              <Pressable key={board.id} accessibilityRole="button" accessibilityLabel={`Open board ${board.title}`}
+              <Pressable key={board.id} accessibilityRole="button" accessibilityLabel={`Open board ${board.title}, ${board.completedCount} of ${board.goalCount} goals completed`}
                 onPress={() => setCurrent(board)} style={[styles.boardCard, { backgroundColor: palette.surface, borderColor: palette.border, boxShadow: palette === colors.dark ? depth.dark.card : depth.light.card }]}>
                 <View style={[styles.boardEmblem, { backgroundColor: palette.accentSoft }]}><FolderOpen size={23} color={palette.accent} strokeWidth={1.5} /></View>
                 <View style={styles.boardCopy}>
                   <Text style={[styles.boardTitle, { color: palette.foreground }]} numberOfLines={1}>{board.title}</Text>
-                  <Text style={[styles.goalMeta, { color: palette.muted }]} numberOfLines={2}>
-                    {board.description || `${board.goalCount} goals`}
-                  </Text>
-                  <Text style={[styles.count, { color: palette.accent }]}>
-                    {board.goalCount} goals · {board.completedCount} done
-                  </Text>
+                  {board.description ? <Text style={[styles.goalMeta, { color: palette.muted }]} numberOfLines={2}>{board.description}</Text> : null}
+                  {board.goalCount > 0 ? <CompletionProgress label="Goals" completed={board.completedCount} total={board.goalCount} palette={palette} /> :
+                    <Text style={[styles.goalMeta, { color: palette.muted }]}>Ready for your first goal</Text>}
                 </View>
                 <ChevronRight size={20} color={palette.muted} strokeWidth={1.8} />
               </Pressable>
@@ -446,9 +441,8 @@ export function BoardsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   page: { padding: 20, paddingBottom: 40, gap: 12 },
-  topRow: { flexDirection: 'row', alignItems: 'center', minHeight: 20 },
+  topRow: { flexDirection: 'row', alignItems: 'center', minHeight: 48, gap: 12 },
   back: { width: 48, height: 48, borderWidth: 1, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  brand: { fontSize: 10, letterSpacing: 2.3, fontWeight: '600', flex: 1 },
   heading: { ...type.display },
   subtitle: { fontSize: 13, lineHeight: 21, marginBottom: 10 },
   primary: { minHeight: 53, borderRadius: radius.md, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 15, marginBottom: 9 },

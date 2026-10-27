@@ -120,12 +120,12 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
     <View style={styles.row}>
       {checkbox(goal)}
       <Pressable style={styles.content} onPress={() => onOpen(goal)} accessibilityRole="button" accessibilityLabel={`Open ${goal.title}`}>
+        <StrikeTitle title={goal.title} style={styles.title} sweep={sweep} strikeColor={palette.muted}
+          color={goal.completed || completing ? palette.muted : palette.foreground} struck={goal.completed} />
         {goal.parentTitle ? <View style={[styles.parent, styles.parentPill, { backgroundColor: palette.accentSoft }]}>
           <Layers3 size={12} color={palette.accent} strokeWidth={1.8} />
           <Text numberOfLines={1} style={[styles.meta, { color: palette.accent, fontWeight: '600' }]}>{goal.parentTitle}</Text>
         </View> : null}
-        <StrikeTitle title={goal.title} style={styles.title} sweep={sweep} strikeColor={palette.muted}
-          color={goal.completed || completing ? palette.muted : palette.foreground} struck={goal.completed} />
         {goal.notes ? <Text numberOfLines={1} style={[styles.meta, { color: palette.muted }]}>{goal.notes}</Text> : null}
         {showContext ? <Text style={[styles.meta, { color: palette.muted }]}>{planningLabel(goal)}</Text> : null}
         {goal.dueDate ? <Text style={[styles.meta, { color: palette.muted }]}>Deadline · {goal.dueDate}</Text> : null}
