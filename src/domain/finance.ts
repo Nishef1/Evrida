@@ -181,15 +181,26 @@ export function tagTotals(txs: FinTx[], month: string): Map<string, number> {
   return totals;
 }
 
-export function accountBalance(account: FinAccount, txs: FinTx[]): number {
+export function accountBalance(account: FinAccount, txs: FinTx[], accounts: FinAccount[] = []): number {
   let balance = account.opening;
   for (const tx of txs) {
     if (tx.type === 'transfer') {
-      // Asset accounts lose money when sending and gain when receiving.
-      // Liability balances represent amounts owed, so payments into a liability
-      // reduce debt while transfers out (for example, a cash advance) increase it.
-      if (tx.accountId === account.id) balance += account.kind === 'liability' ? tx.amount : -tx.amount;
-      if (tx.toAccountId === account.id) balance += account.kind === 'liability' ? -tx.amount : tx.amount;
+      const sourceKind = accounts.find((a) => a.id === tx.accountId)?.kind;
+      const destinationKind = accounts.find((a) => a.id === tx.toAccountId)?.kind;
+      if (tx.accountId === account.id) {
+        // Moving a balance from one liability to another reduces the source debt;
+        // a cash advance from a liability to an asset increases the source debt.
+        balance += account.kind === 'liability'
+          ? destinationKind === 'liability' ? -tx.amount : tx.amount
+          : -tx.amount;
+      }
+      if (tx.toAccountId === account.id) {
+        // A payment from an asset reduces debt; a liability-to-liability transfer
+        // increases the destination debt while reducing the source debt.
+        balance += account.kind === 'liability'
+          ? sourceKind === 'liability' ? tx.amount : -tx.amount
+          : tx.amount;
+      }
     } else if (tx.accountId === account.id) {
       if (account.kind === 'liability') {
         // A purchase on credit increases debt; income/refunds reduce it.
