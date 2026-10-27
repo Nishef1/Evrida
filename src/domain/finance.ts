@@ -244,14 +244,15 @@ export function accountBalance(account: FinAccount, txs: FinTx[], accounts: FinA
 }
 /** Net worth counts liabilities as negative; a credit balance on a liability account is an asset. */
 export function netWorth(accounts: FinAccount[], txs: FinTx[]): number | null {
-  const open = accounts.filter((a) => !a.archived);
-  if (!open.length) return null;
-  return open.reduce((sum, a) => sum + (a.kind === 'liability' ? -accountBalance(a, txs, accounts) : accountBalance(a, txs, accounts)), 0);
+  if (!accounts.length) return null;
+  // Archiving hides an account from pickers; it does not erase the asset or debt from net worth.
+  return accounts.reduce((sum, a) => sum + (a.kind === 'liability' ? -accountBalance(a, txs, accounts) : accountBalance(a, txs, accounts)), 0);
 }
 
 /** Cash held in asset accounts that is not yet explicitly allocated to a money goal. */
 export function unallocatedFunds(accounts: FinAccount[], txs: FinTx[], allocations: FinAllocation[]): number {
-  const assets = accounts.filter((a) => !a.archived && a.kind !== 'liability')
+  // Hidden accounts still contain real money and remain part of the user's total balances.
+  const assets = accounts.filter((a) => a.kind !== 'liability')
     .reduce((sum, a) => sum + accountBalance(a, txs, accounts), 0);
   return assets - allocations.reduce((sum, a) => sum + a.amount, 0);
 }
