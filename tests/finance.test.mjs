@@ -116,6 +116,8 @@ test('finance storage records a ledger atomically and backs up, validates and re
     const salary = await saveTransaction(source.db, spend({ type: 'income', amount: 30000000, categoryId: cat('Salary') }));
     const groceries = await saveTransaction(source.db, spend({ amount: 2000000, tagNames: ['Work week', 'work week'] }));
     await saveTransaction(source.db, spend({ type: 'income', amount: 500000, refundOfId: groceries }));
+    await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 1600000, refundOfId: groceries })), /Refunds cannot exceed/);
+    await assert.rejects(() => saveTransaction(source.db, spend({ amount: 400000 }), groceries), /has refunds/);
     await saveTransaction(source.db, spend({ amount: 900000, categoryId: null, splits: [{ categoryId: cat('Groceries'), amount: 600000 }, { categoryId: cat('Health'), amount: 300000 }] }));
     await saveTransaction(source.db, spend({ type: 'transfer', amount: 1000000, toAccountId: cash, categoryId: null }));
     await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 5, refundOfId: salary })), /refund must refer to an expense/);
