@@ -152,10 +152,24 @@ async function writeTransaction(tx: Writer, input: TxInput, tagNames: string[], 
   const txId = id ?? randomUUID();
   const category = input.splits.length ? null : input.categoryId;
   if (input.refundOfId) {
-    const original = await tx.getFirstAsync<{ type: string }>('SELECT type FROM fin_transactions WHERE id = ?', [input.refundOfId]);
+    const original = await tx.getFirstAsync<{ type: string; amount: number }>(
+      'SELECT type, amount FROM fin_transactions WHERE id = ?', [input.refundOfId]);
     if (original?.type !== 'expense') throw new Error('A refund must refer to an expense.');
+    const prior = await tx.getFirstAsync<{ total: number }>(
+      'SELECT COALESCE(SUM(amount), 0) AS total FROM fin_transactions WHERE refund_of_id = ? AND id <> ?',
+      [input.refundOfId, id ?? '']);
+    if ((prior?.total ?? 0) + input.amount > original.amount) {
+      throw new Error('Refunds cannot exceed the original expense.');
+    }
   }
   if (id) {
+    const current = await tx.getFirstAsync<{ type: string }>('SELECT type FROM fin_transactions WHERE id = ?', [id]);
+    if (!current) throw new Error('This transaction no longer exists.');
+    const refunds = await tx.getFirstAsync<{ total: number }>(
+      'SELECT COALESCE(SUM(amount), 0) AS total FROM fin_transactions WHERE refund_of_id = ? AND id <> ?', [id, id]);
+    if ((refunds?.total ?? 0) > 0 && (input.type !== 'expense' || input.amount < (refunds?.total ?? 0))) {
+      throw new Error('This expense has refunds. Keep it as an expense and do not reduce it below the total refunded amount.');
+    }
     const changed = await tx.runAsync(`UPDATE fin_transactions SET type = ?, amount = ?, date = ?, account_id = ?, to_account_id = ?,
       category_id = ?, refund_of_id = ?, payee = ?, note = ?, updated_at = ? WHERE id = ?`,
     [input.type, input.amount, input.date, input.accountId, input.toAccountId, category,
