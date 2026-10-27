@@ -99,7 +99,7 @@ Record significant decisions and reversals here. A future change should cite its
 
 ## 2026-10-15 — Native SQLite lifetime risk is a release blocker
 
-- Public Expo issue #48999 and #48995 resemble, but do not prove the cause of, Eonward's earlier Android `exsqlite3_step/pthread_mutex_lock` SIGSEGV. Keep issue #2 open pending native replication.
+- Public Expo issue #48999 and #48995 resemble, but do not prove the cause of, Evrida's earlier Android `exsqlite3_step/pthread_mutex_lock` SIGSEGV. Keep issue #2 open pending native replication.
 - A lightweight per-handle JavaScript queue protects native statement lifecycles for all screen and Focus consumers, including exclusive transaction duration, without replacing the Expo SQLite provider or adding a second connection.
 - The source mitigation deliberately does not claim to cure native shared-object GC/teardown races. Do not wholesale upgrade to Expo SDK 58 or invent a Kotlin patch without platform compatibility and physical-device verification.
 
@@ -116,7 +116,7 @@ Record significant decisions and reversals here. A future change should cite its
 
 ## 2026-10-15 — Whole-product feature gate and correctness before scope
 
-- Do not add headline features while the existing Plan → Calendar → Focus → Review loop still has measurable correctness and native lifecycle gaps. Eonward already offers seven horizons, Boards, Guided Plans, a living timeline and user-controlled Recovery. More icons, dashboards or an AI scheduler do not close the Android expo-sqlite P0 or make native iOS acceptance real.
+- Do not add headline features while the existing Plan → Calendar → Focus → Review loop still has measurable correctness and native lifecycle gaps. Evrida already offers seven horizons, Boards, Guided Plans, a living timeline and user-controlled Recovery. More icons, dashboards or an AI scheduler do not close the Android expo-sqlite P0 or make native iOS acceptance real.
 - Weekly capacity represents each goal's **occupied wall time**: compute the union of overlapping time reservations across the goal and its current descendants, not a double-counted sum. Distinct goals' budgets may overlap without subtracting one from the other; they are independently defined capacities. Focus history remains separately measured and old unattributed sessions are not backfilled.
 - Keep the one-step Undo promise strict: store the applied block's timestamp, owner, type and intention. Decline Undo if any moved block was subsequently edited, completed, archived or assigned to an active Focus session; never silently overwrite a later user edit. Hide an unavailable Undo CTA using a read-only comparison, but require the transaction to recheck atomically before writing.
 - Timebox-based and shortcut-based Focus must obey the same completion constraints. Completing the linked goal closes its running/paused Focus in the same SQLite transaction and persists an accurate stopped/completed record; Plan and Boards immediately refresh the globally visible Focus provider.
@@ -150,6 +150,15 @@ Record significant decisions and reversals here. A future change should cite its
 
 - Keep the SQLite local record as authoritative on matching backup IDs; expose counts of incoming *missing*, *identical* and *different* records before restore. A user confirms any divergent local-ID content instead of discovering silent skips afterwards. Inspect candidate IDs only, in bounded query batches; recheck preview counts before inserting inside an exclusive transaction.
 - Scheduling a new OS Focus reminder must not cancel an existing reminder *before* the replacement schedule succeeds. Android exact-alarm special access is independent of Notification permission and may be denied by default. No background notification is guaranteed; the SQLite Focus timer remains the source of truth.
-- Existing Eonward reservations are fixed UTC instants displayed in the device's current timezone. Historical Focus rollups are grouped by **session end**; changing either semantic requires a deliberate data-model migration and revised reporting, not a UI-only switch.
+- Existing Evrida reservations are fixed UTC instants displayed in the device's current timezone. Historical Focus rollups are grouped by **session end**; changing either semantic requires a deliberate data-model migration and revised reporting, not a UI-only switch.
 - A three-layer 24h strip is explicitly a *summary*. Show its maximum concurrency when over three so it cannot hide that it is lossy; use the full overlap-lane timeline for detail.
 - Preserve Android OS auto-backup defaults until privacy versus recoverability is decided with device QA; don't turn it off during a no-data-loss hardening pass.
+
+
+## 2026-10-27 — Evrida brand and learning-planner direction
+
+- Product name: **Evrida**. Tagline: **Every day with Evrida**.
+- Learning should be modeled as a resource-aware project with units, workload estimates, scheduled sessions, observed pace and learning evidence, not as a note or an unstructured checklist.
+- Initial estimates must be ranges with visible assumptions and confidence. Minutes spent are not a proxy for mastery; use recall/assessment signals where the user supplies them.
+- Missed-session re-planning is opt-in. The scheduler may move only flexible learning blocks and must not silently move fixed commitments, active Focus sessions or locked blocks.
+- Keep the first learning-planner implementation deterministic and offline-first. AI-assisted resource extraction is optional and deferred until the core workflow is validated.
