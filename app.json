@@ -9,6 +9,8 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "plugins": [
+      "./plugins/with-windows-cmake.cjs",
+      "./plugins/with-gradle-memory.cjs",
       "expo-notifications",
       "expo-sharing",
       "expo-system-ui",

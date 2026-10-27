@@ -22,6 +22,7 @@ import Plus from 'lucide-react-native/icons/plus';
 import Search from 'lucide-react-native/icons/search';
 import Settings2 from 'lucide-react-native/icons/settings-2';
 import X from 'lucide-react-native/icons/x';
+import { HorizonSpectrum } from '../shared/HorizonSpectrum';
 import { GoalDetails } from './GoalDetails';
 import { GoalCard } from './GoalCard';
 import { GoalEditor } from './GoalEditor';
@@ -458,6 +459,7 @@ export function HorizonsScreen() {
           <MoreHorizontal size={23} color={palette.foreground} strokeWidth={1.8} />
         </Pressable>
       </View>
+      {!searching ? <View style={styles.spectrum}><HorizonSpectrum palette={palette} active={view === 'focus' ? horizon : undefined} /></View> : null}
       {searching ? <TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search goals, notes or parent goals"
         accessibilityLabel="Search goals and notes" placeholderTextColor={palette.muted}
         style={[styles.searchInput, { color: palette.foreground, backgroundColor: palette.surface, borderColor: palette.border }]} /> : <>
@@ -474,7 +476,7 @@ export function HorizonsScreen() {
           <View style={styles.periodRow}>
             <Pressable accessibilityRole="button" accessibilityLabel={`Planning horizon: ${HORIZON_TITLES[horizon]}. Change horizon`}
               onPress={() => setHorizonsVisible(true)} style={[styles.horizonSelect, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-              <Layers3 size={15} color={palette.accent} strokeWidth={1.8} />
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.horizon[horizon] }} />
               <Text style={[styles.horizonChipText, { color: palette.foreground }]}>{HORIZON_TITLES[horizon]}</Text>
               <ChevronDown size={14} color={palette.muted} />
             </Pressable>
@@ -589,7 +591,7 @@ export function HorizonsScreen() {
         <Text accessibilityLiveRegion="polite" style={[styles.captureContext, { color: palette.muted }]}>{captureNotice?.context === listContext ? captureNotice.label : (view === 'inbox' ? 'INBOX · no date needed' : `ADDING TO · ${caption}`)}</Text>
         <View style={[styles.quickBar, { borderColor: palette.border, backgroundColor: palette.surface, boxShadow: palette === colors.dark ? depth.dark.control : depth.light.control }]}>
           <TextInput ref={quickInput} value={quickTitle} onChangeText={(value) => { setQuickTitle(value); setCaptureNotice(null); }} maxLength={180}
-            placeholder={view === 'inbox' ? 'Get it off your mind…' : 'What’s one thing you want to do?'}
+            placeholder={view === 'inbox' ? 'Get it off your mind…' : 'One thing for now…'}
             placeholderTextColor={palette.muted} accessibilityLabel="Quick goal title" returnKeyType="done" blurOnSubmit={false}
             onSubmitEditing={() => { void quickCreate(); }} style={[styles.quickField, { color: palette.foreground }]} />
           <Pressable accessibilityRole="button" accessibilityLabel="Save quick goal" accessibilityState={{ disabled: working || !quickTitle.trim() }} disabled={working || !quickTitle.trim()}
@@ -766,13 +768,14 @@ const styles = StyleSheet.create({
   organizeCancelText: { fontSize: 14, fontWeight: '600' },
   screen: { flex: 1 },
   listContent: { paddingHorizontal: 20, paddingBottom: 28, flexGrow: 1 },
-  topBar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingTop: 12, paddingBottom: 20 },
-  pageTitle: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingTop: 12, paddingBottom: 16 },
+  pageTitle: { fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -1.1 },
+  spectrum: { marginBottom: 16 },
   caption: { fontSize: 13, lineHeight: 20, marginTop: 6 },
   utility: { minHeight: 48, minWidth: 48, alignItems: 'center', justifyContent: 'center' },
-  modes: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 14, marginBottom: 16 },
-  modeTab: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 8 },
-  horizonSelect: { minHeight: 48, paddingHorizontal: 12, borderRadius: radius.md, alignItems: 'center', flexDirection: 'row', gap: 8, borderWidth: 1 },
+  modes: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 20, marginBottom: 16 },
+  modeTab: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 16, paddingHorizontal: 8, paddingVertical: 8 },
+  horizonSelect: { minHeight: 48, paddingHorizontal: 14, borderRadius: radius.full, alignItems: 'center', flexDirection: 'row', gap: 8, borderWidth: 1 },
   horizonChipText: { fontSize: 13, fontWeight: '600' },
   periodRow: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingVertical: 2, marginBottom: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 14, marginBottom: 14 },
@@ -785,13 +788,13 @@ const styles = StyleSheet.create({
   detailsAction: { minWidth: 48, minHeight: 48, paddingHorizontal: 8, justifyContent: 'center', alignItems: 'center' },
   sectionCount: { fontSize: 12 },
   searchInput: { borderWidth: 1, borderRadius: radius.md, minHeight: 50, paddingHorizontal: 14, marginBottom: 8 },
-  quickBar: { flexDirection: 'row', alignItems: 'center', gap: 2, borderWidth: 1, borderRadius: radius.lg, marginHorizontal: 20, marginBottom: 12, marginTop: 8, paddingLeft: 16, paddingRight: 5, paddingVertical: 4 },
+  quickBar: { flexDirection: 'row', alignItems: 'center', gap: 2, borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.full, marginHorizontal: 20, marginBottom: 12, marginTop: 8, paddingLeft: 16, paddingRight: 5, paddingVertical: 4 },
   quickField: { flex: 1, minWidth: 0, minHeight: 48, fontSize: 14 },
   quickSave: { minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
-  quickSaveIcon: { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  quickSaveIcon: { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center' },
   empty: { paddingTop: 36, paddingBottom: 25, alignItems: 'center', gap: 13, paddingHorizontal: spacing.md },
-  emptyEmblem: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', textAlign: 'center' },
+  emptyEmblem: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
+  emptyTitle: { fontSize: 19, fontWeight: '700', letterSpacing: -.3, textAlign: 'center' },
   emptyBody: { fontSize: 13, lineHeight: 21, textAlign: 'center', maxWidth: 270 },
   wait: { marginTop: 60 },
   retry: { padding: 10, fontWeight: '700', fontSize: 14 },

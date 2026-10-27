@@ -3,14 +3,14 @@
 **Product name:** Evrida  
 **Tagline:** Every day with Evrida
 
-Direction: **Studio** — a personal planning workspace with neutral surfaces, restrained depth and clear time horizons. This replaces the provisional warm/green styling. It is an implemented direction awaiting user aesthetic review, not a release or accessibility sign-off.
+Direction: **Daybreak** (2026-10-27) — warm paper by day, ink-blue night, and one sunrise-to-midnight spectrum that gives each of the seven planning horizons its own color (Day sunrise orange → Life midnight blue). It replaces the cool grey Studio direction, which read as generic and lifeless. The spectrum is the product-specific signature: the same hue marks a horizon in the Plan strip, the horizon chip and each goal's check ring. It is implemented and rendered on an Android emulator in light, dark and 130% font; user aesthetic acceptance, physical-device and iOS review are still open.
 
 ## Visual grammar
 
-- A cool neutral canvas supports white cards in light mode and graphite surfaces in dark mode.
-- Use green to identify a selected destination, a connected parent, or a deliberate primary action. Avoid flooding every surface with accent color.
+- A warm paper canvas supports white cards in light mode; dark mode is an ink-blue night with lifted horizon colors.
+- Indigo is the single action color: selected destination, primary buttons, links and completion fill. Horizon colors appear only as small marks (dot, ring, strip). Do not tint whole surfaces with them, and never rely on a horizon color alone to carry meaning.
 - Small layered shadows distinguish cards and selected controls. Dark mode relies primarily on border and surface separation. Shadows must never carry essential state alone.
-- Keep controls precise: 12dp corners, 16dp cards, 28dp sheets. Nested radii should follow the actual inset rather than matching outer radii indiscriminately.
+- Keep controls soft and rounded: 14dp controls, 20dp cards, 28dp sheets, full pills for capture, chips and the dock indicator. Nested radii should follow the actual inset rather than matching outer radii indiscriminately.
 - Typography uses the native system family. Screen titles are 28–32sp, goal titles 15–16sp, ordinary copy 13–15sp. Supporting text may be smaller, while respecting dynamic font scaling. Decorative brand labels are secondary.
 - Icons use Lucide vectors with consistent 1.5–2 stroke weights. Keep root navigation labels visible; a clever symbol must not replace the destination name.
 - Use a 4/8dp spacing rhythm, 20dp screen gutters and generous separation between groups. Dense content still needs readable task titles and 48dp touch targets.
@@ -21,15 +21,17 @@ Direction: **Studio** — a personal planning workspace with neutral surfaces, r
 
 | Role | Light | Dark |
 | --- | --- | --- |
-| Canvas | `#F6F6F8` | `#141517` |
-| Surface | `#FFFFFF` | `#202226` |
-| Inset/control group | `#EDEEF1` | `#292C31` |
-| Primary text | `#24262B` | `#F2F3F5` |
-| Secondary text | `#696D77` | `#ADB1BB` |
-| Accent | `#35634D` | `#A3CEB5` |
-| On accent | `#FFFFFF` | `#15251C` |
-| Accent surface | `#EAF1EC` | `#26392F` |
-| Border | `#E2E4E9` | `#34373E` |
+| Canvas | `#FAF7F2` | `#0E1118` |
+| Surface | `#FFFFFF` | `#1F2433` |
+| Inset/control group | `#F1ECE4` | `#161A25` |
+| Primary text | `#1F1B16` | `#F2EFE9` |
+| Secondary text | `#6B6358` | `#A7A9B8` |
+| Accent | `#4F46C8` | `#A9A3FF` |
+| On accent | `#FFFFFF` | `#17143A` |
+| Accent surface | `#ECEAFB` | `#25234A` |
+| Border | `#E9E2D7` | `#2C3243` |
+
+Horizon spectrum (`palette.horizon`): Day `#D9722A` / `#FFA45E`, Week `#D6455D` / `#FF7D8F`, Month `#B83C86` / `#E477BC`, Quarter `#8444C0` / `#B58AF0`, Year `#5654D4` / `#8C8CFF`, Decade `#2F6FB5` / `#6FA8E8`, Life `#1F3A5F` / `#8FA7D0` (light / dark). Keep the dark selected-control surface lighter than its track.
 
 Use `onAccent` for filled primary controls, not hard-coded white. Completion must also have a check and semantic accessibility state. Timeboxes retain a separate warm scheduling accent; calendar color never replaces exact times or labels.
 

@@ -52,9 +52,9 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
     return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.completed, disabled }}
       accessibilityLabel={`${item.completed ? 'Reopen' : 'Complete'} ${item.title}`} disabled={disabled}
       onPress={() => onToggle(item)} style={styles.checkboxTouch}>
-      <View style={[styles.checkbox, { borderColor: item.completed ? palette.accent : palette.muted,
+      <View style={[styles.checkbox, { borderColor: item.completed ? palette.accent : palette.horizon[item.horizon],
         backgroundColor: item.completed ? palette.accent : 'transparent' }]}>
-        {item.completed ? <Check size={14} color={palette.onAccent} strokeWidth={2.5} /> : null}
+        {item.completed ? <Check size={15} color={palette.onAccent} strokeWidth={2.75} /> : null}
       </View>
     </Pressable>;
   }
@@ -64,9 +64,9 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
     <View style={styles.row}>
       {checkbox(goal)}
       <Pressable style={styles.content} onPress={() => onOpen(goal)} accessibilityRole="button" accessibilityLabel={`Open ${goal.title}`}>
-        {goal.parentTitle ? <View style={styles.parent}>
+        {goal.parentTitle ? <View style={[styles.parent, styles.parentPill, { backgroundColor: palette.accentSoft }]}>
           <Layers3 size={12} color={palette.accent} strokeWidth={1.8} />
-          <Text numberOfLines={1} style={[styles.meta, { color: palette.accent }]}>{goal.parentTitle}</Text>
+          <Text numberOfLines={1} style={[styles.meta, { color: palette.accent, fontWeight: '600' }]}>{goal.parentTitle}</Text>
         </View> : null}
         <Text numberOfLines={3} style={[styles.title, { color: goal.completed ? palette.muted : palette.foreground,
           textDecorationLine: goal.completed ? 'line-through' : 'none' }]}>{goal.title}</Text>
@@ -118,14 +118,15 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: radius.lg, marginBottom: 10 },
+  card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, minHeight: 72 },
   checkboxTouch: { minHeight: 48, width: 48, alignItems: 'center', justifyContent: 'center' },
-  checkbox: { width: 21, height: 21, borderRadius: 7, borderWidth: 1.3, justifyContent: 'center', alignItems: 'center' },
+  checkbox: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
   content: { flex: 1, minHeight: 48, justifyContent: 'center', paddingVertical: 14, gap: 5 },
-  title: { fontSize: 16, lineHeight: 23, fontWeight: '600', letterSpacing: -.15 },
+  title: { fontSize: 16.5, lineHeight: 23, fontWeight: '600', letterSpacing: -.2 },
   meta: { fontSize: 12, lineHeight: 18, flexShrink: 1 },
   parent: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  parentPill: { alignSelf: 'flex-start', borderRadius: radius.full, paddingHorizontal: 9, paddingVertical: 3, maxWidth: '100%' },
   stepsToggle: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
   stepCount: { fontSize: 12, lineHeight: 18, fontWeight: '600', flexShrink: 1 },
   steps: { borderTopWidth: StyleSheet.hairlineWidth, marginHorizontal: 12 },

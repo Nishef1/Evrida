@@ -19,6 +19,8 @@ function duration(ms: number): string {
   const minutes = Math.floor(ms / 60000), hours = Math.floor(minutes / 60);
   return minutes < 1 ? ms > 0 ? '<1m' : '0m' : hours ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
 }
+const shortDay = (date: Date) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+
 export function InsightsScreen() {
   const focus = useFocusSession();
   const db = useEvridaDatabase(), router = useRouter();
@@ -73,7 +75,7 @@ export function InsightsScreen() {
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: palette.background }}>
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <View style={{ flex: 1, gap: 6 }}><Text style={[styles.brand, { color: palette.muted }]}>EVRIDA</Text><Text style={[styles.title, { color: palette.foreground }]}>This week</Text><Text style={[styles.muted, { color: palette.muted }]}>{periodKey('day', monday)} – {periodKey('day', days[6])}</Text></View>
+        <View style={{ flex: 1, gap: 6 }}><Text style={[styles.brand, { color: palette.muted }]}>EVRIDA</Text><Text style={[styles.title, { color: palette.foreground }]}>This week</Text><Text style={[styles.muted, { color: palette.muted }]}>{shortDay(monday)} – {shortDay(days[6])}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh weekly review" onPress={() => setRevision((n) => n + 1)} style={styles.icon}><RefreshCw size={21} color={palette.foreground} strokeWidth={1.8} /></Pressable>
       </View>
       {loading ? <ActivityIndicator color={palette.accent} /> : error ? <View style={styles.section}>

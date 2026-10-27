@@ -10,6 +10,7 @@ coverage/
 # generated native projects (Expo CNG; revisit if native source is adopted)
 android/
 ios/
+.cxx/
 
 # local configuration and secrets
 .env
@@ -38,4 +39,6 @@ Thumbs.db
 expo-env.d.ts
 
 # Private emulator logcat snapshots and QA package dumps
+.qa-evidence/
+.qa-build.log
 .qa-evidence/

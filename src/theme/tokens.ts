@@ -1,4 +1,6 @@
-// Shared Studio foundation. See docs/DESIGN_SYSTEM.md.
+// Shared Daybreak foundation: warm paper by day, ink-blue night, and one
+// sunrise-to-midnight spectrum that gives each planning horizon its color.
+// See docs/DESIGN_SYSTEM.md.
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -8,42 +10,50 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  md: 12,
-  lg: 16,
-  xl: 24,
+  md: 14,
+  lg: 20,
+  xl: 28,
   full: 999,
 } as const;
 
 export const colors = {
   light: {
-    background: '#F6F6F8',
+    background: '#FAF7F2',
     surface: '#FFFFFF',
-    foreground: '#24262B',
-    muted: '#696D77',
-    accent: '#35634D',
+    foreground: '#1F1B16',
+    muted: '#6B6358',
+    accent: '#4F46C8',
     onAccent: '#FFFFFF',
-    border: '#E2E4E9',
-    inset: '#EDEEF1',
-    accentSoft: '#EAF1EC',
+    border: '#E9E2D7',
+    inset: '#F1ECE4',
+    accentSoft: '#ECEAFB',
+    horizon: {
+      day: '#D9722A', week: '#D6455D', month: '#B83C86', quarter: '#8444C0',
+      year: '#5654D4', decade: '#2F6FB5', life: '#1F3A5F',
+    },
   },
   dark: {
-    background: '#141517',
-    surface: '#202226',
-    foreground: '#F2F3F5',
-    muted: '#ADB1BB',
-    accent: '#A3CEB5',
-    onAccent: '#15251C',
-    border: '#34373E',
-    inset: '#292C31',
-    accentSoft: '#26392F',
+    background: '#0E1118',
+    surface: '#1F2433',
+    foreground: '#F2EFE9',
+    muted: '#A7A9B8',
+    accent: '#A9A3FF',
+    onAccent: '#17143A',
+    border: '#2C3243',
+    inset: '#161A25',
+    accentSoft: '#25234A',
+    horizon: {
+      day: '#FFA45E', week: '#FF7D8F', month: '#E477BC', quarter: '#B58AF0',
+      year: '#8C8CFF', decade: '#6FA8E8', life: '#8FA7D0',
+    },
   },
 } as const;
 
 // Small layered shadows define surfaces; dark mode uses borders for separation.
 export const depth = {
   light: {
-    card: '0 1px 2px rgba(24, 28, 38, 0.025), 0 5px 14px rgba(24, 28, 38, 0.025)',
-    control: '0 1px 3px rgba(24, 28, 38, 0.08), 0 0 0 1px rgba(24, 28, 38, 0.025)',
+    card: '0 1px 2px rgba(54, 38, 14, 0.04), 0 6px 18px rgba(54, 38, 14, 0.05)',
+    control: '0 1px 3px rgba(54, 38, 14, 0.10), 0 0 0 1px rgba(54, 38, 14, 0.03)',
   },
   dark: { card: '0 1px 2px rgba(0, 0, 0, 0.12)', control: '0 1px 3px rgba(0, 0, 0, 0.25)' },
 } as const;
