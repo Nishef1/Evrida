@@ -285,6 +285,8 @@ function AccountSheet({ data, target, palette, onClose, onChanged }: { data: Fin
   const [error, setError] = useState<string | null>(null);
   const existing = target && target !== 'new' ? target : null;
   const { settings } = data;
+  const typeLocked = !!existing && (data.txs.some((tx) => tx.accountId === existing.id || tx.toAccountId === existing.id)
+    || data.plans.some((plan) => plan.accountId === existing.id));
   useEffect(() => {
     setError(null);
     setName(existing?.name ?? ''); setKind(existing?.kind ?? 'bank');
@@ -308,7 +310,9 @@ function AccountSheet({ data, target, palette, onClose, onChanged }: { data: Fin
       {existing ? <TextButton label="Hide account" onPress={archive} palette={palette} muted /> : null}</>}>
     <Field label="Name" value={name} onChangeText={setName} palette={palette} maxLength={80} placeholder="e.g. Savings" />
     <Label palette={palette}>TYPE</Label>
-    <ChipRow>{ACCOUNT_KINDS.map((k) => <Chip key={k} label={KIND_LABEL[k]} selected={kind === k} palette={palette} onPress={() => setKind(k)} />)}</ChipRow>
+    {typeLocked
+      ? <Text style={[type.caption, { color: palette.muted }]}>Type is locked because this account is used by transactions or planned items. Create a new account with the correct type if needed.</Text>
+      : <ChipRow>{ACCOUNT_KINDS.map((k) => <Chip key={k} label={KIND_LABEL[k]} selected={kind === k} palette={palette} onPress={() => setKind(k)} />)}</ChipRow>}
     <Field label={kind === 'liability' ? 'Amount owed at the start' : 'Balance at the start'} value={opening} onChangeText={setOpening} palette={palette}
       keyboardType="decimal-pad" suffix={settings.unit} money={settings} negative hint="Records you add later change the balance. To fix a wrong balance, add an adjustment rather than editing history." />
   </Sheet>;
