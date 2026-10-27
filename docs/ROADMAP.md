@@ -23,7 +23,7 @@ This file is the single source of truth for **planned vs completed** work. It is
 | M1 — Product UX | Information architecture, design tokens, prototypes | Daybreak refinement implemented; Android renders sampled; user aesthetic acceptance open | Approved screen map and verified interactions |
 | M2 — Goals & horizons | Persistent data, hierarchy, seven horizons | SQLite v8; real SQLite integration and sampled native flows pass | Complete device acceptance matrix |
 | M3 — Planning views | Boards, calendar, time blocks, fast capture | Implemented; native keyboard, time editing and cross-view Focus sampled | Full cross-view and device matrix |
-| M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates remain planned; a self-rated Learning tracker (topics, 1–10 check-ins, weekly review, trend; schema v11) is implemented, while resources, estimates and reminders remain planned | Accepted offline workflow scope |
+| M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates remain planned; a self-rated Learning tracker (topics, 1–10 check-ins, weekly review, trend, targets and pace estimate; schema v13) is implemented, while resource-based projects and adaptive session planning remain planned | Accepted offline workflow scope |
 | M5 — Mobile integration | Notifications, widgets, localization, backup | Native picker/backup/reminders implemented; widgets/localization remain open | Physical-device and Apple acceptance |
 | M6 — Quality & release | Performance, accessibility, testing, release build | Isolated Android release QA APK built; iOS JS export passes | Store signing, native iOS, physical-device and accessibility gates |
 
@@ -453,9 +453,9 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the full implementation inventory, in
 
 **Exit gate:** a reproducible build and completed acceptance checklist. Publishing to a store is a separate explicit decision.
 
-## Learning Projects — planned product milestone (2026-10-27)
+## Learning Projects — resource-aware milestone (2026-10-27)
 
-**Status: specified, implementation not started.** The current Guided Plans are four fixed starter paths; they are not a resource-aware learning planner.
+**Status: first slice implemented; resource-aware project planning remains planned.** The self-rated topic tracker, check-in history, weekly review, optional reminder, target score/date, pace estimate and planning-goal link are implemented. The current Guided Plans are four fixed starter paths; neither they nor the tracker yet provide a resource-aware learning planner.
 
 - [ ] Model a Learning Project and ordered resources/units (books, chapters, videos, courses, exercises) linked to one canonical goal.
 - [ ] Ask for weekly capacity, preferred days, session size, optional target date and per-unit effort; produce a transparent initial effort and completion-date range.
@@ -470,7 +470,7 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the full implementation inventory, in
 
 ## Personal Finance & Money Goals — implementation status (2026-10-27)
 
-**Status: partially implemented on main.** The optional Money module now has a manual ledger, accounts, editable categories and tags, budgets, planned items, explicit savings-goal allocations, assumption-based target forecasts, and an optional dated USD comparison rate. The implementation has domain/SQLite test coverage; CI now includes those tests. Native device acceptance and some forecast capabilities remain incomplete. Full rules live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
+**Status: partially implemented on main (schema v13, backup v7).** The optional Money module now has a manual ledger, accounts, editable categories and tags, budgets, planned items, explicit savings-goal allocations, assumption-based target forecasts, and an optional dated USD comparison rate. The implementation has domain/SQLite test coverage; CI now includes those tests. Native device acceptance and some forecast capabilities remain incomplete. Full rules live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
 
 ### Finance 1 — Trustworthy manual ledger
 
