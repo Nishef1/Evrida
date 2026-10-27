@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { periodText } from '../shared/dates';
 import type { ComponentRef } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, parseDateInput, periodKey, periodLabel, shiftPeriod, type Horizon } from '../../domain/horizons';
+import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, parseDateInput, periodKey, shiftPeriod, type Horizon } from '../../domain/horizons';
 import type { Goal, GoalInput } from '../../domain/goals';
 import { REPEAT_LABELS, REPEAT_RULES, type RepeatRule } from '../../domain/planning';
 import { colors, radius, spacing, type Palette, scrim } from '../../theme/tokens';
@@ -169,11 +170,11 @@ export function GoalEditor({
               value={notes} onChangeText={setNotes} multiline scrollEnabled textAlignVertical="top"
               style={[styles.notesInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.foreground }]}
               accessibilityLabel="Goal notes" />
-            <Pressable accessibilityRole="button" accessibilityLabel={`Planning options: ${inbox ? 'Inbox, no date yet' : periodLabel(horizon, chosenDate)}`} accessibilityState={{ expanded }}
+            <Pressable accessibilityRole="button" accessibilityLabel={`Planning options: ${inbox ? 'Inbox, no date yet' : periodText(horizon, chosenDate)}`} accessibilityState={{ expanded }}
               onPress={() => setExpanded(!expanded)} style={[styles.planningSummary, { backgroundColor: palette.surface, borderColor: palette.border }]}>
               {inbox ? <Inbox size={20} color={palette.accent} strokeWidth={1.7} /> : <CalendarDays size={20} color={palette.accent} strokeWidth={1.7} />}
               <View style={{ flex: 1, gap: 5 }}>
-                <Text style={[styles.summaryTitle, { color: palette.foreground }]}>{inbox ? 'Inbox · no date yet' : periodLabel(horizon, chosenDate)}</Text>
+                <Text style={[styles.summaryTitle, { color: palette.foreground }]}>{inbox ? 'Inbox · no date yet' : periodText(horizon, chosenDate)}</Text>
                 <Text style={[styles.summaryDetail, { color: palette.muted }]}>
                   {[inbox ? 'Plan when you are ready' : HORIZON_TITLES[horizon],
                     dueDate ? `Due ${dueDate}` : '', !inbox && repeatRule !== 'none' ? REPEAT_LABELS[repeatRule] : '',
@@ -214,7 +215,7 @@ export function GoalEditor({
                 <ChevronLeft size={21} color={palette.foreground} />
               </Pressable> : null}
               <View style={styles.periodMiddle}>
-                <Text style={[styles.periodTitle, { color: palette.foreground }]} numberOfLines={2}>{periodLabel(horizon, chosenDate)}</Text>
+                <Text style={[styles.periodTitle, { color: palette.foreground }]} numberOfLines={2}>{periodText(horizon, chosenDate)}</Text>
                 {horizon !== 'life' ? <Pressable onPress={() => { const now = new Date(); setDate(now); setDateText(periodKey('day', now)); }}
                   accessibilityRole="button" accessibilityLabel="Use current period" style={styles.currentPeriod}>
                   <Text style={[styles.now, { color: palette.accent }]}>Go to current period</Text>

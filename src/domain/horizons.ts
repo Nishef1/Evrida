@@ -1,3 +1,5 @@
+import { formatJalali, type CalendarStyle } from './jalali';
+
 export const HORIZONS = ['day', 'week', 'month', 'quarter', 'year', 'decade', 'life'] as const;
 
 export type Horizon = (typeof HORIZONS)[number];
@@ -63,16 +65,21 @@ export function shiftPeriod(horizon: Horizon, date: Date, delta: number): Date {
   }
 }
 
-export function periodLabel(horizon: Horizon, date: Date): string {
+/** Day and week captions can use the Shamsi calendar; a month, quarter or year is still a Gregorian planning period. */
+export function periodLabel(horizon: Horizon, date: Date, style: CalendarStyle = 'gregorian'): string {
   const y = date.getFullYear();
+  const shamsi = style === 'jalali';
   switch (horizon) {
     case 'day':
+      if (shamsi) return formatJalali(y, date.getMonth() + 1, date.getDate(), { weekday: true, year: false });
       return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(date);
     case 'week': {
       const start = startOfWeek(date);
       const end = noon(start.getFullYear(), start.getMonth(), start.getDate() + 6);
-      const first = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(start);
-      const last = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(end);
+      const short = (d: Date) => shamsi ? formatJalali(d.getFullYear(), d.getMonth() + 1, d.getDate(), { year: false })
+        : new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(d);
+      const first = short(start);
+      const last = short(end);
       return `${first} – ${last}`;
     }
     case 'month': return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date);

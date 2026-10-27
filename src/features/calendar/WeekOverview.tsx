@@ -1,4 +1,5 @@
 import { ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
+import { weekdayText } from '../shared/dates';
 import { analyzeDayLoad, blockOverlapsRange, localDayBounds, localDayKey, type TimeBlock } from '../../domain/timeblocks';
 import { colors, radius, spacing, semantic, type Palette } from '../../theme/tokens';
 
@@ -61,7 +62,7 @@ export function WeekOverview({ days, blocks, selectedDay, palette, onSelectDay }
               </View>
               <View style={styles.cardTitleGroup}>
                 <Text style={[styles.dayName, { color: palette.foreground }]}>
-                  {new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(day)}
+                  {weekdayText(day)}
                 </Text>
                 <Text numberOfLines={1} style={[styles.preview, { color: palette.muted }]}>
                   {entries.length ? entries.slice(0, 2).map((item) => item.goalTitle).join(' · ') +

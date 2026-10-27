@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { periodText } from '../shared/dates';
 import type { ComponentRef } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, AppState, Keyboard, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
-import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, periodKey, periodLabel, shiftPeriod, type Horizon } from '../../domain/horizons';
+import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, periodKey, shiftPeriod, type Horizon } from '../../domain/horizons';
 import { availableGoalParents, type Goal, type GoalInput } from '../../domain/goals';
 import { buildPerspectiveSections } from '../../domain/perspective';
 import { archiveGoal, createGoal, editGoal, getGoal, listAllGoals, listArchivedGoals, listChildGoals, listGoalAncestors, listGoals, listInboxGoals, listPerspectiveGoals, moveGoal, planGoal, restoreGoal, setGoalCompleted } from '../../storage/goals';
@@ -98,7 +99,7 @@ export function HorizonsScreen() {
     () => ({ horizon: 'week', anchor: new Date(), inbox: false }),
   );
   const key = periodKey(horizon, anchor);
-  const caption = periodLabel(horizon, anchor);
+  const caption = periodText(horizon, anchor);
   const goalReadKey = `${view}:${horizon}:${key}:${searching ? search : 'no-search'}:${searching}`;
   const waitingForList = loadedReadKey !== goalReadKey || (loading && goals.length === 0);
   const openGoals = useMemo(() => goals.filter((goal) => !goal.completed), [goals]);
@@ -117,7 +118,7 @@ export function HorizonsScreen() {
       HORIZONS.map((item) => ({
         horizon: item,
         key: periodKey(item, anchor),
-        label: periodLabel(item, anchor),
+        label: periodText(item, anchor),
       })),
       perspectiveGoals,
     ),
@@ -618,7 +619,7 @@ export function HorizonsScreen() {
               style={[styles.horizonOption, { backgroundColor: horizon === item ? palette.accentSoft : palette.surface, borderColor: horizon === item ? palette.accent : palette.border }]}>
               <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: palette.horizon[item] }} />
               <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600', minWidth: 70 }}>{HORIZON_TITLES[item]}</Text>
-              <Text style={{ color: palette.muted, fontSize: 12, flex: 1 }}>{periodLabel(item, anchor)}</Text>
+              <Text style={{ color: palette.muted, fontSize: 12, flex: 1 }}>{periodText(item, anchor)}</Text>
               {horizon === item ? <Check size={18} color={palette.accent} /> : <ChevronRight size={17} color={palette.muted} />}
             </Pressable>)}
             </ScrollView>

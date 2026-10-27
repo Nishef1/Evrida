@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { dayTimeText, periodText } from '../shared/dates';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import Check from 'lucide-react-native/icons/check';
@@ -8,7 +9,7 @@ import Clock3 from 'lucide-react-native/icons/clock-3';
 import Layers3 from 'lucide-react-native/icons/layers';
 import MoreHorizontal from 'lucide-react-native/icons/ellipsis';
 import type { Goal } from '../../domain/goals';
-import { HORIZON_TITLES, dateFromPeriodKey, periodLabel } from '../../domain/horizons';
+import { HORIZON_TITLES, dateFromPeriodKey } from '../../domain/horizons';
 import { listChildGoals } from '../../storage/goals';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { listMotion } from '../../theme/motion';
@@ -17,7 +18,7 @@ import { useReducedMotion } from '../../theme/useReducedMotion';
 import { type } from '../../theme/type';
 
 function planningLabel(goal: Goal) {
-  return goal.inbox ? 'Inbox · not yet planned' : `${HORIZON_TITLES[goal.horizon]} · ${periodLabel(goal.horizon, dateFromPeriodKey(goal.horizon, goal.periodKey, new Date()))}`;
+  return goal.inbox ? 'Inbox · not yet planned' : `${HORIZON_TITLES[goal.horizon]} · ${periodText(goal.horizon, dateFromPeriodKey(goal.horizon, goal.periodKey, new Date()))}`;
 }
 
 type TextLayoutLine = { x: number; y: number; width: number; height: number };
@@ -133,7 +134,7 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
         {goal.nextBlockAt ? <View style={styles.parent}>
           <Clock3 size={12} color={palette.accent} />
           <Text style={[styles.meta, { color: palette.accent }]}>
-            {new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(goal.nextBlockAt))}
+            {dayTimeText(goal.nextBlockAt)}
           </Text>
         </View> : null}
       </Pressable>

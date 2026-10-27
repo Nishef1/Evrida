@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { isoWeekKey, periodKey, shiftPeriod, startOfWeek, periodLabel, dateFromPeriodKey, parseDateInput } from '../src/domain/horizons.ts';
+import { toJalali, toGregorian, isJalaliLeap, jalaliMonthLength, parseDateText, formatJalaliKey, normalizeDigits } from '../src/domain/jalali.ts';
 import { normalizeGoalTitle, availableGoalParents } from '../src/domain/goals.ts';
 import { buildPerspectiveSections } from '../src/domain/perspective.ts';
 import { analyzeDayLoad, clockWithUtcOffset, analyzeRangeLoad, peakOverlap, blockOverlapsRange, blockClockRangeForDay, layoutBlocks, localDayBounds, localDayKey, monthGridDays, timeRangeFromInput } from '../src/domain/timeblocks.ts';
@@ -40,6 +41,31 @@ test('week boundaries, ISO week-year and period navigation stay on the right cal
 test('names and strict dates reject empty, overlong and impossible input', () => {
   assert.equal(periodKey('day', parseDateInput('2024-02-29')), '2024-02-29');
   assert.equal(parseDateInput('2025-02-29'), null);
+  // Shamsi calendar: anchors are the Nowruz dates, a leap year, and a full-range round trip
+  assert.deepEqual(toJalali(2026, 3, 21), { jy: 1405, jm: 1, jd: 1 });
+  assert.deepEqual(toJalali(2025, 3, 21), { jy: 1404, jm: 1, jd: 1 });
+  assert.deepEqual(toJalali(2024, 3, 20), { jy: 1403, jm: 1, jd: 1 });
+  assert.deepEqual(toJalali(2025, 3, 20), { jy: 1403, jm: 12, jd: 30 }, '1403 is a leap year with 30 Esfand');
+  assert.deepEqual(toJalali(2026, 10, 27), { jy: 1405, jm: 8, jd: 5 });
+  assert.deepEqual(toGregorian(1405, 8, 5), { gy: 2026, gm: 10, gd: 27 });
+  assert.ok(isJalaliLeap(1403) && !isJalaliLeap(1404));
+  assert.deepEqual([jalaliMonthLength(1405, 6), jalaliMonthLength(1405, 7), jalaliMonthLength(1403, 12), jalaliMonthLength(1404, 12)], [31, 30, 30, 29]);
+  for (let day = new Date(Date.UTC(1990, 0, 1)); day < new Date(Date.UTC(2060, 0, 1)); day = new Date(day.getTime() + 86400000 * 7)) {
+    const [y, m, d] = [day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate()], j = toJalali(y, m, d), back = toGregorian(j.jy, j.jm, j.jd);
+    assert.deepEqual([back.gy, back.gm, back.gd], [y, m, d]);
+  }
+  assert.equal(parseDateText('2026-10-27'), '2026-10-27');
+  assert.equal(parseDateText('1405/08/05'), '2026-10-27', 'a Shamsi year is read as Shamsi');
+  assert.equal(parseDateText('۱۴۰۵-۰۸-۰۵'), '2026-10-27', 'Persian digits are accepted');
+  assert.equal(parseDateText('1404/12/30'), null, '1404 is not a leap year');
+  assert.equal(parseDateText('1405/13/01'), null);
+  assert.equal(parseDateText('2025-02-29'), null);
+  assert.equal(normalizeDigits('٢٠٢٦ ۱۴۰۵'), '2026 1405');
+  assert.match(formatJalaliKey('2026-10-27'), /^⁧۵ آبان ۱۴۰۵⁩$/);
+  assert.match(formatJalaliKey('2026-10-27', { weekday: true, year: false }), /سه‌شنبه، ۵ آبان/);
+  assert.match(periodLabel('day', new Date(2026, 9, 27, 12), 'jalali'), /۵ آبان/);
+  assert.match(periodLabel('week', new Date(2026, 9, 27, 12), 'jalali'), /۴ آبان.*۱۰ آبان/s, 'a Monday-based week renders as Shamsi dates');
+  assert.match(periodLabel('month', new Date(2026, 9, 27, 12), 'jalali'), /October 2026/, 'months stay Gregorian planning periods');
   assert.equal(parseDateInput('2026-13-01'), null);
   assert.equal(parseDateInput('2026-04-31'), null);
   assert.equal(parseDateInput('2026/10/14'), null);

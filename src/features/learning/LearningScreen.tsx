@@ -10,7 +10,7 @@ import {
   MAX_SCORE, MIN_SCORE, addDays, bandLabel, daysBetween, focusSuggestions, paceEstimate, groupBySubject, historyOf, parseMinutes, topicProgress,
   trendPoints, weekStart, weeklyReview, type LearnCheckin, type LearnTopic,
 } from '../../domain/learning';
-import { isDateKey } from '../../domain/finance';
+import { parseDateText } from '../../domain/jalali';
 import { createGoal, listAllGoals } from '../../storage/goals';
 import { saveBlock } from '../../storage/timeblocks';
 import { GoalPicker } from '../shared/GoalPicker';
@@ -227,14 +227,15 @@ function SessionSheet({ topic, today, palette, onClose, onPlanned }: {
   if (key !== shownFor) { setShownFor(key); if (topic) { setDate(today); setStart('18:00'); setEnd('18:30'); setReserve(true); setError(null); } }
   const plan = () => void run(async () => {
     if (!topic) return;
-    if (!isDateKey(date)) throw new Error('Enter the date as YYYY-MM-DD.');
-    const goalId = await createGoal(db, { title: `Study: ${topic.name}`.slice(0, 180), notes: topic.note, horizon: 'day', periodKey: date, parentId: topic.goalId });
+    const day = parseDateText(date);
+    if (!day) throw new Error('Enter the date as YYYY-MM-DD (or the Shamsi form, like 1405/08/05).');
+    const goalId = await createGoal(db, { title: `Study: ${topic.name}`.slice(0, 180), notes: topic.note, horizon: 'day', periodKey: day, parentId: topic.goalId });
     if (reserve) {
-      try { await saveBlock(db, { goalId, date, start, end, kind: 'block', intention: topic.name }); }
-      catch (reason) { throw new Error(`The study goal was added for ${dateName(date)}, but the time could not be reserved: ${reason instanceof Error ? reason.message : 'check the times'}.`); }
+      try { await saveBlock(db, { goalId, date: day, start, end, kind: 'block', intention: topic.name }); }
+      catch (reason) { throw new Error(`The study goal was added for ${dateName(day)}, but the time could not be reserved: ${reason instanceof Error ? reason.message : 'check the times'}.`); }
     }
     onPlanned();
-    Alert.alert('Study session planned', reserve ? `Added to ${dateName(date)}, ${start}–${end}. Find it in Plan or Calendar.` : `Added to your plan for ${dateName(date)}.`,
+    Alert.alert('Study session planned', reserve ? `Added to ${dateName(day)}, ${start}–${end}. Find it in Plan or Calendar.` : `Added to your plan for ${dateName(day)}.`,
       [{ text: 'OK' }, { text: 'Open Calendar', onPress: () => router.push('/calendar' as never) }]);
   }, setError);
   return <Sheet visible={!!topic} title="Plan a study session" onClose={onClose} palette={palette}
@@ -294,8 +295,9 @@ function TopicSheet({ visible, topic, subjects, palette, onClose, onSaved }: {
     if (key) { setSubject(topic?.subject ?? ''); setName(topic?.name ?? ''); setNote(topic?.note ?? ''); setTarget(topic?.targetScore ?? null); setTargetDate(topic?.targetDate ?? ''); setGoalId(topic?.goalId ?? null); setError(null); }
   }
   const save = () => void run(async () => {
-    if (targetDate.trim() && !isDateKey(targetDate.trim())) throw new Error('Enter the target date as YYYY-MM-DD, or leave it empty.');
-    await saveTopic(db, { id: topic?.id, subject, name, note, targetScore: target, targetDate: targetDate.trim() || null, goalId });
+    const targetDay = targetDate.trim() ? parseDateText(targetDate) : null;
+    if (targetDate.trim() && !targetDay) throw new Error('Enter the target date as YYYY-MM-DD (or the Shamsi form), or leave it empty.');
+    await saveTopic(db, { id: topic?.id, subject, name, note, targetScore: target, targetDate: targetDay, goalId });
     onSaved();
   }, setError);
   const remove = () => Alert.alert('Delete this topic?', 'Its whole rating history is deleted too. Archive it instead to keep the history.', [
@@ -349,8 +351,9 @@ function CheckinSheet({ state, data, today, palette, onClose, onSaved }: {
     if (score === null) throw new Error('Choose a mastery score from 1 to 10.');
     const mins = parseMinutes(minutes);
     if (mins === 'invalid') throw new Error('Enter the minutes practised as a whole number, or leave it empty.');
-    if (!isDateKey(date)) throw new Error('Enter the date as YYYY-MM-DD.');
-    await saveCheckin(db, { id: state.entry?.id, topicId: state.topic.id, date, score, minutes: mins, covered, note });
+    const day = parseDateText(date);
+    if (!day) throw new Error('Enter the date as YYYY-MM-DD (or the Shamsi form, like 1405/08/05).');
+    await saveCheckin(db, { id: state.entry?.id, topicId: state.topic.id, date: day, score, minutes: mins, covered, note });
     onSaved();
   }, setError);
   const remove = () => Alert.alert('Delete this check-in?', 'The rating is removed from the history.', [

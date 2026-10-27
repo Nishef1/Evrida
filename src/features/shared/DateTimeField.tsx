@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Platform, Pressable, Text, View, useColorScheme } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { parseDateInput, periodKey } from '../../domain/horizons';
+import { fullDateText } from './dates';
 import { colors, radius } from '../../theme/tokens';
 import CalendarDays from 'lucide-react-native/icons/calendar-days';
 import ChevronDown from 'lucide-react-native/icons/chevron-down';
@@ -21,7 +22,7 @@ export function DateTimeField({ value, mode = 'date', label, placeholder = 'Choo
   const choose = (date: Date) => onChange(mode === 'date' ? periodKey('day', date)
     : `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
   const display = displayValue ?? (!value ? placeholder : mode === 'time' ? value
-    : new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(selected));
+    : fullDateText(selected));
   return <View style={{ gap: 8 }}>
     <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
       <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${display}`} accessibilityHint="Opens the system picker"

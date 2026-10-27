@@ -36,13 +36,11 @@ import { useDockInset, useSetDockHidden } from '../shell/DockInset';
 import Animated from 'react-native-reanimated';
 import { listMotion } from '../../theme/motion';
 import { useReducedMotion } from '../../theme/useReducedMotion';
+import { longDayText, shortDayText } from '../shared/dates';
 
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-function dateHeading(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric',
-    year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined }).format(date);
-}
+const dateHeading = longDayText;
 function weekOf(day: Date): Date[] {
   const weekday = (day.getDay() + 6) % 7;
   const start = shiftLocalDay(day, -weekday);
@@ -52,9 +50,7 @@ function timeLabel(value: string): string {
   return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 }
 /** Compact date for the page heading, so it stays on one line beside the actions. */
-function shortDateHeading(date: Date) {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(date);
-}
+const shortDateHeading = shortDayText;
 function durationLabel(minutes: number) {
   const h = Math.floor(minutes / 60), m = Math.round(minutes % 60);
   return h ? `${h}h${m ? ` ${m}m` : ''}` : `${m}m`;

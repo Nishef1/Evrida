@@ -6,6 +6,7 @@ import { fonts, type } from '../../theme/type';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import X from 'lucide-react-native/icons/x';
 import { formatAmount, formatUsd, groupDigits, parseAmount, toUsd, type FinSettings } from '../../domain/finance';
+import { keyText } from '../shared/dates';
 
 /** Bottom sheet with a fixed footer, shared by every Money editor. */
 export function Sheet({ visible, title, onClose, palette, children, footer }: {
@@ -146,6 +147,6 @@ const styles = StyleSheet.create({
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** "Oct 2026", or just "Oct" when `short`. */
 export const monthName = (month: string, short = false) => `${MONTH_NAMES[Number(month.slice(5, 7)) - 1]}${short ? '' : ' ' + month.slice(0, 4)}`;
-/** "Oct 27, 2026" from a YYYY-MM-DD key; never routes through UTC. */
-export const dateName = (key: string) => `${MONTH_NAMES[Number(key.slice(5, 7)) - 1]} ${Number(key.slice(8, 10))}, ${key.slice(0, 4)}`;
+/** "Oct 27, 2026" (or the Shamsi form) from a YYYY-MM-DD key; never routes through UTC. */
+export const dateName = keyText;
 export const numeral = { ...type.numeral, fontFamily: fonts.numeral } as const;

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { dayTimeText } from '../shared/dates';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Alert, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
@@ -317,7 +318,7 @@ export function BoardsScreen() {
                   </Text>
                   {goal.nextBlockAt ? (
                     <Text style={[styles.goalMeta, { color: palette.accent }]} numberOfLines={1}>
-                      ◷ {new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(goal.nextBlockAt))}
+                      ◷ {dayTimeText(goal.nextBlockAt)}
                     </Text>
                   ) : null}
                 </Pressable>

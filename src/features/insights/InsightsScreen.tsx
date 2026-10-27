@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { monthDayText } from '../shared/dates';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, AppState, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,7 +22,7 @@ function duration(ms: number): string {
   const minutes = Math.floor(ms / 60000), hours = Math.floor(minutes / 60);
   return minutes < 1 ? ms > 0 ? '<1m' : '0m' : hours ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
 }
-const shortDay = (date: Date) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+const shortDay = monthDayText;
 
 export function InsightsScreen() {
   const dockInset = useDockInset();
@@ -126,7 +127,7 @@ export function InsightsScreen() {
           <Text style={[styles.sectionTitle, { color: palette.foreground }]}>Recent focus</Text>
           {recent.map((row) => <View key={row.id} style={[styles.log, { borderBottomColor: palette.border }]}>
             <View style={{ flex: 1, gap: 5 }}><Text style={{ color: palette.foreground, fontSize: 14 }}>{row.goalTitle}</Text>
-              <Text style={[styles.caption, { color: palette.muted }]}>{new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(row.endedAtMs))} · {row.outcome === 'completed' ? 'Time limit reached' : row.outcome === 'replaced' ? 'Switched' : 'Stopped'}</Text>
+              <Text style={[styles.caption, { color: palette.muted }]}>{monthDayText(new Date(row.endedAtMs))} · {row.outcome === 'completed' ? 'Time limit reached' : row.outcome === 'replaced' ? 'Switched' : 'Stopped'}</Text>
             </View><Text style={{ color: palette.accent, fontWeight: '700' }}>{duration(row.focusedMs)}</Text>
           </View>)}
         </View> : null}

@@ -14,6 +14,8 @@ import { colors } from '../../theme/tokens';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import { type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
+import { setCalendarStyle, useCalendarStyle } from '../shared/calendarStyle';
+import { formatJalali } from '../../domain/jalali';
 
 export function SettingsScreen() {
   const dockInset = useDockInset();
@@ -22,6 +24,7 @@ export function SettingsScreen() {
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState<string | null>(null);
   const [health, setHealth] = useState<LocalHealth | null>(null);
   const locked = useRef(false);
+  const calendar = useCalendarStyle();
   async function run(action: () => Promise<void>) {
     if (locked.current) return;
     locked.current = true; setBusy(true); setNotice(null); setHealth(null);
@@ -112,6 +115,17 @@ export function SettingsScreen() {
           Structure: {health.structureOkay ? 'no issues found' : `${health.structuralProblems} issue(s)`} ·
           Relationships: {health.foreignKeysOkay ? 'no issues found' : `${health.orphanRelations} issue(s)`}
         </Text> : null}
+      </View>
+      <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+        <Text style={[styles.heading, { color: palette.foreground }]}>Calendar</Text>
+        <Text style={[styles.copy, { color: palette.muted }]}>Show dates in the Gregorian or the Shamsi (Jalali) calendar. Your data is stored the same way either way, so you can switch at any time.</Text>
+        {(['gregorian', 'jalali'] as const).map((style) => <Pressable key={style} accessibilityRole="radio" accessibilityState={{ selected: calendar === style }}
+          onPress={() => setCalendarStyle(style)} style={[styles.secondary, { borderColor: calendar === style ? palette.accent : palette.border, borderWidth: calendar === style ? 2 : 1 }]}>
+          <Text style={{ color: palette.foreground, fontWeight: '700' }}>{style === 'gregorian' ? 'Gregorian' : 'Shamsi (Jalali)'}</Text>
+          <Text style={[styles.caption, { color: palette.muted }]}>{style === 'gregorian' ? new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())
+            : formatJalali(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate(), { weekday: true })}</Text>
+        </Pressable>)}
+        <Text style={[styles.caption, { color: palette.muted }]}>Months, quarters and years in Plan, and monthly budgets in Money, stay Gregorian periods. Where you type a date, you can type either form (for example 2026-10-27 or 1405/08/05).</Text>
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Text style={[styles.heading, { color: palette.foreground }]}>Focus alerts</Text>

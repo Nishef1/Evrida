@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { periodText } from '../shared/dates';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { dateFromPeriodKey, HORIZON_TITLES, periodLabel } from '../../domain/horizons';
+import { dateFromPeriodKey, HORIZON_TITLES } from '../../domain/horizons';
 import type { Goal } from '../../domain/goals';
 import { colors, radius, spacing, semantic, type Palette, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
@@ -66,7 +67,7 @@ export function GoalDetails({
           {goal ? (
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
               <Text style={[styles.title, { color: palette.foreground }]}>{goal.title}</Text>
-              <Text style={[styles.period, { color: palette.muted }]}>{goal.inbox ? 'Not yet planned' : periodLabel(goal.horizon, dateFromPeriodKey(goal.horizon, goal.periodKey, new Date()))}</Text>
+              <Text style={[styles.period, { color: palette.muted }]}>{goal.inbox ? 'Not yet planned' : periodText(goal.horizon, dateFromPeriodKey(goal.horizon, goal.periodKey, new Date()))}</Text>
               {ancestors.length > 0 ? (
                 <View style={[styles.pathPanel, { backgroundColor: palette.accentSoft }]}>
                   <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}><Layers3 size={13} color={palette.accent} />
@@ -125,7 +126,7 @@ export function GoalDetails({
                   <Pressable accessibilityRole="button" accessibilityLabel={`Open ${child.title}`}
                     onPress={() => onOpenChild(child)} style={styles.childContent}>
                     <Text style={[styles.childTitle, { color: palette.foreground, textDecorationLine: child.completed ? 'line-through' : 'none' }]} numberOfLines={2}>{child.title}</Text>
-                    <Text style={[styles.childHorizon, { color: palette.muted }]}>{child.inbox ? 'Inbox · not yet planned' : HORIZON_TITLES[child.horizon] + ' · ' + periodLabel(child.horizon, dateFromPeriodKey(child.horizon, child.periodKey, new Date()))}</Text>
+                    <Text style={[styles.childHorizon, { color: palette.muted }]}>{child.inbox ? 'Inbox · not yet planned' : HORIZON_TITLES[child.horizon] + ' · ' + periodText(child.horizon, dateFromPeriodKey(child.horizon, child.periodKey, new Date()))}</Text>
                   </Pressable>
                   <Pressable style={styles.childNavigate} onPress={() => onOpenChild(child)}
                     accessibilityRole="button" accessibilityLabel={`View details for ${child.title}`}>

@@ -73,7 +73,7 @@ Schema v2 adds `archived_at` (nullable timestamp) and `sort_rank` (integer) to e
 
 - Use unique IDs; persist UTC instants for timed events and an explicit IANA time zone where relevant.
 - Store calendar dates separately when the concept is a floating all-day date.
-- Treat week start and display calendar as configurable; Jalali is a presentation/calendar conversion, not a rewrite of stored timestamps.
+- Treat week start and display calendar as configurable; Jalali is a presentation/calendar conversion, not a rewrite of stored timestamps. Implemented in `src/domain/jalali.ts` (pure conversion, parsing, formatting) with the per-device choice in `src/features/shared/calendarStyle.ts` and the display helpers in `src/features/shared/dates.ts`; no schema or backup change.
 - Explicitly test DST gaps/overlaps, leap days, week/year rollover and long-horizon calculations.
 - A recurrence rule and an individual occurrence are separate records/concepts.
 
