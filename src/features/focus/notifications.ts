@@ -3,8 +3,8 @@ import { Platform } from 'react-native';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getFocusSession } from '../../storage/focus';
 
-const CHANNEL = 'eonward-focus';
-const MARKER = 'eonward-focus-expiry';
+const CHANNEL = 'evrida-focus';
+const MARKER = 'evrida-focus-expiry';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -53,7 +53,7 @@ export function reconcileFocusNotification(db: SQLiteDatabase): Promise<string |
   const work = queue.catch(() => {}).then(async () => {
     await prepareChannel();
     const pending = (await Notifications.getAllScheduledNotificationsAsync()).filter(
-      (item) => item.content.data?.eonwardMarker === MARKER,
+      (item) => item.content.data?.evridaMarker === MARKER,
     );
     const session = await getFocusSession(db);
     const needsReminder = session?.status === 'running' && session.deadlineMs > Date.now();
@@ -76,10 +76,10 @@ export function reconcileFocusNotification(db: SQLiteDatabase): Promise<string |
       newIdentifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Focus time is up',
-        body: 'Your timebox has ended. Return to Eonward to review your session.',
+        body: 'Your timebox has ended. Return to Evrida to review your session.',
         sound: 'default',
         data: {
-          eonwardMarker: MARKER,
+          evridaMarker: MARKER,
           focusBlockId: session.blockId,
           deadlineMs: String(session.deadlineMs),
         },
