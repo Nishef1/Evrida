@@ -1,6 +1,6 @@
 # Eonward development roadmap
 
-Last reviewed: 2026-10-15
+Last reviewed: 2026-10-16
 Status: **M0 complete; M1–M6 partially implemented and verified at the levels below. Store release is not approved.**
 Release targets: **Android and iOS**. Native Android can be built locally; native iOS acceptance needs Apple tooling. Desktop is deferred.
 
@@ -26,6 +26,20 @@ This file is the single source of truth for **planned vs completed** work. It is
 | M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates deferred | Accepted offline workflow scope |
 | M5 — Mobile integration | Notifications, widgets, localization, backup | Native picker/backup/reminders implemented; widgets/localization remain open | Physical-device and Apple acceptance |
 | M6 — Quality & release | Performance, accessibility, testing, release build | Isolated Android release QA APK built; iOS JS export passes | Store signing, native iOS, physical-device and accessibility gates |
+
+## Plan interaction refinement — Oct 16, 2026
+
+**Implemented in source; native visual and interaction acceptance remains open.** Plan now separates open goals and an explicitly expandable Completed section. Goal cards can preview up to three actual child goals, open or complete them directly, and lead to all steps in the existing detail sheet. Search retains completed results and labels their planning contexts. Quick capture names its destination and reports successful saves. The Studio palette and the existing goal, scheduling, recurrence and Focus contracts remain in use; no schema or dependency change was introduced.
+
+Same-context reads retain mounted rows so expanded step previews can refresh after writes; changing the period or search still waits for its own result. Empty search results and a list containing only completed goals have distinct paths. These source behaviors require the native interaction checks below before UX acceptance.
+
+Checked: TypeScript, all 20 domain/real-SQLite cases, the shared database/design source guards, Expo dependency alignment and Android/Hermes export. The local debug native build failed during CMake/Ninja generation (`build.ninja` remained dirty after 100 attempts, alongside long-path warnings). The existing Android development binary received the new Metro bundle; an isolated temporary database reached schema v8, but startup/initialization stalled and earlier cold starts produced Android ANRs. An existing QA native binary was also tried with the new Hermes bundle; that is not a successful Gradle build or native acceptance. No application data reset was used, and the temporary database-name source change was reverted.
+
+- [ ] Verify inline child expansion, completion refresh, detail/back navigation and more-than-three-step access on Android.
+- [ ] Verify Completed show/hide/reopen, a completed-only list, empty search, mixed-horizon search and changing periods without stale cards.
+- [ ] Verify consecutive quick captures, Details draft preservation and destination feedback with the keyboard open.
+- [ ] Inspect populated/empty light and dark renders, long titles, 130%/200% text and screen-reader behavior; verify persistence after restart.
+- [ ] Native iOS and physical-device acceptance remain separate gates. No aesthetic approval or resolution of SQLite issue #2 is claimed.
 
 ## End-to-end edge-case execution — Oct 15, 2026
 

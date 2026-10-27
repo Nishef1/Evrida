@@ -39,6 +39,9 @@ Use `onAccent` for filled primary controls, not hard-coded white. Completion mus
 - An open goal's organization sheet offers explicit Today, Tomorrow, This week and Inbox destinations, omitting its current destination. Repeating steps offer daily destinations only. After moving, show the destination. Keep deadline, calendar reservation and recurrence anchor independent of this planning move.
 - Positional Move up/down belongs to the actual period list, not global search results or a mixed-horizon Inbox. The organization sheet scrolls on constrained screens and with larger fonts.
 - Goal cards lead with the title and optionally show a compact connected-parent badge. Completion and organization have separate touch targets.
+- Plan separates open goals from a collapsed Completed section with a real count and an explicit show/hide control. Completed goals stay searchable and can be reopened. The count describes the selected planning context, not when completion happened.
+- A goal's next steps can expand inline: show up to three canonical children, their actual planning contexts and independent completion controls, with access to all steps through goal details. Read children on expansion and refresh an expanded preview after writes; avoid replacing the entire list during a same-context refresh.
+- Capture names its destination above the input and announces a successful save there. Changing planning context must not carry a previous destination's success message. Keep the keyboard available for consecutive captures and retain the typed title when opening Details.
 - Horizons displays the seven time scales along a quiet rail. The rail connects time scales, not arbitrary goal entities. Actual parent relationships are shown only from stored relationships.
 - Empty states guide one useful action without fake progress, sample goals inserted into user data, or a second competing primary button.
 
