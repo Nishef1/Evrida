@@ -22,10 +22,8 @@ jobs:
         with:
           node-version: "22.13.0"
           cache: npm
-      - name: Install current lockfile
-        run: npm ci
-      - name: Align packages to the installed Expo SDK
-        run: npx expo install --fix
+      - name: Regenerate the lockfile for pinned SDK-compatible versions
+        run: npm install
       - name: Verify dependency alignment
         run: npm run deps:check
       - name: Verify TypeScript and domain tests
