@@ -12,9 +12,9 @@ Evrida is an offline-first personal planning application for mobile. The intent 
 6. Review progress over time.
 7. Export and restore personal data without depending on an account.
 
-## Learning Projects (planned core workflow)
+## Learning tracker and Learning Projects
 
-Evrida should support learning as a measurable, long-running project rather than a note or a loose list of tasks. A Learning Project links one outcome to its resources, units, scheduled study sessions, actual time, review sessions and evidence of learning.
+Evrida already includes a self-rated Learning tracker: topics, 1–10 check-ins, notes, practice minutes, score history, weekly review, optional weekly reminders, target score/date, pace estimates and a link to an existing planning goal. A fuller resource-aware Learning Project remains planned: it would connect one outcome to books/videos, ordered units, estimated workload, scheduled study sessions and adaptive recovery.
 
 - Define the outcome (for example, improving spoken English), optional target date, weekly capacity, preferred study days and session length.
 - Add resources such as books, chapters, video series, courses, vocabulary sets and exercises. Each resource can be split into ordered units with estimated effort, prerequisites and completion state.
@@ -48,7 +48,7 @@ See [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md) for the full specification and ac
 | Calendar and time blocks | M3 | Do not confuse due dates with blocks |
 | Notes, recurring goals and habits | M4 | Rich editor choice deferred |
 | Templates, guided plans and insights | M4 | Personal and offline |
-| Personal finance and money goals | Partially implemented | Optional manual ledger, budgets, planned items, savings goals and assumption-based forecasts |
+| Personal finance and money goals | Partially implemented | Optional manual ledger, categories/tags, budgets, planned items, savings goals, assumption-based forecasts and budget-threshold alerts; dated CPI, bill/goal reminders and native acceptance remain incomplete |
 | Notifications, widgets and quick-add | M5 | Native integration where necessary |
 | Backup/restore | M5 | Must precede release |
 | Localization and Jalali presentation | M5 | Logical storage separate from display |
