@@ -165,7 +165,7 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(data.tags.length, 1, 'tags are case-insensitive and created on first use');
     assert.equal(data.budgets.length, 2);
     const summary = monthSummary(data.txs, '2026-10');
-    assert.deepEqual([summary.income, summary.spent], [30000000, 2000000 - 500000 + 900000]);
+    assert.deepEqual([summary.income, summary.spent], [30000000, 2000000 - 500000 + 900000 - 100000 - 400000]);
     const goalId = await saveFinGoal(source.db, { title: 'Car repair reserve', target: 8000000, targetDate: '2027-04-01', monthly: 500000, growthBp: 2500, linkedGoalId: null });
     await assert.rejects(() => allocate(source.db, goalId, 999999999, '2026-10-03'), /unallocated/);
     await allocate(source.db, goalId, 3000000, '2026-10-03');
