@@ -48,7 +48,8 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
     if (initial) {
       setType(initial.type); setAmount(formatAmount(Math.abs(initial.amount), settings).replace(/,/g, ''));
       setDate(initial.date); setAccountId(initial.accountId); setToAccountId(initial.toAccountId ?? '');
-      setCategoryId(initial.categoryId); setTags(tagNames(initial.tagIds)); setPayee(initial.payee); setNote(initial.note);
+      const original = initial.refundOfId ? data.txs.find((t) => t.id === initial.refundOfId) : null;
+      setCategoryId(initial.categoryId ?? original?.categoryId ?? original?.splits[0]?.categoryId ?? null); setTags(tagNames(initial.tagIds)); setPayee(initial.payee); setNote(initial.note);
       setRefundOfId(initial.refundOfId); setSplitting(initial.splits.length > 0);
       setSplits(initial.splits.map((s) => ({ categoryId: s.categoryId, amount: formatAmount(s.amount, settings).replace(/,/g, '') })));
       if (initial.type === 'adjustment' && initial.amount < 0) setAmount('-' + formatAmount(-initial.amount, settings).replace(/,/g, ''));
@@ -57,14 +58,19 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
       setAmount(preset?.amount ? formatAmount(preset.amount, settings).replace(/,/g, '') : '');
       setDate(preset?.date ?? periodKey('day', new Date()));
       setAccountId(preset?.accountId ?? accounts[0]?.id ?? ''); setToAccountId('');
-      setCategoryId(preset?.categoryId ?? null); setTags([]); setPayee(''); setNote(preset?.note ?? '');
+      const original = preset?.refundOfId ? data.txs.find((t) => t.id === preset.refundOfId) : null;
+      setCategoryId(preset?.categoryId ?? original?.categoryId ?? original?.splits[0]?.categoryId ?? null); setTags([]); setPayee(''); setNote(preset?.note ?? '');
       setRefundOfId(preset?.refundOfId ?? null); setSplitting(!!preset?.splits?.length);
       setSplits((preset?.splits ?? []).map((s) => ({ categoryId: s.categoryId, amount: formatAmount(s.amount, settings).replace(/,/g, '') })));
     }
   }, [visible, initial?.id, preset?.refundOfId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const categories = data.categories.filter((c) => !c.archived && c.kind === (refundOfId ? 'expense' : type === 'income' ? 'income' : 'expense'));
   const refunded = refundOfId ? data.txs.find((t) => t.id === refundOfId) : null;
+  const refundCategoryIds = new Set(refunded ? (refunded.splits.length ? refunded.splits.map((s) => s.categoryId)
+    : refunded.categoryId ? [refunded.categoryId] : []) : []);
+  const categories = data.categories.filter((c) => refundOfId
+    ? c.kind === 'expense' && refundCategoryIds.has(c.id)
+    : !c.archived && c.kind === (type === 'income' ? 'income' : 'expense'));
   const total = parseAmount(amount, settings.decimals);
   const splitTotal = splits.reduce((sum, s) => sum + (parseAmount(s.amount, settings.decimals) ?? 0), 0);
   const categoryName = (id: string | null) => data.categories.find((c) => c.id === id)?.name ?? 'Category';
@@ -76,8 +82,17 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
     setTagInput('');
   }
   function toggleSplit(on: boolean) {
-    setSplitting(on);
-    if (on && splits.length < 2) setSplits([{ categoryId: categoryId ?? '', amount: amount }, { categoryId: '', amount: '' }]);
+    if (on) {
+      setSplitting(true);
+      if (splits.length < 2) {
+        const firstCategory = categoryId ?? (refundOfId ? refunded?.categoryId ?? refunded?.splits[0]?.categoryId : null) ?? '';
+        setSplits([{ categoryId: firstCategory, amount }, { categoryId: '', amount: '' }]);
+      }
+      return;
+    }
+    if (refundOfId) setCategoryId(splits.find((s) => s.categoryId)?.categoryId
+      ?? refunded?.categoryId ?? refunded?.splits[0]?.categoryId ?? null);
+    setSplitting(false);
   }
   async function addCategory() {
     if (!newCategory?.trim()) return;
@@ -127,7 +142,7 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
     {type === 'transfer' ? <Text style={[type_.caption, { color: palette.muted }]}>Moves money between your own accounts. It is not income or spending.</Text> : null}
     {type === 'adjustment' ? <Text style={[type_.caption, { color: palette.muted }]}>Use a negative amount to lower a balance. Adjustments are never counted as spending or income.</Text> : null}
     {refunded ? <Text style={[type_.caption, { color: palette.muted }]}>
-      Refund of {formatMoney(refunded.amount, settings)} · {categoryName(refunded.categoryId)}. It lowers that category’s net spending instead of counting as income.</Text> : null}
+      Refund of {formatMoney(refunded.amount, settings)} · {refunded.splits.length ? 'multiple categories' : categoryName(refunded.categoryId)}. It lowers the original category totals instead of counting as income.</Text> : null}
 
     <Field label="Amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings} negative={type === 'adjustment'}
       placeholder={settings.decimals ? '0.00' : '0'} />
@@ -158,7 +173,7 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
         </Text>
         <View style={{ flexDirection: 'row' }}>
           <TextButton label="＋ Add part" palette={palette} onPress={() => setSplits([...splits, { categoryId: '', amount: '' }])} />
-          {!refundOfId ? <TextButton label="Remove split" palette={palette} muted onPress={() => toggleSplit(false)} /> : null}
+          <TextButton label={refundOfId ? 'Use one category' : 'Remove split'} palette={palette} muted onPress={() => toggleSplit(false)} />
         </View>
       </> : <>
         <ChipRow>
@@ -170,7 +185,7 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
           <Field label="New category" value={newCategory} onChangeText={setNewCategory} palette={palette} maxLength={80} placeholder="e.g. Pets" />
           <PrimaryButton label="Create category" palette={palette} onPress={() => void addCategory()} disabled={!newCategory.trim() || busy} />
         </View> : null}
-        {!refundOfId ? <TextButton label="Split between categories" palette={palette} onPress={() => toggleSplit(true)} /> : null}
+        {(!refundOfId || refundCategoryIds.size > 1) ? <TextButton label={refundOfId ? 'Split refund' : 'Split between categories'} palette={palette} onPress={() => toggleSplit(true)} /> : null}
       </>}
 
       <Label palette={palette}>TAGS (OPTIONAL)</Label>
