@@ -20,7 +20,7 @@ This document describes whole-gate validation. Sampled current evidence is in RO
 
 ## Native SQLite release blocker
 
-- [ ] Android (including live font/theme/rotation transitions with dirty forms) passes native SQLite lifecycle stress without SIGSEGV/NPE. Track [issue #2](https://github.com/Nishef1/Eonward/issues/2).
+- [ ] Android (including live font/theme/rotation transitions with dirty forms) passes native SQLite lifecycle stress without SIGSEGV/NPE. Track [issue #2](https://github.com/Nishef1/Evrida/issues/2).
 - [ ] Focus/Calendar/Boards/Plan concurrent read/write workloads show no hidden corruption, deadlock, or permanently poisoned cached handles; check data after relaunch.
 - [ ] The JavaScript serialization mitigation has a passing concurrency test, but does not substitute for a real-device pass.
 
