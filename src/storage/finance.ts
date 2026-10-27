@@ -211,6 +211,12 @@ async function writeTransaction(tx: Writer, input: TxInput, tagNames: string[], 
   const stamp = now();
   const txId = id ?? randomUUID();
   const category = input.splits.length ? null : input.categoryId;
+  const account = await tx.getFirstAsync('SELECT 1 FROM fin_accounts WHERE id = ? AND archived_at IS NULL', [input.accountId]);
+  if (!account) throw new Error('Choose an active account.');
+  if (input.type === 'transfer') {
+    const destination = await tx.getFirstAsync('SELECT 1 FROM fin_accounts WHERE id = ? AND archived_at IS NULL', [input.toAccountId]);
+    if (!destination) throw new Error('Choose an active destination account.');
+  }
   if (input.type === 'income' || input.type === 'expense') {
     const expectedKind = input.refundOfId ? 'expense' : input.type;
     for (const line of inputLines(input)) {
@@ -395,17 +401,29 @@ export async function setPlanArchived(db: SQLiteDatabase, id: string, archived: 
   await db.runAsync('UPDATE fin_plans SET archived_at = ?, updated_at = ? WHERE id = ?', [archived ? now() : null, now(), id]);
 }
 
-/** Confirming a planned item records one real transaction and moves the item to its next due date, together or not at all. */
-export async function confirmPlan(db: SQLiteDatabase, plan: FinPlan, accountId: string, date: string, amount = plan.amount): Promise<void> {
-  if (!plan.categoryId) throw new Error('Choose a category for this item before confirming it.');
-  const input: TxInput = {
-    type: plan.direction, amount, date, accountId, toAccountId: null, categoryId: plan.categoryId, refundOfId: null,
-    payee: '', note: plan.title, tagNames: [], splits: [],
-  };
-  const tagNames = prepareTransaction(input, await activeAccounts(db));
+/** Confirming a planned item records one real transaction and advances the due date exactly once. */
+export async function confirmPlan(db: SQLiteDatabase, plan: FinPlan, accountId: string, date: string, amount?: number): Promise<void> {
+  if (amount !== undefined && (!Number.isSafeInteger(amount) || amount <= 0)) throw new Error('Enter an amount greater than zero.');
   await db.withExclusiveTransactionAsync(async (tx) => {
+    const current = await tx.getFirstAsync<{
+      title: string; direction: 'income' | 'expense'; amount: number; cadence: Cadence; nature: Nature;
+      due_date: string; category_id: string | null; account_id: string | null; archived_at: string | null;
+    }>('SELECT title, direction, amount, cadence, nature, due_date, category_id, account_id, archived_at FROM fin_plans WHERE id = ?', [plan.id]);
+    if (!current || current.archived_at) throw new Error('This planned item no longer exists or is archived.');
+    if (current.due_date !== plan.dueDate || current.title !== plan.title || current.direction !== plan.direction
+      || current.amount !== plan.amount || current.cadence !== plan.cadence || current.nature !== plan.nature
+      || current.category_id !== plan.categoryId || current.account_id !== plan.accountId) {
+      throw new Error('This planned item has changed or was already confirmed. Refresh it before confirming again.');
+    }
+    if (!current.category_id) throw new Error('Choose a category for this item before confirming it.');
+    const input: TxInput = {
+      type: current.direction, amount: amount ?? current.amount, date, accountId, toAccountId: null,
+      categoryId: current.category_id, refundOfId: null, payee: '', note: current.title, tagNames: [], splits: [],
+    };
+    const tagNames = prepareTransaction(input, await activeAccounts(tx));
     await writeTransaction(tx, input, tagNames);
-    await tx.runAsync('UPDATE fin_plans SET due_date = ?, updated_at = ? WHERE id = ?',
-      [addMonthsToDate(plan.dueDate, plan.cadence === 'yearly' ? 12 : 1), now(), plan.id]);
+    const changed = await tx.runAsync('UPDATE fin_plans SET due_date = ?, updated_at = ? WHERE id = ? AND due_date = ?',
+      [addMonthsToDate(current.due_date, current.cadence === 'yearly' ? 12 : 1), now(), plan.id, current.due_date]);
+    if (!changed.changes) throw new Error('This planned item changed during confirmation. No transaction was recorded.');
   });
 }
