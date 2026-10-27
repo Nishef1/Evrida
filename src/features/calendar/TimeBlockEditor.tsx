@@ -8,6 +8,7 @@ import { DateTimeField } from '../shared/DateTimeField';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import Check from 'lucide-react-native/icons/check';
 import X from 'lucide-react-native/icons/x';
+import { type } from '../../theme/type';
 
 
 
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg },
   headerText: { flex: 1, gap: 6 },
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3 },
-  heading: { fontSize: 23, fontWeight: '700', letterSpacing: -0.5 },
+  heading: { ...type.title },
   close: { width: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
   form: { gap: 13, paddingHorizontal: spacing.lg, paddingTop: 20, paddingBottom: 22 },
   label: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginTop: 8 },

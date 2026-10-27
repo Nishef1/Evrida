@@ -14,6 +14,8 @@ import RefreshCw from 'lucide-react-native/icons/refresh-cw';
 import Sprout from 'lucide-react-native/icons/sprout';
 import { useFocusSession } from '../focus/FocusProvider';
 import { TimeArchitecture } from './TimeArchitecture';
+import { type } from '../../theme/type';
+import { useDockInset } from '../shell/DockInset';
 
 function duration(ms: number): string {
   const minutes = Math.floor(ms / 60000), hours = Math.floor(minutes / 60);
@@ -22,6 +24,7 @@ function duration(ms: number): string {
 const shortDay = (date: Date) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
 
 export function InsightsScreen() {
+  const dockInset = useDockInset();
   const focus = useFocusSession();
   const db = useEvridaDatabase(), router = useRouter();
   const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
@@ -73,9 +76,9 @@ export function InsightsScreen() {
   const weekMs = totals.reduce((sum, ms) => sum + ms, 0), max = Math.max(...totals, 60000);
   const hasProgress = weekMs > 0 || completed > 0;
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: palette.background }}>
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 32 + dockInset }]}>
       <View style={styles.header}>
-        <View style={{ flex: 1, gap: 6 }}><Text style={[styles.brand, { color: palette.muted }]}>EVRIDA</Text><Text style={[styles.title, { color: palette.foreground }]}>This week</Text><Text style={[styles.muted, { color: palette.muted }]}>{shortDay(monday)} – {shortDay(days[6])}</Text></View>
+        <View style={{ flex: 1, gap: 6 }}><Text style={[styles.title, { color: palette.foreground }]}>This week</Text><Text style={[styles.muted, { color: palette.muted }]}>{shortDay(monday)} – {shortDay(days[6])}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh weekly review" onPress={() => setRevision((n) => n + 1)} style={styles.icon}><RefreshCw size={21} color={palette.foreground} strokeWidth={1.8} /></Pressable>
       </View>
       {loading ? <ActivityIndicator color={palette.accent} /> : error ? <View style={styles.section}>
@@ -135,9 +138,9 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 32, gap: 16 }, header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 10 },
   brand: { fontSize: 10, fontWeight: '600', letterSpacing: 2.3, marginBottom: 7 },
   emptyEmblem: { width: 48, height: 48, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  title: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 }, muted: { fontSize: 13, lineHeight: 21 }, caption: { fontSize: 11, lineHeight: 18 },
+  title: { ...type.display }, muted: { fontSize: 13, lineHeight: 21 }, caption: { fontSize: 11, lineHeight: 18 },
   icon: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' }, stats: { flexDirection: 'row', gap: 20, marginVertical: 10 },
-  number: { fontSize: 34, fontWeight: '700', letterSpacing: -1 }, section: { gap: 9, marginTop: 10 }, sectionTitle: { fontSize: 18, fontWeight: '700' },
+  number: { ...type.numeral, fontSize: 34 }, section: { gap: 9, marginTop: 10 }, sectionTitle: { ...type.heading },
   card: { padding: 18, borderWidth: 1, borderRadius: 16, gap: 8 }, goalTitle: { minHeight: 48, gap: 6, justifyContent: 'center' },
   decisions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 5 }, action: { minHeight: 48, minWidth: 48, justifyContent: 'center', paddingHorizontal: 5 },
   chart: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, paddingBottom: 12 }, day: { flex: 1, minHeight: 120, alignItems: 'center', gap: 5 },

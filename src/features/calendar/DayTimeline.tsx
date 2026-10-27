@@ -5,6 +5,11 @@ import { blockClockRangeForDay, layoutBlocks, localClock, localDayBounds, localD
 import { colors, radius, semantic, type Palette } from '../../theme/tokens';
 import { getFocusElapsedMs, type FocusSession } from '../../domain/focus';
 import { pixelsToQuarterHours, previewTimelineEdit, type TimelineEditMode, type TimelineEditPreview } from '../../domain/timeline-edit';
+import ChevronsDown from 'lucide-react-native/icons/chevrons-down';
+import GripVertical from 'lucide-react-native/icons/grip-vertical';
+import Info from 'lucide-react-native/icons/info';
+import Lock from 'lucide-react-native/icons/lock';
+import Timer from 'lucide-react-native/icons/timer';
 
 
 
@@ -16,6 +21,11 @@ const HOURS = Array.from({ length: 25 }, (_, i) => i);
 function blockTone(block: TimeBlock): string {
   if (block.goalCompleted) return semantic.timeline.completed;
   return block.kind === 'box' ? semantic.timeline.timebox : semantic.timeline.planned;
+}
+function blockMinutes(block: TimeBlock): string {
+  const minutes = Math.round((Date.parse(block.endAt) - Date.parse(block.startAt)) / 60000);
+  const hours = Math.floor(minutes / 60);
+  return hours ? `${hours}h${minutes % 60 ? ` ${minutes % 60}m` : ''}` : `${minutes}m`;
 }
 function clockLabel(iso: string) {
   return localClock(new Date(iso));
@@ -137,10 +147,13 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
         <Pressable accessibilityRole="button" accessibilityLabel="How to use the timeline"
           onPress={() => Alert.alert('Your timeline', 'Tap an empty hour to reserve time. Tap a block to edit, or hold it to adjust its schedule in 15-minute steps. Long blocks also have drag and resize grips. Nothing moves until you confirm.')}
           style={[styles.toolbarCopy, { minHeight: 48, justifyContent: 'center' }]}>
-          <Text style={[styles.heading, { color: palette.foreground }]}>Timeline ⓘ</Text>
-          <Text style={{ color: palette.muted, fontSize: 11 }}>
-            {Math.floor(recordedMs / 60000)}m linked Focus · sessions ending here + active time
-          </Text>
+          <View style={styles.summaryLine}>
+            <Text style={[styles.heading, { color: palette.foreground }]}>
+              {blocks.length ? `${blocks.length} ${blocks.length === 1 ? 'block' : 'blocks'}` : 'Open day'}
+              {recordedMs >= 60000 ? ` · ${Math.floor(recordedMs / 60000)}m focused` : ''}
+            </Text>
+            <Info size={15} color={palette.muted} strokeWidth={1.8} />
+          </View>
         </Pressable>
         <View style={[styles.zoom, { backgroundColor: palette.surface, borderColor: palette.border }]}>
           <Pressable accessibilityRole="button" accessibilityLabel="Zoom out of day timeline"
@@ -173,16 +186,9 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
           style={[styles.ribbonSummary, { color: palette.foreground }]}>
           Peak: {ribbonPeak} simultaneous plans · strip displays 3 layers. Open the full timeline for every overlap.
         </Text> : null}
-        <Text numberOfLines={1} style={[styles.ribbonSummary, { color: palette.muted }]}>
-          {upcoming
-            ? `${Date.parse(upcoming.startAt) <= now.getTime() ? 'Happening now' : 'Next up'} · ${upcoming.goalTitle}`
-            : ribbon.length ? 'Day at a glance · Tap a time range to jump' : 'An open day · Tap a time range to begin'}
-        </Text>
-        <View style={styles.ribbonLabels}>
-          <Text style={[styles.ribbonLabel, { color: palette.muted }]}>MIDNIGHT</Text>
-          <Text style={[styles.ribbonLabel, { color: palette.muted }]}>NOON</Text>
-          <Text style={[styles.ribbonLabel, { color: palette.muted }]}>MIDNIGHT</Text>
-        </View>
+        {upcoming ? <Text numberOfLines={1} style={[styles.ribbonSummary, { color: palette.muted }]}>
+          {`${Date.parse(upcoming.startAt) <= now.getTime() ? 'Happening now' : 'Next up'} · ${upcoming.goalTitle}`}
+        </Text> : null}
         <View style={[styles.ribbonTrack, { backgroundColor: palette.inset }]}>
           {ribbon.map((item) => <View pointerEvents="none" key={item.id}
             style={[styles.ribbonBlock, {
@@ -322,7 +328,6 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                       top: top + 1, height: Math.max(21, height - 3),
                       left: `${100 * lane / lanes}%`, width: `${100 / lanes}%`,
                       backgroundColor: tone,
-                      borderLeftColor: block.kind === 'box' ? semantic.timeline.timeboxEdge : 'rgba(255,255,255,0.65)',
                       opacity: 1,
                     }]}>
                     {veryCompact ? (
@@ -331,10 +336,12 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                       </Text>
                     ) : (
                       <>
-                        <Text numberOfLines={1} style={styles.eventTime}>
-                          {visibleRange(block)}
-                          {block.kind === 'box' ? ' · TIMEBOX' : ' · PLANNED'}{block.flexible ? ' · FLEXIBLE' : ' · FIXED'}
-                        </Text>
+                        <View style={styles.eventHead}>
+                          <Text numberOfLines={1} style={styles.eventTime}>{visibleRange(block)}</Text>
+                          {block.kind === 'box' ? <Timer size={12} color="rgba(255,255,255,0.92)" strokeWidth={2.2} /> : null}
+                          {!block.flexible ? <Lock size={11} color="rgba(255,255,255,0.92)" strokeWidth={2.4} /> : null}
+                          {height >= 52 ? <Text style={styles.eventDuration}>{blockMinutes(block)}</Text> : null}
+                        </View>
                         <Text numberOfLines={height < 75 ? 1 : 2}
                           style={[styles.eventTitle, block.goalCompleted && styles.doneTitle]}>
                           {block.goalTitle}
@@ -363,7 +370,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                         onResponderGrant={(e) => beginDrag(block, 'move', e.nativeEvent.pageY)}
                         onResponderMove={(e) => continueDrag(block, 'move', e.nativeEvent.pageY)}
                         style={styles.dragGrip}>
-                        <Text style={styles.dragGlyph}>↕</Text>
+                        <GripVertical size={20} color="#FFFFFF" strokeWidth={2.2} />
                       </View>
                     ) : null}
                     {height >= 177 && lanes === 1 && !block.goalCompleted &&
@@ -379,7 +386,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                         onResponderGrant={(e) => beginDrag(block, 'resize', e.nativeEvent.pageY)}
                         onResponderMove={(e) => continueDrag(block, 'resize', e.nativeEvent.pageY)}
                         style={styles.resizeGrip}>
-                        <Text style={styles.dragGlyph}>↧</Text>
+                        <ChevronsDown size={20} color="#FFFFFF" strokeWidth={2.2} />
                       </View>
                     ) : null}
                   </Pressable>
@@ -419,7 +426,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 250 },
-  ribbonRegion: { paddingTop: 3, paddingBottom: 13, gap: 7 },
+  ribbonRegion: { paddingTop: 2, paddingBottom: 8, gap: 6 },
   ribbonSummary: { fontSize: 12, fontWeight: '600' },
   ribbonLabels: { flexDirection: 'row', justifyContent: 'space-between' },
   ribbonLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.7 },
@@ -427,14 +434,15 @@ const styles = StyleSheet.create({
   ribbonBlock: { position: 'absolute', height: 6, borderRadius: 3, opacity: 0.95 },
   ribbonNow: { position: 'absolute', top: -4, bottom: -4, width: 2, borderRadius: 2, backgroundColor: semantic.timeline.now },
   ribbonJump: { position: 'absolute', width: '25%', top: -11, height: 48 },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 11, flexWrap: 'wrap' },
+  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 4, flexWrap: 'wrap' },
   toolbarCopy: { flex: 1, gap: 4 },
+  summaryLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heading: { fontSize: 17, fontWeight: '700', letterSpacing: -0.4 },
-  zoom: { height: 48, flexDirection: 'row', alignItems: 'center', borderRadius: radius.full, borderWidth: 1 },
-  zoomButton: { minWidth: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  zoom: { height: 44, flexDirection: 'row', alignItems: 'center', borderRadius: radius.full, borderWidth: 1 },
+  zoomButton: { minWidth: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   zoomGlyph: { fontSize: 18, fontWeight: '700' },
   zoomCenter: { fontSize: 10, fontWeight: '800', minWidth: 13, textAlign: 'center' },
-  nowButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: 13 },
+  nowButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: 13 },
   nowDot: { height: 7, width: 7, borderRadius: 4 },
   nowText: { fontSize: 12, fontWeight: '700' },
   canvasFrame: { flex: 1, overflow: 'hidden', borderWidth: 1, borderRadius: radius.xl },
@@ -448,7 +456,9 @@ const styles = StyleSheet.create({
   emptyHour: { position: 'absolute', left: GUTTER, right: 6, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 10 },
   plusHint: { fontSize: 13, opacity: 0.24 },
   events: { position: 'absolute', top: 0, bottom: 0, left: GUTTER + 2, right: 7 },
-  event: { position: 'absolute', borderRadius: 11, borderLeftWidth: 4, paddingHorizontal: 9, paddingVertical: 5, overflow: 'hidden', elevation: 1 },
+  event: { position: 'absolute', borderRadius: 14, paddingHorizontal: 11, paddingVertical: 6, overflow: 'hidden', elevation: 1 },
+  eventHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eventDuration: { marginLeft: 'auto', color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] },
   dragGrip: { position: 'absolute', top: 2, right: 0, width: 46, height: 48,
     justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.13)', borderRadius: 11 },
   resizeGrip: { position: 'absolute', bottom: 0, right: 0, width: 46, height: 48,
@@ -472,8 +482,8 @@ const styles = StyleSheet.create({
   adjustApply: { minHeight: 48, minWidth: 61, paddingHorizontal: 6, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center' },
   adjustFooter: { fontSize: 11, lineHeight: 16 },
-  eventTime: { color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  eventTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginTop: 3 },
+  eventTime: { color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  eventTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginTop: 2, letterSpacing: -0.1 },
   doneTitle: { textDecorationLine: 'line-through' },
   eventIntention: { color: 'rgba(255,255,255,0.83)', fontSize: 11, marginTop: 7 },
   microTitle: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },

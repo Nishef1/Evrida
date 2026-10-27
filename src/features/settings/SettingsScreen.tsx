@@ -12,8 +12,11 @@ import { exportBackup, previewBackupMerge, restoreBackup } from '../../storage/b
 import { checkLocalHealth, type LocalHealth } from '../../storage/health';
 import { colors } from '../../theme/tokens';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
+import { type } from '../../theme/type';
+import { useDockInset } from '../shell/DockInset';
 
 export function SettingsScreen() {
+  const dockInset = useDockInset();
   const db = useEvridaDatabase(), router = useRouter();
   const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export function SettingsScreen() {
     } finally { if (file.exists) file.delete(); }
   }
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: palette.background }}>
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 32 + dockInset }]}>
       <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel="Back to Plan" onPress={() => router.back()} style={styles.back}><ChevronLeft size={23} color={palette.foreground} strokeWidth={1.8} /></Pressable><Text style={[styles.title, { color: palette.foreground }]}>Your data & settings</Text></View>
       <Text style={[styles.copy, { color: palette.muted }]}>Your plans live on this device. Times are stored as fixed instants; travel across time zones changes the displayed local hour. Keep an exported backup to recover them on another device.</Text>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
@@ -126,8 +129,8 @@ export function SettingsScreen() {
 }
 const styles = StyleSheet.create({
   content: { padding: 18, paddingBottom: 32, gap: 18 }, header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  back: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' }, title: { fontSize: 23, fontWeight: '700', flex: 1 },
-  heading: { fontSize: 18, fontWeight: '700' }, copy: { fontSize: 14, lineHeight: 22 }, caption: { fontSize: 12, lineHeight: 19 },
+  back: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' }, title: { ...type.title, flex: 1 },
+  heading: { ...type.heading }, copy: { fontSize: 14, lineHeight: 22 }, caption: { fontSize: 12, lineHeight: 19 },
   card: { padding: 18, borderRadius: 18, borderWidth: 1, gap: 14 }, primary: { minHeight: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   secondary: { minHeight: 50, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
 });

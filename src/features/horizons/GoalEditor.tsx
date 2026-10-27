@@ -17,6 +17,7 @@ import CalendarDays from 'lucide-react-native/icons/calendar-days';
 import Inbox from 'lucide-react-native/icons/inbox';
 import Layers3 from 'lucide-react-native/icons/layers';
 import X from 'lucide-react-native/icons/x';
+import { type } from '../../theme/type';
 
 
 
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
   grabber: { height: 4, width: 36, alignSelf: 'center', borderRadius: 10, marginBottom: 18 },
   header: { paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerCopy: { flex: 1, gap: 5 },
-  heading: { fontSize: 24, fontWeight: '700', letterSpacing: -0.7 },
+  heading: { ...type.title },
   closeButton: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' },
   formScroll: { flex: 1 },
   form: { paddingHorizontal: spacing.lg, paddingBottom: 22, paddingTop: spacing.lg, gap: spacing.md },

@@ -4,6 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GUIDED_PLANS, type GuidedPlan } from '../../domain/guided-plans';
 import { colors, type Palette, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
+import { type } from '../../theme/type';
 
 
 interface Props {
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
   sheet: { maxHeight: '94%', borderTopLeftRadius: 26, borderTopRightRadius: 26, overflow: 'hidden' },
   content: { padding: 20, gap: 12, paddingBottom: 22 },
   kicker: { fontSize: 10, letterSpacing: 1.2, fontWeight: '800' },
-  heading: { fontSize: 25, fontWeight: '700', letterSpacing: -0.5 },
+  heading: { ...type.title },
   caption: { fontSize: 12, lineHeight: 19 },
   card: { borderRadius: 15, padding: 14, borderWidth: 1, gap: 6, minHeight: 93 },
   cardTitle: { fontSize: 15, fontWeight: '700' },

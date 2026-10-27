@@ -6,6 +6,7 @@ import { localClock, type TimeBlock } from '../../domain/timeblocks';
 import { previewReplan, type ReplanPreview } from '../../domain/replan';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import RefreshCw from 'lucide-react-native/icons/refresh-cw';
+import { type } from '../../theme/type';
 
 
 interface Props {
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
   sheet: { maxHeight: '94%', borderTopLeftRadius: 27, borderTopRightRadius: 27, overflow: 'hidden' },
   content: { padding: 21, gap: 14, paddingBottom: 20 },
   kicker: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
-  title: { fontSize: 26, fontWeight: '700', letterSpacing: -0.7 },
+  title: { ...type.title },
   caption: { fontSize: 12, lineHeight: 20 },
   row: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   refresh: { minHeight: 48, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 6, paddingHorizontal: 6 },

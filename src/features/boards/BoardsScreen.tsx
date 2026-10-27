@@ -18,12 +18,15 @@ import { createGoal, listAllGoals, setGoalCompleted } from '../../storage/goals'
 import type { Goal, GoalInput } from '../../domain/goals';
 import { GoalEditor } from '../horizons/GoalEditor';
 import { useFocusSession } from '../focus/FocusProvider';
+import { type } from '../../theme/type';
+import { useDockInset } from '../shell/DockInset';
 import {
   addGoalToBoard, createBoard, deleteBoard, editBoard, getBoard, listBoardGoals,
   listBoards, removeGoalFromBoard, type Board, type BoardGoal,
 } from '../../storage/boards';
 
 export function BoardsScreen() {
+  const dockInset = useDockInset();
   const reducedMotion = useReducedMotion();
   const db = useEvridaDatabase();
   const focus = useFocusSession();
@@ -212,9 +215,9 @@ export function BoardsScreen() {
   const controlColor = palette.foreground;
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={[styles.screen, { backgroundColor: palette.background }]}>
-      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.page, { paddingBottom: 40 + dockInset }]} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
-          <Text style={[styles.brand, { color: palette.muted }]}>EVRIDA</Text>
+          <View style={{ flex: 1 }} />
           {current ? <Pressable onPress={() => { setCurrent(null); setBoardLens('open'); }}
             accessibilityRole="button" accessibilityLabel="Back to boards"
             style={[styles.back, { backgroundColor: palette.surface, borderColor: palette.border }]}>
@@ -299,7 +302,7 @@ export function BoardsScreen() {
                     await setGoalCompleted(db, goal.id, !goal.completed);
                     await focus.refresh();
                   })}>
-                  {goal.completed ? <Check size={20} color={palette.accent} /> : <Circle size={20} color={palette.muted} strokeWidth={1.4} />}
+                  {goal.completed ? <Check size={20} color={palette.accent} /> : <Circle size={20} color={palette.muted} strokeWidth={1.8} />}
                 </Pressable>
                 <Pressable style={styles.goalCopy} accessibilityRole="button"
                   accessibilityLabel={`Open ${goal.title} in Horizons`}
@@ -449,7 +452,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', minHeight: 20 },
   back: { width: 48, height: 48, borderWidth: 1, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   brand: { fontSize: 10, letterSpacing: 2.3, fontWeight: '600', flex: 1 },
-  heading: { fontSize: 32, letterSpacing: -1.2, fontWeight: '700' },
+  heading: { ...type.display },
   subtitle: { fontSize: 13, lineHeight: 21, marginBottom: 10 },
   primary: { minHeight: 53, borderRadius: radius.md, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 15, marginBottom: 9 },
   primaryText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
@@ -483,7 +486,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   sheet: { borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: spacing.lg, gap: 12 },
   pickerSheet: { maxHeight: '88%', borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: spacing.lg, gap: 12 },
-  sheetHeading: { fontSize: 24, fontWeight: '700', marginBottom: 9 },
+  sheetHeading: { ...type.title, marginBottom: 9 },
   field: { borderWidth: 1, borderRadius: radius.lg, minHeight: 54, padding: 14, fontSize: 15 },
   multi: { minHeight: 84, textAlignVertical: 'top' },
   cancel: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },

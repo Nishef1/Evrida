@@ -48,7 +48,7 @@ export function PerspectiveView({ sections, palette, loading, error, onRetry, on
       </View>
       {section.preview.map((goal) => <Pressable key={goal.id} accessibilityRole="button" onPress={() => onOpenGoal(goal)}
         accessibilityLabel={`Open ${goal.title}`} style={[styles.preview, { borderTopColor: palette.border }]}>
-        {goal.completed ? <Check size={15} color={palette.accent} /> : <Circle size={13} color={palette.muted} strokeWidth={1.4} />}
+        {goal.completed ? <Check size={15} color={palette.accent} /> : <Circle size={13} color={palette.muted} strokeWidth={1.8} />}
         <View style={{ flex: 1, gap: 4 }}>
           <Text numberOfLines={2} style={{ color: palette.foreground, fontSize: 14, textDecorationLine: goal.completed ? 'line-through' : 'none' }}>{goal.title}</Text>
           {goal.parentTitle ? <Text numberOfLines={1} style={[styles.caption, { color: palette.muted }]}>↳ {goal.parentTitle}</Text> : null}

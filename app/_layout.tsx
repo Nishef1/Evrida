@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ComponentRef } from 'react';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, useColorScheme, View } from 'react-native';
@@ -9,6 +10,11 @@ import { FocusProvider } from '../src/features/focus/FocusProvider';
 import { AppDock } from '../src/features/shell/AppDock';
 import { colors } from '../src/theme/tokens';
 import { useReducedMotion } from '../src/theme/useReducedMotion';
+import { useFonts } from 'expo-font';
+import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
+import { BlurTargetView } from 'expo-blur';
+import { DockInsetContext } from '../src/features/shell/DockInset';
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   useEffect(() => { void SplashScreen.hideAsync().catch(() => {}); }, []);
@@ -24,10 +30,18 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 }
 
 function DatabaseContent({ reducedMotion }: { reducedMotion: boolean }) {
+  // The dock floats over the screens as frosted glass: screens render inside the blur
+  // target, and each one reserves the measured dock height at its bottom.
+  const blurTarget = useRef<ComponentRef<typeof View>>(null);
+  const [dockHeight, setDockHeight] = useState(0);
   return <FocusProvider>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={{ flex: 1 }}><Stack screenOptions={{ headerShown: false, ...(reducedMotion ? { animation: 'none' as const } : {}) }} /></View>
-      <AppDock />
+      <DockInsetContext.Provider value={dockHeight}>
+        <BlurTargetView ref={blurTarget} style={{ flex: 1 }}>
+          <Stack screenOptions={{ headerShown: false, ...(reducedMotion ? { animation: 'none' as const } : {}) }} />
+        </BlurTargetView>
+      </DockInsetContext.Provider>
+      <AppDock blurTarget={blurTarget} onHeight={setDockHeight} />
     </KeyboardAvoidingView>
   </FocusProvider>;
 }
@@ -43,6 +57,9 @@ function LoadingDatabase() {
 
 export default function RootLayout() {
   const reducedMotion = useReducedMotion();
+  // Local font files load in milliseconds; a failure falls back to the system family.
+  const [fontsLoaded, fontError] = useFonts({ Fraunces_600SemiBold, Fraunces_700Bold });
+  if (!fontsLoaded && !fontError) return <LoadingDatabase />;
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />

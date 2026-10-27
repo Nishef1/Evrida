@@ -7,6 +7,7 @@ export const spacing = {
   md: 16,
   lg: 24,
   xl: 32,
+  gutter: 20,
 } as const;
 
 export const radius = {
@@ -49,6 +50,9 @@ export const colors = {
   },
 } as const;
 
+// Acrylic tints laid over the blurred content behind the dock.
+export const glass = { light: 'rgba(250, 247, 242, 0.74)', dark: 'rgba(23, 27, 38, 0.72)' } as const;
+
 // Modal backdrop shared by every sheet: neutral ink, not a tinted overlay.
 export const scrim = 'rgba(14, 17, 24, 0.5)';
 
@@ -57,8 +61,9 @@ export const depth = {
   light: {
     card: '0 1px 2px rgba(54, 38, 14, 0.04), 0 6px 18px rgba(54, 38, 14, 0.05)',
     control: '0 1px 3px rgba(54, 38, 14, 0.10), 0 0 0 1px rgba(54, 38, 14, 0.03)',
+    float: '0 2px 4px rgba(54, 38, 14, 0.05), 0 12px 28px rgba(54, 38, 14, 0.12)',
   },
-  dark: { card: '0 1px 2px rgba(0, 0, 0, 0.12)', control: '0 1px 3px rgba(0, 0, 0, 0.25)' },
+  dark: { card: '0 1px 2px rgba(0, 0, 0, 0.12)', control: '0 1px 3px rgba(0, 0, 0, 0.25)', float: '0 2px 4px rgba(0, 0, 0, 0.2), 0 14px 30px rgba(0, 0, 0, 0.45)' },
 } as const;
 
 // One semantic palette for schedule/status surfaces shared by all Calendar views.

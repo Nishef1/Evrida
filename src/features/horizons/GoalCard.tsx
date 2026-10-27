@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import Check from 'lucide-react-native/icons/check';
 import ChevronDown from 'lucide-react-native/icons/chevron-down';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
@@ -14,25 +14,49 @@ import { useEvridaDatabase } from '../../storage/use-database';
 import { listMotion } from '../../theme/motion';
 import { colors, depth, radius, type Palette } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
+import { type } from '../../theme/type';
 
 function planningLabel(goal: Goal) {
   return goal.inbox ? 'Inbox · not yet planned' : `${HORIZON_TITLES[goal.horizon]} · ${periodLabel(goal.horizon, dateFromPeriodKey(goal.horizon, goal.periodKey, new Date()))}`;
 }
 
+type TextLayoutLine = { x: number; y: number; width: number; height: number };
+
 /** The completion ring gives a small tactile pop when its state changes, never on first paint. */
-function CheckRing({ goal, palette, reduced }: { goal: Goal; palette: Palette; reduced: boolean }) {
+function CheckRing({ goal, done, palette, reduced }: { goal: Goal; done: boolean; palette: Palette; reduced: boolean }) {
   const scale = useSharedValue(1);
   const painted = useRef(false);
   useEffect(() => {
     if (!painted.current) { painted.current = true; return; }
     if (reduced) return;
     scale.value = withSequence(withTiming(0.8, { duration: 70 }), withSpring(1, { damping: 9, stiffness: 280 }));
-  }, [goal.completed, reduced, scale]);
+  }, [done, reduced, scale]);
   const pop = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  return <Animated.View style={[styles.checkbox, { borderColor: goal.completed ? palette.accent : palette.horizon[goal.horizon],
-    backgroundColor: goal.completed ? palette.accent : 'transparent' }, pop]}>
-    {goal.completed ? <Check size={15} color={palette.onAccent} strokeWidth={2.75} /> : null}
+  return <Animated.View style={[styles.checkbox, { borderColor: done ? palette.accent : palette.horizon[goal.horizon],
+    backgroundColor: done ? palette.accent : 'transparent' }, pop]}>
+    {done ? <Check size={15} color={palette.onAccent} strokeWidth={2.75} /> : null}
   </Animated.View>;
+}
+
+/** One strike line that draws left to right across a measured line of title text. */
+function StrikeLine({ line, index, count, sweep, color }: { line: TextLayoutLine; index: number; count: number; sweep: SharedValue<number>; color: string }) {
+  const style = useAnimatedStyle(() => {
+    const share = Math.min(1, Math.max(0, sweep.value * count - index));
+    return { width: line.width * share };
+  });
+  return <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: line.x, top: line.y + line.height / 2 - 1, height: 2, borderRadius: 1, backgroundColor: color }, style]} />;
+}
+
+/** Title text whose strikethrough can be drawn as a sweep instead of appearing at once. */
+function StrikeTitle({ title, color, struck, sweep, strikeColor, style }: {
+  title: string; color: string; struck: boolean; sweep: SharedValue<number>; strikeColor: string; style: object;
+}) {
+  const [lines, setLines] = useState<TextLayoutLine[]>([]);
+  return <View>
+    <Text numberOfLines={3} onTextLayout={(event) => setLines(event.nativeEvent.lines)}
+      style={[style, { color, textDecorationLine: struck ? 'line-through' : 'none' }]}>{title}</Text>
+    {lines.map((line, index) => <StrikeLine key={index} line={line} index={index} count={lines.length} sweep={sweep} color={strikeColor} />)}
+  </View>;
 }
 
 export function GoalCard({ goal, palette, revision, showContext, disabled, onOpen, onToggle, onOrganize }: {
@@ -47,6 +71,10 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
 }) {
   const db = useEvridaDatabase();
   const reduced = useReducedMotion();
+  const sweep = useSharedValue(0);
+  const [completing, setCompleting] = useState(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); }, []);
   const [expanded, setExpanded] = useState(false);
   const [steps, setSteps] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,11 +96,22 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
     return () => { active = false; };
   }, [db, expanded, goal.id, goal.childrenCount, revision, retry]);
 
+  // Completing plays a short sequence first: the ring fills, a line is drawn through the
+  // title, a beat passes, and only then does the goal leave the open list.
+  function toggle(item: Goal) {
+    if (item.id !== goal.id || item.completed || reduced) { onToggle(item); return; }
+    setCompleting(true);
+    sweep.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+    timers.current.push(setTimeout(() => onToggle(item), 480));
+    timers.current.push(setTimeout(() => { setCompleting(false); sweep.value = 0; }, 1600));
+  }
+
   function checkbox(item: Goal) {
-    return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.completed, disabled }}
-      accessibilityLabel={`${item.completed ? 'Reopen' : 'Complete'} ${item.title}`} disabled={disabled}
-      onPress={() => onToggle(item)} style={styles.checkboxTouch}>
-      <CheckRing goal={item} palette={palette} reduced={reduced} />
+    const done = item.completed || (completing && item.id === goal.id);
+    return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done, disabled: disabled || completing }}
+      accessibilityLabel={`${item.completed ? 'Reopen' : 'Complete'} ${item.title}`} disabled={disabled || completing}
+      onPress={() => toggle(item)} style={styles.checkboxTouch}>
+      <CheckRing goal={item} done={done} palette={palette} reduced={reduced} />
     </Pressable>;
   }
 
@@ -85,8 +124,8 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
           <Layers3 size={12} color={palette.accent} strokeWidth={1.8} />
           <Text numberOfLines={1} style={[styles.meta, { color: palette.accent, fontWeight: '600' }]}>{goal.parentTitle}</Text>
         </View> : null}
-        <Text numberOfLines={3} style={[styles.title, { color: goal.completed ? palette.muted : palette.foreground,
-          textDecorationLine: goal.completed ? 'line-through' : 'none' }]}>{goal.title}</Text>
+        <StrikeTitle title={goal.title} style={styles.title} sweep={sweep} strikeColor={palette.muted}
+          color={goal.completed || completing ? palette.muted : palette.foreground} struck={goal.completed} />
         {goal.notes ? <Text numberOfLines={1} style={[styles.meta, { color: palette.muted }]}>{goal.notes}</Text> : null}
         {showContext ? <Text style={[styles.meta, { color: palette.muted }]}>{planningLabel(goal)}</Text> : null}
         {goal.dueDate ? <Text style={[styles.meta, { color: palette.muted }]}>Deadline · {goal.dueDate}</Text> : null}
@@ -140,7 +179,7 @@ const styles = StyleSheet.create({
   checkboxTouch: { minHeight: 48, width: 48, alignItems: 'center', justifyContent: 'center' },
   checkbox: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
   content: { flex: 1, minHeight: 48, justifyContent: 'center', paddingVertical: 14, gap: 5 },
-  title: { fontSize: 16.5, lineHeight: 23, fontWeight: '600', letterSpacing: -.2 },
+  title: { ...type.cardTitle },
   meta: { fontSize: 12, lineHeight: 18, flexShrink: 1 },
   parent: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   parentPill: { alignSelf: 'flex-start', borderRadius: radius.full, paddingHorizontal: 9, paddingVertical: 3, maxWidth: '100%' },

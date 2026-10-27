@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
-  <path d="M512 256 768 512 512 768 256 512Z" stroke="#F7F6F2" stroke-width="48" stroke-linejoin="round"/>
-  <path d="m512 398 114 114-114 114-114-114Z" fill="#F7F6F2"/>
+  <defs><clipPath id="above"><rect width="1024" height="526"/></clipPath></defs>
+  <circle cx="512" cy="356" r="190" fill="#FFB36B" clip-path="url(#above)"/>
+  <g stroke-linecap="round" stroke-width="28">
+    <path d="M206 580H818" stroke="#FFA45E"/><path d="M224 624H800" stroke="#FF7D8F"/>
+    <path d="M242 668H782" stroke="#E477BC"/><path d="M260 712H764" stroke="#B58AF0"/>
+    <path d="M278 756H746" stroke="#8C8CFF"/><path d="M296 800H728" stroke="#6FA8E8"/>
+    <path d="M314 844H710" stroke="#6283BE"/>
+  </g>
 </svg>

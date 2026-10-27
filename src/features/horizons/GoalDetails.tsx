@@ -14,6 +14,7 @@ import Layers3 from 'lucide-react-native/icons/layers';
 import Play from 'lucide-react-native/icons/play';
 import Plus from 'lucide-react-native/icons/plus';
 import X from 'lucide-react-native/icons/x';
+import { type } from '../../theme/type';
 
 
 
@@ -132,7 +133,7 @@ export function GoalDetails({
                   <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: child.completed }}
                     accessibilityLabel={child.completed ? `Reopen ${child.title}` : `Complete ${child.title}`}
                     onPress={() => onToggle(child)} style={styles.childCheckTouch}>
-                    {child.completed ? <Check size={20} color={palette.accent} /> : <Circle size={19} color={palette.muted} strokeWidth={1.4} />}
+                    {child.completed ? <Check size={20} color={palette.accent} /> : <Circle size={19} color={palette.muted} strokeWidth={1.8} />}
                   </Pressable>
                   <Pressable accessibilityRole="button" accessibilityLabel={`Open ${child.title}`}
                     onPress={() => onOpenChild(child)} style={styles.childContent}>
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
   pathChip: { minHeight: 48, maxWidth: 184, minWidth: 102, paddingRight: 8, paddingVertical: 6, gap: 4, justifyContent: 'center' },
   pathHorizon: { fontSize: 10, fontWeight: '700' },
   pathTitle: { fontSize: 12, fontWeight: '600' },
-  title: { fontSize: 27, letterSpacing: -0.7, lineHeight: 34, fontWeight: '700' },
+  title: { ...type.title, fontSize: 27, lineHeight: 34 },
   period: { fontSize: 12, fontWeight: '600', marginTop: -8 },
   description: { fontSize: 15, lineHeight: 24 },
   complete: { minHeight: 56, borderWidth: 1, borderRadius: radius.lg, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.md, marginTop: spacing.sm },

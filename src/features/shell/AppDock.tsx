@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ComponentRef, RefObject } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { getGoalPath } from '../../storage/goals';
@@ -8,7 +9,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { getFocusRemainingMs, formatFocusTime } from '../../domain/focus';
 import { useFocusSession } from '../focus/FocusProvider';
 import { motion } from '../../theme/motion';
-import { colors, radius, semantic, scrim } from '../../theme/tokens';
+import { colors, glass, radius, semantic, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import CalendarDays from 'lucide-react-native/icons/calendar-days';
 import ChartNoAxesCombined from 'lucide-react-native/icons/chart-no-axes-combined';
@@ -17,6 +18,8 @@ import ListTodo from 'lucide-react-native/icons/list-todo';
 import Timer from 'lucide-react-native/icons/timer';
 import Pause from 'lucide-react-native/icons/pause';
 import Play from 'lucide-react-native/icons/play';
+import { type } from '../../theme/type';
+import { BlurView } from 'expo-blur';
 
 const routes = [
   { path: '/', label: 'Plan', icon: ListTodo },
@@ -33,7 +36,7 @@ function NavPill({ selected, color, reduced }: { selected: boolean; color: strin
   return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: color, borderRadius: 16 }, style]} />;
 }
 
-export function AppDock() {
+export function AppDock({ blurTarget, onHeight }: { blurTarget: RefObject<ComponentRef<typeof View> | null>; onHeight: (height: number) => void }) {
   const reducedMotion = useReducedMotion();
   const router = useRouter();
   const db = useEvridaDatabase();
@@ -44,6 +47,7 @@ export function AppDock() {
   const [expanded, setExpanded] = useState(false);
   const [goalPath, setGoalPath] = useState<string[]>([]);
   const [typing, setTyping] = useState(() => Keyboard.isVisible());
+  useEffect(() => { if (typing) onHeight(0); }, [typing, onHeight]);
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setTyping(true));
     const hide = Keyboard.addListener('keyboardDidHide', () => setTyping(false));
@@ -90,7 +94,12 @@ export function AppDock() {
 
   return (
     <>
-      <SafeAreaView edges={['bottom']} style={[styles.dock, { backgroundColor: palette.surface, borderTopColor: palette.border }, typing && { display: 'none' }]}>
+      <View style={[styles.floating, typing && { display: 'none' }]}
+        onLayout={(event) => onHeight(event.nativeEvent.layout.height)}>
+      <BlurView blurTarget={blurTarget} blurMethod="dimezisBlurView" intensity={60}
+        tint={palette === colors.dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: palette === colors.dark ? glass.dark : glass.light }]} />
+      <SafeAreaView edges={['bottom']} style={[styles.dock, { borderTopColor: palette.border }]}>
         {error ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Retry loading focus timer"
             onPress={() => { void refresh().catch(() => {}); }}
@@ -140,6 +149,7 @@ export function AppDock() {
           })}
         </View>
       </SafeAreaView>
+      </View>
       <Modal visible={expanded && !!session} transparent animationType={reducedMotion ? 'none' : 'fade'}
         statusBarTranslucent navigationBarTranslucent onRequestClose={() => setExpanded(false)}>
         <SafeAreaProvider>
@@ -209,6 +219,7 @@ export function AppDock() {
   );
 }
 const styles = StyleSheet.create({
+  floating: { position: 'absolute', left: 0, right: 0, bottom: 0, overflow: 'hidden' },
   dock: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8 },
   timerIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   loadError: { marginHorizontal: 13, marginBottom: 6, borderRadius: radius.md, minHeight: 48,
@@ -218,7 +229,7 @@ const styles = StyleSheet.create({
   sessionCopy: { flex: 1, gap: 4 },
   miniTitle: { fontSize: 13, fontWeight: '700' },
   miniCaption: { fontSize: 11 },
-  miniClock: { fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  miniClock: { ...type.numeral, fontSize: 22 },
   navigation: { minHeight: 63, flexDirection: 'row', alignItems: 'center' },
   navItem: { flex: 1, minHeight: 58, alignItems: 'center', justifyContent: 'center', gap: 3 },
   navIndicator: { width: 64, height: 32, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
@@ -230,7 +241,7 @@ const styles = StyleSheet.create({
   goalTitle: { fontSize: 20, fontWeight: '700', lineHeight: 27 },
   goalPath: { fontSize: 12, lineHeight: 20, marginTop: 6 },
   pathAction: { minHeight: 48, alignItems: 'flex-start', justifyContent: 'center' },
-  clock: { fontSize: 58, fontWeight: '800', textAlign: 'center', marginTop: 24, fontVariant: ['tabular-nums'], letterSpacing: -1.4 },
+  clock: { ...type.numeral, fontSize: 60, textAlign: 'center', marginTop: 24 },
   explainer: { fontSize: 13, lineHeight: 21, textAlign: 'center', marginVertical: 21 },
   noticeSection: { alignItems: 'center', marginBottom: 13, gap: 4 },
   warning: { fontSize: 12, lineHeight: 18, textAlign: 'center' },

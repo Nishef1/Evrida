@@ -33,10 +33,13 @@ import { PerspectiveView } from './PerspectiveView';
 import { ArchiveView } from './ArchiveView';
 import { useFocusSession } from '../focus/FocusProvider';
 import { useReducedMotion } from '../../theme/useReducedMotion';
+import { type } from '../../theme/type';
+import { useDockInset } from '../shell/DockInset';
 
 
 export function HorizonsScreen() {
   const reducedMotion = useReducedMotion();
+  const dockInset = useDockInset();
   const db = useEvridaDatabase();
   const router = useRouter();
   const focus = useFocusSession();
@@ -510,7 +513,7 @@ export function HorizonsScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingBottom: dockInset }]} edges={['top', 'left', 'right']}>
       <SectionList
         sections={!showingList || waitingForList || failure || goals.length === 0 ? [] : searching ? [{ title: 'Matching goals', completed: false, data: goals }] : [
           ...(openGoals.length ? [{ title: view === 'inbox' ? 'To sort when you’re ready' : 'Next up', completed: false, data: openGoals }] : []),
@@ -553,7 +556,7 @@ export function HorizonsScreen() {
           ) : failure ? (
             <View style={styles.empty}>
               {!searching ? <View style={[styles.emptyEmblem, { backgroundColor: palette.accentSoft }]}>
-                {view === 'inbox' ? <Inbox size={27} color={palette.accent} strokeWidth={1.4} /> : <Layers3 size={27} color={palette.accent} strokeWidth={1.4} />}
+                {view === 'inbox' ? <Inbox size={28} color={palette.accent} strokeWidth={1.8} /> : <Layers3 size={28} color={palette.accent} strokeWidth={1.8} />}
               </View> : null}
               <Text style={[styles.emptyTitle, { color: palette.foreground }]}>Couldn't load this horizon</Text>
               <Text style={[styles.emptyBody, { color: palette.muted }]}>{failure}</Text>
@@ -563,7 +566,7 @@ export function HorizonsScreen() {
             </View>
           ) : (
             <View style={styles.empty}>
-              {!searching ? <View style={[styles.emptyEmblem, { backgroundColor: palette.accentSoft }]}>{view === 'inbox' ? <Inbox size={27} color={palette.accent} strokeWidth={1.4} /> : <Layers3 size={27} color={palette.accent} strokeWidth={1.4} />}</View> : null}
+              {!searching ? <View style={[styles.emptyEmblem, { backgroundColor: palette.accentSoft }]}>{view === 'inbox' ? <Inbox size={28} color={palette.accent} strokeWidth={1.8} /> : <Layers3 size={28} color={palette.accent} strokeWidth={1.8} />}</View> : null}
               <Text style={[styles.emptyTitle, { color: palette.foreground }]}>{searching ? 'No matching goals.' : view === 'inbox' ? 'A place for your next idea.' : 'A clear space to begin.'}</Text>
               <Text style={[styles.emptyBody, { color: palette.muted }]}>{searching ? 'Try another word from a title or note.' : 'Add one goal below. You can add the details later.'}</Text>
               {!searching && view === 'focus' ? <Pressable accessibilityRole="button"
@@ -586,7 +589,7 @@ export function HorizonsScreen() {
       {showingList && !searching ? <View>
         {captureNotice?.context === listContext || view === 'inbox' || !(horizon === 'day' && key === clockDay) ?
           <Text accessibilityLiveRegion="polite" style={[styles.captureContext, { color: palette.muted }]}>{captureNotice?.context === listContext ? captureNotice.label : (view === 'inbox' ? 'INBOX · no date needed' : `ADDING TO · ${caption}`)}</Text> : null}
-        <View style={[styles.quickBar, { borderColor: palette.border, backgroundColor: palette.surface, boxShadow: palette === colors.dark ? depth.dark.control : depth.light.control }]}>
+        <View style={[styles.quickBar, { borderColor: palette.border, backgroundColor: palette.surface, boxShadow: palette === colors.dark ? depth.dark.float : depth.light.float }]}>
           <TextInput ref={quickInput} value={quickTitle} onChangeText={(value) => { setQuickTitle(value); setCaptureNotice(null); }} maxLength={180}
             placeholder={view === 'inbox' ? 'Get it off your mind…' : 'One thing for now…'}
             placeholderTextColor={palette.muted} accessibilityLabel="Quick goal title" returnKeyType="done" blurOnSubmit={false}
@@ -757,7 +760,7 @@ const styles = StyleSheet.create({
   organizePanel: { padding: spacing.lg, paddingBottom: 35, borderTopLeftRadius: 28, borderTopRightRadius: 28, gap: 10 },
   grabber: { width: 36, height: 4, borderRadius: 4, alignSelf: 'center', marginBottom: 10 },
   horizonOption: { minHeight: 54, borderWidth: 1, borderRadius: radius.md, flexDirection: 'row', gap: 10, alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8 },
-  organizeTitle: { fontSize: 21, fontWeight: '700', letterSpacing: -0.4 },
+  organizeTitle: { ...type.title },
   organizeSubtitle: { fontSize: 13, lineHeight: 20, marginBottom: 12 },
   organizeAction: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, paddingVertical: 12, borderRadius: radius.lg, borderWidth: 1 },
   organizeActionText: { fontSize: 15, fontWeight: '600', flexShrink: 1 },
@@ -766,7 +769,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   listContent: { paddingHorizontal: 20, paddingBottom: 28, flexGrow: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingTop: 12, paddingBottom: 16 },
-  pageTitle: { fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -1.1 },
+  pageTitle: { ...type.display },
   spectrum: { marginBottom: 4, marginTop: -8 },
   caption: { fontSize: 13, lineHeight: 20, marginTop: 6 },
   utility: { minHeight: 48, minWidth: 48, alignItems: 'center', justifyContent: 'center' },
@@ -776,7 +779,7 @@ const styles = StyleSheet.create({
   horizonChipText: { fontSize: 13, fontWeight: '600' },
   periodRow: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingVertical: 2, marginBottom: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 14, marginBottom: 14 },
-  sectionTitle: { fontSize: 14, fontWeight: '600' },
+  sectionTitle: { ...type.label },
   planSummary: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 16, paddingBottom: 4, gap: 4 },
   summaryText: { fontSize: 17, lineHeight: 25, fontWeight: '600', letterSpacing: -.25 },
   summaryDetail: { fontSize: 13, lineHeight: 20 },
@@ -791,7 +794,7 @@ const styles = StyleSheet.create({
   quickSaveIcon: { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center' },
   empty: { paddingTop: 36, paddingBottom: 25, alignItems: 'center', gap: 13, paddingHorizontal: spacing.md },
   emptyEmblem: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
-  emptyTitle: { fontSize: 19, fontWeight: '700', letterSpacing: -.3, textAlign: 'center' },
+  emptyTitle: { ...type.heading, textAlign: 'center' },
   emptyBody: { fontSize: 13, lineHeight: 21, textAlign: 'center', maxWidth: 270 },
   wait: { marginTop: 60 },
   retry: { padding: 10, fontWeight: '700', fontSize: 14 },

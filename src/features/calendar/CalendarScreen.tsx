@@ -12,7 +12,6 @@ import { listRangeBlocks, removeBlock, saveBlock } from '../../storage/timeblock
 import { colors, depth, radius, spacing, semantic, type Palette } from '../../theme/tokens';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import ListPlus from 'lucide-react-native/icons/list-plus';
 import Plus from 'lucide-react-native/icons/plus';
 import ArrowUpRight from 'lucide-react-native/icons/arrow-up-right';
 import X from 'lucide-react-native/icons/x';
@@ -29,6 +28,8 @@ import { useFocusSession } from '../focus/FocusProvider';
 import { TimeBlockEditor } from './TimeBlockEditor';
 import { GoalEditor } from '../horizons/GoalEditor';
 import { DateTimeField } from '../shared/DateTimeField';
+import { type } from '../../theme/type';
+import { useDockInset } from '../shell/DockInset';
 
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -44,12 +45,17 @@ function weekOf(day: Date): Date[] {
 function timeLabel(value: string): string {
   return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
 }
+/** Compact date for the page heading, so it stays on one line beside the actions. */
+function shortDateHeading(date: Date) {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(date);
+}
 function durationLabel(minutes: number) {
   const h = Math.floor(minutes / 60), m = Math.round(minutes % 60);
   return h ? `${h}h${m ? ` ${m}m` : ''}` : `${m}m`;
 }
 
 export function CalendarScreen() {
+  const dockInset = useDockInset();
   const db = useEvridaDatabase();
   const focus = useFocusSession();
   const router = useRouter();
@@ -277,18 +283,26 @@ export function CalendarScreen() {
   const foreground = palette.foreground;
   return (
     <SafeAreaView edges={['top', 'left', 'right']}
-      style={[styles.screen, { backgroundColor: palette.background }]}>
+      style={[styles.screen, { backgroundColor: palette.background, paddingBottom: dockInset }]}>
       <View style={styles.top}>
-        <View style={styles.navigation}>
-
-          <View style={styles.brandGroup}>
-            <Text style={[styles.brandLabel, { color: palette.muted }]}>EVRIDA</Text>
-            <Text style={[styles.brand, { color: foreground }]}>Calendar</Text>
+        <View style={styles.dateTitleRow}>
+          <View style={styles.dateTitleGroup}>
+            <DateTimeField value={key} label="Calendar date" variant="inline"
+              displayValue={mode === 'month'
+                ? new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(day)
+                : shortDateHeading(day)} onChange={(value) => { const selected = parseLocalDay(value); if (selected) setDay(selected); }} />
           </View>
-          <Pressable onPress={() => setNewGoalOpen(true)} accessibilityRole="button"
-            accessibilityLabel="Create a new goal from calendar"
-            style={styles.newGoal}>
-            <ListPlus size={22} color={palette.foreground} strokeWidth={1.8} />
+          <Pressable style={styles.weekArrow} accessibilityRole="button" accessibilityLabel={mode === "month" ? "Previous month" : "Previous week"}
+            onPress={() => setDay((current) => mode === 'month'
+              ? new Date(current.getFullYear(), current.getMonth() - 1, 1, 12)
+              : shiftLocalDay(current, -7))}>
+            <ChevronLeft size={21} color={foreground} strokeWidth={1.8} />
+          </Pressable>
+          <Pressable style={styles.weekArrow} accessibilityRole="button" accessibilityLabel={mode === "month" ? "Next month" : "Next week"}
+            onPress={() => setDay((current) => mode === 'month'
+              ? new Date(current.getFullYear(), current.getMonth() + 1, 1, 12)
+              : shiftLocalDay(current, 7))}>
+            <ChevronRight size={21} color={foreground} strokeWidth={1.8} />
           </Pressable>
           <Pressable onPress={() => { setDay(new Date()); setMode('timeline'); }} accessibilityRole="button"
             accessibilityLabel="Go to today's timeline" style={[styles.todayPill, { backgroundColor: palette.surface, borderColor: palette.border }]}>
@@ -298,28 +312,6 @@ export function CalendarScreen() {
             accessibilityLabel="Plan a time block" style={[styles.create, { backgroundColor: palette.accent }]}>
             <Plus size={23} color={palette.onAccent} strokeWidth={1.8} />
           </Pressable>
-        </View>
-        <View style={styles.dateTitleRow}>
-          <View style={styles.dateTitleGroup}>
-            <DateTimeField value={key} label="Calendar date" variant="inline"
-              displayValue={mode === 'month'
-                ? new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(day)
-                : dateHeading(day)} onChange={(value) => { const selected = parseLocalDay(value); if (selected) setDay(selected); }} />
-          </View>
-          <View style={styles.weekArrows}>
-            <Pressable style={styles.weekArrow} accessibilityRole="button" accessibilityLabel={mode === "month" ? "Previous month" : "Previous week"}
-              onPress={() => setDay((current) => mode === 'month'
-                ? new Date(current.getFullYear(), current.getMonth() - 1, 1, 12)
-                : shiftLocalDay(current, -7))}>
-              <ChevronLeft size={21} color={foreground} strokeWidth={1.8} />
-            </Pressable>
-            <Pressable style={styles.weekArrow} accessibilityRole="button" accessibilityLabel={mode === "month" ? "Next month" : "Next week"}
-              onPress={() => setDay((current) => mode === 'month'
-                ? new Date(current.getFullYear(), current.getMonth() + 1, 1, 12)
-                : shiftLocalDay(current, 7))}>
-              <ChevronRight size={21} color={foreground} strokeWidth={1.8} />
-            </Pressable>
-          </View>
         </View>
         {mode !== 'month' ? <View style={styles.weekStrip}>
           {week.map((date, index) => {
@@ -342,7 +334,7 @@ export function CalendarScreen() {
           })}
         </View> : null}
         <View style={[styles.summaryRow, { borderColor: palette.border }]}>
-          <View style={styles.summaryStats}>
+          {displayMode !== 'timeline' ? <View style={styles.summaryStats}>
             <Text style={[styles.summaryValue, { color: foreground }]}>{durationLabel(activeLoad.occupiedMinutes)}
               <Text style={[styles.summaryLabel, { color: palette.muted }]}> occupied</Text>
             </Text>
@@ -353,7 +345,7 @@ export function CalendarScreen() {
                 mode === 'month' ? 'this month' : mode === 'week' ? 'this week' :
                   completedGoals + ' linked goals done'}
             </Text>
-          </View>
+          </View> : null}
           <View style={[styles.viewToggle, { backgroundColor: palette.inset }]}>
             {(['timeline', 'week', 'month', 'list'] as const).map((item) => (
               <Pressable key={item} accessibilityRole="button"
@@ -369,21 +361,21 @@ export function CalendarScreen() {
             ))}
           </View>
         </View>
-        {displayMode === 'timeline' && key === todayKey ? <View
-          style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-          <Pressable accessibilityRole="button" onPress={() => setRecoveryOpen(true)}
-            style={{ minHeight: 48, justifyContent: 'center', flex: 1 }}>
-            <Text style={{ color: palette.accent, fontWeight: '700', fontSize: 13 }}>↝  Preview day recovery</Text>
-          </Pressable>
-          {hasUndo ? <Pressable accessibilityRole="button" disabled={busy}
-            onPress={() => { void undoPreview(); }} style={{ minHeight: 48, justifyContent: 'center' }}>
-            <Text style={{ color: palette.foreground, fontSize: 13 }}>Undo replan ↶</Text>
+        {(displayMode === 'timeline' && key === todayKey && blocks.length > 0) || (untimed.length > 0 && (mode === 'timeline' || mode === 'list')) ? <View style={styles.chipRow}>
+          {displayMode === 'timeline' && key === todayKey && blocks.length > 0 ? <Pressable accessibilityRole="button" onPress={() => setRecoveryOpen(true)}
+            accessibilityLabel="Preview day recovery" style={[styles.chip, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <Text style={[styles.chipText, { color: palette.accent }]}>Preview recovery</Text>
+          </Pressable> : null}
+          {hasUndo ? <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void undoPreview(); }}
+            accessibilityLabel="Undo replan" style={[styles.chip, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <Text style={[styles.chipText, { color: palette.foreground }]}>Undo replan</Text>
+          </Pressable> : null}
+          {untimed.length > 0 && (mode === 'timeline' || mode === 'list') ? <Pressable accessibilityRole="button"
+            accessibilityLabel="View goals without a time" onPress={() => setMode('list')}
+            style={[styles.chip, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <Text style={[styles.chipText, { color: palette.accent }]}>{untimed.length} unscheduled</Text>
           </Pressable> : null}
         </View> : null}
-        {untimed.length > 0 && (mode === 'timeline' || mode === 'list') ? <Pressable accessibilityRole="button"
-          accessibilityLabel="View goals without a time" onPress={() => setMode('list')} style={{ minHeight: 48, justifyContent: 'center' }}>
-          <Text style={{ color: palette.accent, fontSize: 12 }}>{untimed.length} goal{untimed.length === 1 ? '' : 's'} without a time · Plan when ready →</Text>
-        </Pressable> : null}
       </View>
       {mode === 'timeline' && localDayHours !== 24 ? (
         <View accessibilityRole="summary" style={[styles.clockChangeNotice,
@@ -497,11 +489,11 @@ export function CalendarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  top: { paddingHorizontal: 20, paddingTop: 20 },
+  top: { paddingHorizontal: 20, paddingTop: 12 },
   navigation: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 6 },
   brandGroup: { flex: 1, gap: 10 },
   brandLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 2.3 },
-  brand: { fontSize: 28, fontWeight: '700', letterSpacing: -1 },
+  brand: { ...type.title },
   newGoal: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' },
   todayPill: { borderRadius: radius.md, minHeight: 48, paddingHorizontal: 12, borderWidth: 1, justifyContent: 'center' },
   todayLabel: { fontSize: 12, fontWeight: '700' },
@@ -516,22 +508,25 @@ const styles = StyleSheet.create({
   dayCircle: { width: 39, height: 39, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   dayNumber: { fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] },
   todayDot: { width: 4, height: 4, borderRadius: 2 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8, paddingBottom: 2 },
+  chip: { minHeight: 40, paddingHorizontal: 14, borderRadius: radius.full, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center' },
+  chipText: { fontSize: 13, fontWeight: '600' },
   summaryRow: { flexDirection: 'column', alignItems: 'stretch', gap: 8, paddingVertical: 7, borderBottomWidth: 1 },
   summaryStats: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   summaryValue: { fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
   summaryLabel: { fontSize: 12, fontWeight: '400' },
   summarySecond: { fontSize: 11 },
   viewToggle: { flexDirection: 'row', padding: 4, gap: 3, borderRadius: 14 },
-  modeButton: { flex: 1, paddingHorizontal: 9, minHeight: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  modeButton: { flex: 1, paddingHorizontal: 9, minHeight: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   modeText: { fontSize: 12, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   error: { borderWidth: 1, borderRadius: radius.lg, margin: 16, padding: 22, gap: 12 },
   retry: { minHeight: 46, justifyContent: 'center' },
-  timelineArea: { flex: 1, paddingHorizontal: spacing.md, paddingBottom: 8 },
+  timelineArea: { flex: 1, paddingHorizontal: spacing.gutter, paddingBottom: 8 },
   clockChangeNotice: { minHeight: 48, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: 13, paddingVertical: 9, justifyContent: 'center' },
   clockChangeText: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
   listScroll: { flex: 1 },
-  listContent: { paddingHorizontal: spacing.md, paddingTop: 21, paddingBottom: 36, gap: 11 },
+  listContent: { paddingHorizontal: spacing.gutter, paddingTop: 21, paddingBottom: 36, gap: 11 },
   listHeading: { fontSize: 19, fontWeight: '700', marginBottom: 9 },
   empty: { borderWidth: 1, borderRadius: radius.xl, padding: 22, gap: 12 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },

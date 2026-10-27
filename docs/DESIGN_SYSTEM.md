@@ -76,6 +76,13 @@ Use `onAccent` for filled primary controls, not hard-coded white. Completion mus
 
 Motion is short and functional, built on `react-native-reanimated` (already a dependency) with durations in `src/theme/motion.ts` (160/240 ms). It is on goal rows (fade in/out and re-flow when a row is added, completed or moved), the completion ring (a small press-and-settle pop), the horizon spectrum (the active band grows and shrinks) and the dock's selected pill (grows from the center). Every one of them is skipped when system reduced motion is on, and no state is conveyed by motion alone. Verified on an Android emulator by screen recording the strip and a newly added row; the completion pop and 60 fps behavior on real hardware are not verified.
 
+## Type, glass, icons and the timebox view (2026-10-27)
+
+- **Type:** `src/theme/type.ts` is the one scale. Page and sheet titles and the Focus clock use Fraunces (bundled via `@expo-google-fonts/fraunces`, loaded in the root layout, system-font fallback on failure); all other text stays on the system family. Negative letter-spacing is dropped automatically in RTL. Persian text will fall back to the system font until a Persian typeface is chosen.
+- **Glass:** the dock floats over the screens as frosted glass (`expo-blur` on a `BlurTargetView`, tinted with `glass`). Screens reserve the measured dock height (`useDockInset`); Review, Boards and Settings scroll under it. The blur is subtle on the light theme and was not compared on physical hardware.
+- **Icons:** Lucide only, stroke 1.8 (2 for the selected dock icon). The old text glyphs for move/resize grips were replaced with icons. Launcher, adaptive, monochrome and splash art come from `scripts/generate-brand-assets.ps1`: a rising sun over seven stripes, one per horizon.
+- **Timebox view (Calendar, Day):** the timeline is the product's core surface, so everything around it is kept to one line each: date + actions, week strip, view toggle, one chip row (only when relevant), a one-line summary with zoom and Now, and the day strip. Blocks lead with the exact range (`16:00 – 17:00`), then the title; a timer icon marks a Timebox, a lock marks a fixed block, and the duration sits at the right. Status words stay in the accessibility label.
+
 ## Platform and accessibility contract
 
 - Respect safe areas, keyboard insets, dynamic fonts and platform back behavior. Touch targets aim for at least 48dp on both platforms.
