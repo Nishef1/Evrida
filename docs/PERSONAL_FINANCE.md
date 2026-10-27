@@ -1,6 +1,6 @@
 # Personal Finance & Money Goals
 
-**Status:** Finance 1 and the core of Finance 2/3 are implemented as of 2026-10-27 (schema v10, backup v4). The app also supports an optional dated USD comparison rate; historical CPI import, finance reminders, broad what-if scenarios and multi-currency aggregation are not implemented.  
+**Status:** Finance 1 and the core of Finance 2/3 are implemented as of 2026-10-27 (schema v13, backup v7). The app also supports an optional dated USD comparison rate; historical CPI import, bill/goal due-date reminders, broad what-if scenarios and multi-currency aggregation are not implemented. Opt-in budget-threshold alerts are implemented.  
 **Product:** Evrida  
 **Principle:** Every day with Evrida.
 
