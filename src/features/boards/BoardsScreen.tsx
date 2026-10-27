@@ -3,7 +3,7 @@ import { useReducedMotion } from '../../theme/useReducedMotion';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Alert, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import { colors, depth, radius, spacing, semantic } from '../../theme/tokens';
 import Check from 'lucide-react-native/icons/check';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
@@ -25,7 +25,7 @@ import {
 
 export function BoardsScreen() {
   const reducedMotion = useReducedMotion();
-  const db = useEonwardDatabase();
+  const db = useEvridaDatabase();
   const focus = useFocusSession();
   const router = useRouter();
   const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
@@ -214,7 +214,7 @@ export function BoardsScreen() {
     <SafeAreaView edges={['top', 'left', 'right']} style={[styles.screen, { backgroundColor: palette.background }]}>
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
-          <Text style={[styles.brand, { color: palette.muted }]}>EONWARD</Text>
+          <Text style={[styles.brand, { color: palette.muted }]}>EVRIDA</Text>
           {current ? <Pressable onPress={() => { setCurrent(null); setBoardLens('open'); }}
             accessibilityRole="button" accessibilityLabel="Back to boards"
             style={[styles.back, { backgroundColor: palette.surface, borderColor: palette.border }]}>
