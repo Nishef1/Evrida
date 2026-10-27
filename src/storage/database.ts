@@ -134,7 +134,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
   const result = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const version = result?.user_version ?? 0;
-  if (version > SCHEMA_VERSION) throw new Error('This app version cannot read a newer Eonward database.');
+  if (version > SCHEMA_VERSION) throw new Error('This app version cannot read a newer Evrida database.');
   if (version === SCHEMA_VERSION) return;
 
   // SQLiteProvider still owns this connection during startup. Opening an exclusive
