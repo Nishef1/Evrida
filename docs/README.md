@@ -1,4 +1,4 @@
-# Eonward documentation
+# Evrida documentation
 
 Working notes for the project. The repository intentionally has no root README.
 
@@ -12,6 +12,7 @@ Working notes for the project. The repository intentionally has no root README.
 | [DECISIONS.md](DECISIONS.md) | Dated architectural decisions |
 | [QUALITY.md](QUALITY.md) | Acceptance and device-verification checklist |
 | [CAPABILITIES.md](CAPABILITIES.md) | Implemented vs planned feature inventory |
+| [LEARNING_PLANS.md](LEARNING_PLANS.md) | Learning Projects: scope, estimates, adaptive scheduling and acceptance criteria |
 | [ANDROID_QA.md](ANDROID_QA.md) | On-device acceptance flow for Horizons 2.0 |
 
 All documents in this public repository are publicly readable. Do not commit private research, credentials, customer information, or internal competitor analysis.
