@@ -79,12 +79,12 @@ Schema v7 uses additive upgrades on the provider's existing transaction connecti
 - Native backup modules and SystemUI are now installed. `npm run android` / `npm run ios` use `expo run:*` to build the required native binary. iOS execution still needs Apple tooling.
 - Domain/SQLite checks remain **20/20** focused cases. The test loader maps only Expo Crypto's native UUID boundary to `node:crypto` and resolves TypeScript paths; persistence tests execute real SQLite, not SQL mocks.
 - Startup migrations use the provider's existing transaction connection. Do not reintroduce an exclusive second connection during initialization, and never reset user data to resolve a lock.
-- Use the currently verified Metro owner/port, not a remembered port. This session's Eonward Metro is 8091; 8082 belongs to another project. A Windows localhost-only listener may bind IPv6 only, which ADB reverse cannot reach through IPv4; the verified local workflow uses `expo start --port 8091 --lan --max-workers 2` and explicit device reverse forwarding.
+- Use the currently verified Metro owner/port, not a remembered port. This session's Evrida Metro is 8091; 8082 belongs to another project. A Windows localhost-only listener may bind IPv6 only, which ADB reverse cannot reach through IPv4; the verified local workflow uses `expo start --port 8091 --lan --max-workers 2` and explicit device reverse forwarding.
 - Screenshots, local backup files and native QA databases stay outside Git. Do not publish personal planning data or private research.
 
 ## Standalone QA and release boundary
 
-- Set `EONWARD_BUILD_VARIANT=qa` when generating the native project to use a separate QA name, scheme and identifier. This preserves the primary app's database. `eas.json` also provides internal preview, iOS simulator and production build profiles.
+- Set `EVRIDA_BUILD_VARIANT=qa` when generating the native project to use a separate QA name, scheme and identifier. This preserves the primary app's database. `eas.json` also provides internal preview, iOS simulator and production build profiles.
 - On Windows, generate Android with `npx expo prebuild --platform android --no-install`; build with `android/gradlew.bat app:assembleRelease --max-workers=2 -PreactNativeArchitectures=x86_64,arm64-v8a`. PowerShell must quote that comma-containing architecture argument.
 - Generated local release APKs currently use Expo's debug signing configuration. They are standalone QA artifacts, not Play/App Store submissions. Production signing credentials and publisher metadata are not configured by this work.
 - After QA generation, regenerate without the QA environment variable before the ordinary primary-app development workflow. Keep Metro processes for other projects intact.
@@ -103,15 +103,15 @@ Source advisories: https://github.com/advisories/GHSA-vfj7-8cjw-p6xm and https:/
 
 ## 2026-10-15 — Android SQLite native-lifetime mitigation (not release acceptance)
 
-Expo issues [#48999](https://github.com/expo/expo/issues/48999) and [#48995](https://github.com/expo/expo/issues/48995) document C++ statement/database lifetime and concurrency hazards, including SIGSEGVs involving `pthread_mutex_lock`. They resemble the earlier Eonward crash but do not establish identical root cause. Eonward uses Expo SQLite 57.0.4; a release-note fix for per-statement locking does not mean runtime teardown has been fully proven safe.
+Expo issues [#48999](https://github.com/expo/expo/issues/48999) and [#48995](https://github.com/expo/expo/issues/48995) document C++ statement/database lifetime and concurrency hazards, including SIGSEGVs involving `pthread_mutex_lock`. They resemble the earlier Evrida crash but do not establish identical root cause. Evrida uses Expo SQLite 57.0.4; a release-note fix for per-statement locking does not mean runtime teardown has been fully proven safe.
 
 All seven UI/Focus consumers now receive `serializeDatabase(useSQLiteContext())` via `src/storage/use-database.ts`. The pure gate serializes `getFirstAsync`, `getAllAsync`, `runAsync`, `execAsync` and full exclusive transactions per native handle. Each exclusive callback receives an independently gated transaction object, and startup initialization remains on SQLiteProvider's original connection. Do not use the raw provider hook from feature code or call back into the parent database object from inside its own guarded exclusive transaction: that can deadlock the queue.
 
-A JS serialization gate cannot prevent an independent native GC/teardown use-after-free; issue [#2](https://github.com/Nishef1/Eonward/issues/2) remains a **P0 release blocker**. Run physical/emulator lifecycle stress and capture logcat tombstones before considering an SDK upgrade or native patch. Do not silently mask connection errors with destructive database replacement or resets.
+A JS serialization gate cannot prevent an independent native GC/teardown use-after-free; issue [#2](https://github.com/Nishef1/Evrida/issues/2) remains a **P0 release blocker**. Run physical/emulator lifecycle stress and capture logcat tombstones before considering an SDK upgrade or native patch. Do not silently mask connection errors with destructive database replacement or resets.
 
 ## 2026-10-15 — Native acceptance toolchain
 
-`src/features/shell/AppDock.tsx` was still accessing the raw `useSQLiteContext` hook, bypassing the shared per-handle serial gate. It now uses `useEonwardDatabase`. The `scripts/check-database-access.mjs` CI guard rejects future occurrences outside the one canonical storage hook. Keep the code guard simple; it does not prove native garbage-collection safety.
+`src/features/shell/AppDock.tsx` was still accessing the raw `useSQLiteContext` hook, bypassing the shared per-handle serial gate. It now uses `useEvridaDatabase`. The `scripts/check-database-access.mjs` CI guard rejects future occurrences outside the one canonical storage hook. Keep the code guard simple; it does not prove native garbage-collection safety.
 
 The original dynamic QA app config (`app.config.js`) already separates production and QA bundle identifiers. Instead of duplicating it, `eas.json` now adds a credentials-free `e2e-test` profile and `scripts/check-qa-config.mjs` verifies those IDs in App checks. Android/iOS Maestro smoke definitions are in `.eas/workflows/native-smoke.yml`; the opt-in emulator-only Android lifecycle script is `scripts/android-sqlite-stress.sh`. See [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md).
 
