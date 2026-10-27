@@ -9,7 +9,7 @@ import MoreHorizontal from 'lucide-react-native/icons/ellipsis';
 import type { Goal } from '../../domain/goals';
 import { HORIZON_TITLES, dateFromPeriodKey, periodLabel } from '../../domain/horizons';
 import { listChildGoals } from '../../storage/goals';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import { colors, depth, radius, type Palette } from '../../theme/tokens';
 
 function planningLabel(goal: Goal) {
@@ -26,7 +26,7 @@ export function GoalCard({ goal, palette, revision, showContext, disabled, onOpe
   onToggle: (goal: Goal) => void;
   onOrganize: () => void;
 }) {
-  const db = useEonwardDatabase();
+  const db = useEvridaDatabase();
   const [expanded, setExpanded] = useState(false);
   const [steps, setSteps] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(false);
