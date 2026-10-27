@@ -134,12 +134,17 @@ test('finance storage records a ledger atomically and backs up, validates and re
     const cat = (name) => data.categories.find((c) => c.name === name).id;
     const spend = (extra) => ({ type: 'expense', amount: 1, date: '2026-10-02', accountId: main.id, toAccountId: null, categoryId: cat('Groceries'),
       refundOfId: null, payee: '', note: '', tagNames: [], splits: [], ...extra });
+    await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 100, categoryId: cat('Groceries') })), /valid income category/);
+    await assert.rejects(() => savePlan(source.db, { title: 'Bad category', direction: 'income', amount: 100, cadence: 'monthly',
+      nature: 'fixed', dueDate: '2026-10-31', categoryId: cat('Groceries'), accountId: main.id }), /category matching/);
+    await assert.rejects(() => setBudget(source.db, cat('Salary'), 1000), /spending category/);
     const salary = await saveTransaction(source.db, spend({ type: 'income', amount: 30000000, categoryId: cat('Salary') }));
     const groceries = await saveTransaction(source.db, spend({ amount: 2000000, tagNames: ['Work week', 'work week'] }));
     await saveTransaction(source.db, spend({ type: 'income', amount: 500000, refundOfId: groceries }));
     await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 1600000, refundOfId: groceries })), /Refunds cannot exceed/);
     await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 100000, categoryId: cat('Health'), refundOfId: groceries })), /original expense categories/);
     await assert.rejects(() => saveTransaction(source.db, spend({ amount: 400000 }), groceries), /has refunds/);
+    await assert.rejects(() => saveTransaction(source.db, spend({ amount: 2000000, categoryId: cat('Health') }), groceries), /original expense categories/);
     const mixed = await saveTransaction(source.db, spend({ amount: 900000, categoryId: null,
       splits: [{ categoryId: cat('Groceries'), amount: 600000 }, { categoryId: cat('Health'), amount: 300000 }] }));
     await saveTransaction(source.db, spend({ type: 'income', amount: 100000, categoryId: cat('Groceries'), refundOfId: mixed }));
@@ -148,6 +153,7 @@ test('finance storage records a ledger atomically and backs up, validates and re
     await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 100000, categoryId: cat('Health'), refundOfId: mixed })),
       /original amount in each category/);
     await saveTransaction(source.db, spend({ type: 'transfer', amount: 1000000, toAccountId: cash, categoryId: null }));
+    await assert.rejects(() => saveAccount(source.db, { id: cash, name: 'Wallet', kind: 'liability', opening: 0 }), /type is locked/);
     await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 5, refundOfId: salary })), /refund must refer to an expense/);
     await assert.rejects(() => saveTransaction(source.db, spend({ amount: 10, categoryId: null, splits: [{ categoryId: cat('Groceries'), amount: 4 }, { categoryId: cat('Health'), amount: 4 }] })), /add up/);
     await setBudget(source.db, cat('Groceries'), 3000000);
