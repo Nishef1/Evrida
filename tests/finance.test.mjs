@@ -173,7 +173,9 @@ test('finance storage records a ledger atomically and backs up, validates and re
     await assert.rejects(() => source.db.runAsync('DELETE FROM fin_accounts WHERE id = ?', [main.id]), /FOREIGN KEY/);
 
     const rent = await savePlan(source.db, { title: 'Rent', direction: 'expense', amount: 4000000, cadence: 'monthly', nature: 'fixed', dueDate: '2026-10-31', categoryId: cat('Rent'), accountId: main.id });
-    await confirmPlan(source.db, (await loadFinance(source.db)).plans.find((p) => p.id === rent), main.id, '2026-10-31');
+    const rentPlan = (await loadFinance(source.db)).plans.find((p) => p.id === rent);
+    await confirmPlan(source.db, rentPlan, main.id, '2026-10-31');
+    await assert.rejects(() => confirmPlan(source.db, rentPlan, main.id, '2026-10-31'), /changed or was already confirmed/);
     data = await loadFinance(source.db);
     assert.equal(data.plans[0].dueDate, '2026-11-30', 'a confirmed monthly item moves to the next month end-safely');
     assert.equal(data.txs.filter((t) => t.note === 'Rent').length, 1);
