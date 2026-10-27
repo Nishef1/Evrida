@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -14,7 +14,7 @@ import { colors } from '../../theme/tokens';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 
 export function SettingsScreen() {
-  const db = useEonwardDatabase(), router = useRouter();
+  const db = useEvridaDatabase(), router = useRouter();
   const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState<string | null>(null);
   const [health, setHealth] = useState<LocalHealth | null>(null);
@@ -32,7 +32,7 @@ export function SettingsScreen() {
       const directory = new Directory(Paths.cache);
       const maxAge = 24 * 60 * 60 * 1000;
       for (const item of directory.list()) {
-        if (!(item instanceof File) || !/^eonward-\d{4}-.*\.json$/.test(item.name)) continue;
+        if (!(item instanceof File) || !/^evrida-\d{4}-.*\.json$/.test(item.name)) continue;
         const modified = item.lastModified;
         if (modified !== null && Number.isFinite(modified) &&
           Date.now() - modified > maxAge) {
@@ -48,12 +48,12 @@ export function SettingsScreen() {
     cleanupOldExports();
     const backup = await exportBackup(db);
     // Do not silently accumulate plaintext backups in the permanent Documents directory.
-    const file = new File(Paths.cache, `eonward-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+    const file = new File(Paths.cache, `evrida-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
     // Serialize exactly as it was size-validated. Pretty-printing can inflate
     // a valid near-limit backup beyond the importer 10 MB safety limit.
     file.write(JSON.stringify(backup));
     await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json',
-      dialogTitle: 'Save your Eonward backup' });
+      dialogTitle: 'Save your Evrida backup' });
     setNotice('Share sheet closed. Confirm you saved a copy in your chosen destination. A temporary file remains in app cache until a later cleanup.');
   }
   async function inspectHealth() {
@@ -68,7 +68,7 @@ export function SettingsScreen() {
     if (picked.canceled) return;
     const file = new File(picked.assets[0].uri);
     try {
-      if ((file.size ?? 0) > MAX_BACKUP_BYTES) throw new Error('Choose an Eonward backup smaller than 10 MB.');
+      if ((file.size ?? 0) > MAX_BACKUP_BYTES) throw new Error('Choose an Evrida backup smaller than 10 MB.');
       const text = await file.text();
       const merge = await previewBackupMerge(db, text);
       const conflictNotice = merge.different
@@ -113,13 +113,13 @@ export function SettingsScreen() {
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Text style={[styles.heading, { color: palette.foreground }]}>Focus alerts</Text>
         <Text style={[styles.copy, { color: palette.muted }]}>Notification access is controlled by {Platform.OS === 'ios' ? 'iOS' : 'Android'}. Focus remains usable when alerts are off.{Platform.OS === 'android' ? ' On Android 14+, also check Settings → Special app access → Alarms & reminders. Notification access and exact alarm permission are separate; battery restrictions can delay alerts. Force stop silences alerts until reopening.' : ''}</Text>
-        <Pressable accessibilityRole="button" onPress={() => { void Linking.openSettings().catch(() => Alert.alert('Open system settings', 'Choose Eonward → Notifications in your device settings.')); }} style={[styles.secondary, { borderColor: palette.border }]}><Text style={{ color: palette.foreground }}>Open app settings</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => { void Linking.openSettings().catch(() => Alert.alert('Open system settings', 'Choose Evrida → Notifications in your device settings.')); }} style={[styles.secondary, { borderColor: palette.border }]}><Text style={{ color: palette.foreground }}>Open app settings</Text></Pressable>
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Text style={[styles.heading, { color: palette.foreground }]}>Private by design</Text>
-        <Text style={[styles.copy, { color: palette.muted }]}>Eonward works without an account. Your goals and focus history are stored locally. This app has no advertising, analytics or cloud sync. Nothing is uploaded by Eonward.</Text>
+        <Text style={[styles.copy, { color: palette.muted }]}>Evrida works without an account. Your goals and focus history are stored locally. This app has no advertising, analytics or cloud sync. Nothing is uploaded by Evrida.</Text>
         <Text style={[styles.copy, { color: palette.muted }]}>Your operating system may include app data in device backups, depending on its settings. Exported files are readable JSON; keep them somewhere you trust. Removing the app or clearing its storage removes local plans, so export first if you want to keep them.</Text>
-        <Text style={[styles.caption, { color: palette.muted }]}>Eonward · {Constants.expoConfig?.version ?? '0.1.0'} · Personal planning, on your terms.</Text>
+        <Text style={[styles.caption, { color: palette.muted }]}>Evrida · {Constants.expoConfig?.version ?? '0.1.0'} · Every day with Evrida.</Text>
       </View>
     </ScrollView>
   </SafeAreaView>;
