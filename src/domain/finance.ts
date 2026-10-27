@@ -185,19 +185,27 @@ export function accountBalance(account: FinAccount, txs: FinTx[]): number {
   let balance = account.opening;
   for (const tx of txs) {
     if (tx.type === 'transfer') {
-      if (tx.accountId === account.id) balance -= tx.amount;
-      if (tx.toAccountId === account.id) balance += tx.amount;
+      // Asset accounts lose money when sending and gain when receiving.
+      // Liability balances represent amounts owed, so payments into a liability
+      // reduce debt while transfers out (for example, a cash advance) increase it.
+      if (tx.accountId === account.id) balance += account.kind === 'liability' ? tx.amount : -tx.amount;
+      if (tx.toAccountId === account.id) balance += account.kind === 'liability' ? -tx.amount : tx.amount;
     } else if (tx.accountId === account.id) {
-      balance += tx.type === 'expense' ? -tx.amount : tx.amount;
+      if (account.kind === 'liability') {
+        // A purchase on credit increases debt; income/refunds reduce it.
+        balance += tx.type === 'expense' ? tx.amount : tx.type === 'income' ? -tx.amount : tx.amount;
+      } else {
+        balance += tx.type === 'expense' ? -tx.amount : tx.amount;
+      }
     }
   }
   return balance;
 }
-/** Net worth counts liabilities as negative; null until at least one account exists. */
+/** Net worth counts liabilities as negative; a credit balance on a liability account is an asset. */
 export function netWorth(accounts: FinAccount[], txs: FinTx[]): number | null {
   const open = accounts.filter((a) => !a.archived);
   if (!open.length) return null;
-  return open.reduce((sum, a) => sum + (a.kind === 'liability' ? -Math.abs(accountBalance(a, txs)) : accountBalance(a, txs)), 0);
+  return open.reduce((sum, a) => sum + (a.kind === 'liability' ? -accountBalance(a, txs) : accountBalance(a, txs)), 0);
 }
 
 /** Cash held in asset accounts that is not yet explicitly allocated to a money goal. */
