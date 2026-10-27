@@ -162,3 +162,13 @@ Record significant decisions and reversals here. A future change should cite its
 - Initial estimates must be ranges with visible assumptions and confidence. Minutes spent are not a proxy for mastery; use recall/assessment signals where the user supplies them.
 - Missed-session re-planning is opt-in. The scheduler may move only flexible learning blocks and must not silently move fixed commitments, active Focus sessions or locked blocks.
 - Keep the first learning-planner implementation deterministic and offline-first. AI-assisted resource extraction is optional and deferred until the core workflow is validated.
+
+
+## 2026-10-27 — Optional personal finance and inflation-aware money goals
+
+- Finance is an optional, offline-first capability, not a requirement for using Evrida. Use progressive setup instead of a large mandatory financial questionnaire.
+- Start with manual ledger records, explicit transaction types, one primary category and multiple cross-cutting tags. Transfers between the user's own accounts must not inflate income or spending; refunds and split transactions need explicit semantics.
+- Savings goals use explicitly allocated balances. Do not assume all cash is available to every goal or silently redistribute contributions between goals.
+- Keep nominal value, real/purchasing-power value, general inflation and target-specific price growth distinct. Forecasts must show dated assumptions and uncertainty, and must not invent live inflation data.
+- First deliver manual transactions and trustworthy monthly reports; then budgets/recurring costs and savings goals; then inflation-aware scenario forecasts. Bank sync, investment advice, tax workflows, cloud finance data and AI categorization are deferred.
+- Respect the existing 20-test budget by extending or replacing meaningful tests; finance data must be included in versioned backup/restore before real use.
