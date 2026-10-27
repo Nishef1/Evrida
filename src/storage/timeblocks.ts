@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { closeFocusInTransaction } from './focus';
 import type { SQLiteDatabase } from 'expo-sqlite';
+import type { Horizon } from '../domain/horizons';
 import { localDayBounds, timeRangeFromInput, type BlockInput, type BlockKind, type TimeBlock } from '../domain/timeblocks';
 
 interface TimeBlockRow {
@@ -8,6 +9,7 @@ interface TimeBlockRow {
   goal_id: string;
   goal_title: string;
   goal_completed: number;
+  goal_horizon: Horizon;
   start_at: string;
   end_at: string;
   kind: BlockKind;
@@ -15,13 +17,13 @@ interface TimeBlockRow {
   flexible: number;
   updated_at: string;
 }
-const SELECT = `SELECT tb.*, g.title AS goal_title, g.completed AS goal_completed
+const SELECT = `SELECT tb.*, g.title AS goal_title, g.completed AS goal_completed, g.horizon AS goal_horizon
   FROM time_blocks tb JOIN goals g ON g.id = tb.goal_id
   WHERE g.archived_at IS NULL`;
 function map(row: TimeBlockRow): TimeBlock {
   return {
     id: row.id, goalId: row.goal_id, goalTitle: row.goal_title,
-    goalCompleted: row.goal_completed === 1, startAt: row.start_at, endAt: row.end_at,
+    goalCompleted: row.goal_completed === 1, goalHorizon: row.goal_horizon, startAt: row.start_at, endAt: row.end_at,
     kind: row.kind, intention: row.intention, flexible: row.flexible === 1,
     updatedAt: row.updated_at,
   };

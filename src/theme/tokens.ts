@@ -80,4 +80,10 @@ export const semantic = {
   dark: { warning: '#E6B579', danger: '#FF9B99' },
 } as const;
 
+/** `#RRGGBB` plus an opacity, for tinted surfaces built from a palette hue. */
+export function withAlpha(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 export type Palette = (typeof colors)[keyof typeof colors];

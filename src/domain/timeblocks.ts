@@ -1,3 +1,5 @@
+import type { Horizon } from './horizons';
+
 /** Calendar blocks are scheduled occurrences, separate from a goal's Horizon. */
 export type BlockKind = 'block' | 'box';
 export interface BlockInput {
@@ -15,6 +17,7 @@ export interface TimeBlock {
   goalId: string;
   goalTitle: string;
   goalCompleted: boolean;
+  goalHorizon?: Horizon; // colors the block; absent only in synthetic read models
   startAt: string; // UTC ISO instant, display in device local timezone
   endAt: string;
   kind: BlockKind;

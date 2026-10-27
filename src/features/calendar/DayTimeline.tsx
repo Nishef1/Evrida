@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentRef } from 'react';
 import { Alert, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { blockClockRangeForDay, layoutBlocks, localClock, localDayBounds, localDayKey, peakOverlap, type TimeBlock } from '../../domain/timeblocks';
-import { colors, radius, semantic, type Palette } from '../../theme/tokens';
+import { colors, radius, semantic, withAlpha, type Palette } from '../../theme/tokens';
 import { getFocusElapsedMs, type FocusSession } from '../../domain/focus';
 import { pixelsToQuarterHours, previewTimelineEdit, type TimelineEditMode, type TimelineEditPreview } from '../../domain/timeline-edit';
 import ChevronsDown from 'lucide-react-native/icons/chevrons-down';
@@ -16,11 +16,11 @@ import Timer from 'lucide-react-native/icons/timer';
 const ZOOM_LEVELS = [56, 76, 104] as const;
 const GUTTER = 62;
 const HOURS = Array.from({ length: 25 }, (_, i) => i);
-/** Timebox is warm, planned time is teal, completed items are neutral.
- * Status labels supplement the colors rather than relying on color alone. */
-function blockTone(block: TimeBlock): string {
-  if (block.goalCompleted) return semantic.timeline.completed;
-  return block.kind === 'box' ? semantic.timeline.timebox : semantic.timeline.planned;
+/** A block wears the hue of its goal's horizon, so the day reads in the same colors as Plan.
+ * Time range, icons and the Timebox outline carry the status; color never does alone. */
+function blockTone(block: TimeBlock, palette: Palette): string {
+  if (block.goalCompleted) return palette.muted;
+  return palette.horizon[block.goalHorizon ?? 'day'];
 }
 function blockMinutes(block: TimeBlock): string {
   const minutes = Math.round((Date.parse(block.endAt) - Date.parse(block.startAt)) / 60000);
@@ -128,9 +128,9 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
       if (lane === -1) lane = laneEnds.indexOf(Math.min(...laneEnds));
       laneEnds[lane] = finish;
       return { id: block.id, left: (start - begin) / span * 100,
-        width: (finish - start) / span * 100, lane, tone: blockTone(block) };
+        width: (finish - start) / span * 100, lane, tone: blockTone(block, palette) };
     }).filter((entry): entry is NonNullable<typeof entry> => entry !== null);
-  }, [blocks, dateKey, offset]);
+  }, [blocks, dateKey, offset, palette]);
   const dayBounds = localDayBounds(date);
   const ribbonPeak = peakOverlap(blocks, Date.parse(dayBounds.from), Date.parse(dayBounds.to));
   const upcoming = isToday ? [...blocks]
@@ -313,7 +313,13 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
               {positioned.map(({ block, top, height, lane, lanes }) => {
                 const compact = height < 52;
                 const veryCompact = height < 39;
-                const tone = blockTone(block);
+                const tone = blockTone(block, palette);
+                const isDark = palette === colors.dark;
+                const past = isToday && Date.parse(block.endAt) <= now.getTime();
+                const strength = (block.kind === 'box' ? 1.5 : 1) * (past ? 0.7 : 1);
+                const fill = block.goalCompleted ? palette.inset
+                  : withAlpha(tone, (isDark ? 0.18 : 0.13) * strength);
+                const ink = block.goalCompleted ? palette.muted : palette.foreground;
                 const focusedMs = (actualByBlock[block.id] ?? 0) +
                   (activeSession?.blockId === block.id ? getFocusElapsedMs(activeSession, now.getTime()) : 0);
                 const plannedMs = Date.parse(block.endAt) - Date.parse(block.startAt);
@@ -327,33 +333,35 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                     style={[styles.event, {
                       top: top + 1, height: Math.max(21, height - 3),
                       left: `${100 * lane / lanes}%`, width: `${100 / lanes}%`,
-                      backgroundColor: tone,
-                      opacity: 1,
+                      backgroundColor: palette.surface,
+                      borderColor: block.kind === 'box' && !block.goalCompleted ? tone : 'transparent',
                     }]}>
+                    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: fill }]} />
                     {veryCompact ? (
-                      <Text numberOfLines={1} style={styles.microTitle}>
+                      <Text numberOfLines={1} style={[styles.microTitle, { color: ink }]}>
                         {visibleRange(block).split(' – ')[0]} · {block.goalTitle}
                       </Text>
                     ) : (
                       <>
                         <View style={styles.eventHead}>
-                          <Text numberOfLines={1} style={styles.eventTime}>{visibleRange(block)}</Text>
-                          {block.kind === 'box' ? <Timer size={12} color="rgba(255,255,255,0.92)" strokeWidth={2.2} /> : null}
-                          {!block.flexible ? <Lock size={11} color="rgba(255,255,255,0.92)" strokeWidth={2.4} /> : null}
-                          {height >= 52 ? <Text style={styles.eventDuration}>{blockMinutes(block)}</Text> : null}
+                          <View style={[styles.eventDot, { backgroundColor: tone }]} />
+                          <Text numberOfLines={1} style={[styles.eventTime, { color: palette.muted }]}>{visibleRange(block)}</Text>
+                          {block.kind === 'box' ? <Timer size={12} color={tone} strokeWidth={2.2} /> : null}
+                          {!block.flexible ? <Lock size={11} color={palette.muted} strokeWidth={2.4} /> : null}
+                          {height >= 52 ? <Text style={[styles.eventDuration, { color: palette.muted }]}>{blockMinutes(block)}</Text> : null}
                         </View>
                         <Text numberOfLines={height < 75 ? 1 : 2}
-                          style={[styles.eventTitle, block.goalCompleted && styles.doneTitle]}>
+                          style={[styles.eventTitle, { color: ink }, block.goalCompleted && styles.doneTitle]}>
                           {block.goalTitle}
                         </Text>
                         {height > 70 && focusedMs > 0 ? (
                           <View accessibilityLabel={`${Math.floor(focusedMs / 60000)} minutes Focus recorded`}
-                            style={styles.progressTrack}>
-                            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+                            style={[styles.progressTrack, { backgroundColor: withAlpha(tone, 0.22) }]}>
+                            <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: tone }]} />
                           </View>
                         ) : null}
                         {height > 114 && block.intention ? (
-                          <Text numberOfLines={2} style={styles.eventIntention}>{block.intention}</Text>
+                          <Text numberOfLines={2} style={[styles.eventIntention, { color: palette.muted }]}>{block.intention}</Text>
                         ) : null}
                       </>
                     )}
@@ -369,8 +377,8 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                         })}
                         onResponderGrant={(e) => beginDrag(block, 'move', e.nativeEvent.pageY)}
                         onResponderMove={(e) => continueDrag(block, 'move', e.nativeEvent.pageY)}
-                        style={styles.dragGrip}>
-                        <GripVertical size={20} color="#FFFFFF" strokeWidth={2.2} />
+                        style={[styles.dragGrip, { backgroundColor: withAlpha(tone, 0.16) }]}>
+                        <GripVertical size={20} color={tone} strokeWidth={2.2} />
                       </View>
                     ) : null}
                     {height >= 177 && lanes === 1 && !block.goalCompleted &&
@@ -385,8 +393,8 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                         })}
                         onResponderGrant={(e) => beginDrag(block, 'resize', e.nativeEvent.pageY)}
                         onResponderMove={(e) => continueDrag(block, 'resize', e.nativeEvent.pageY)}
-                        style={styles.resizeGrip}>
-                        <ChevronsDown size={20} color="#FFFFFF" strokeWidth={2.2} />
+                        style={[styles.resizeGrip, { backgroundColor: withAlpha(tone, 0.16) }]}>
+                        <ChevronsDown size={20} color={tone} strokeWidth={2.2} />
                       </View>
                     ) : null}
                   </Pressable>
@@ -456,13 +464,14 @@ const styles = StyleSheet.create({
   emptyHour: { position: 'absolute', left: GUTTER, right: 6, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 10 },
   plusHint: { fontSize: 13, opacity: 0.24 },
   events: { position: 'absolute', top: 0, bottom: 0, left: GUTTER + 2, right: 7 },
-  event: { position: 'absolute', borderRadius: 14, paddingHorizontal: 11, paddingVertical: 6, overflow: 'hidden', elevation: 1 },
+  event: { position: 'absolute', borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 11, paddingVertical: 6, overflow: 'hidden' },
+  eventDot: { width: 7, height: 7, borderRadius: 4 },
   eventHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  eventDuration: { marginLeft: 'auto', color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  eventDuration: { marginLeft: 'auto', fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] },
   dragGrip: { position: 'absolute', top: 2, right: 0, width: 46, height: 48,
-    justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.13)', borderRadius: 11 },
+    justifyContent: 'center', alignItems: 'center', borderRadius: 11 },
   resizeGrip: { position: 'absolute', bottom: 0, right: 0, width: 46, height: 48,
-    justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 11 },
+    justifyContent: 'center', alignItems: 'center', borderRadius: 11 },
   dragGlyph: { fontSize: 20, color: '#FFFFFF', fontWeight: '800' },
   ghost: { position: 'absolute', borderWidth: 2, borderStyle: 'dashed', borderRadius: 12,
     zIndex: 10, justifyContent: 'center', padding: 10, opacity: 0.92 },
@@ -482,13 +491,13 @@ const styles = StyleSheet.create({
   adjustApply: { minHeight: 48, minWidth: 61, paddingHorizontal: 6, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center' },
   adjustFooter: { fontSize: 11, lineHeight: 16 },
-  eventTime: { color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  eventTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginTop: 2, letterSpacing: -0.1 },
+  eventTime: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  eventTitle: { fontSize: 15, fontWeight: '700', marginTop: 2, letterSpacing: -0.1 },
   doneTitle: { textDecorationLine: 'line-through' },
-  eventIntention: { color: 'rgba(255,255,255,0.83)', fontSize: 11, marginTop: 7 },
-  microTitle: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  progressTrack: { backgroundColor: 'rgba(255,255,255,0.25)', height: 4, borderRadius: 4, marginTop: 7, overflow: 'hidden' },
-  progressFill: { height: 4, borderRadius: 4, backgroundColor: '#FFFFFF' },
+  eventIntention: { fontSize: 11, marginTop: 7 },
+  microTitle: { fontSize: 11, fontWeight: '700' },
+  progressTrack: { height: 4, borderRadius: 4, marginTop: 7, overflow: 'hidden' },
+  progressFill: { height: 4, borderRadius: 4 },
   presentLine: { position: 'absolute', left: 0, right: 0, height: 22, flexDirection: 'row', alignItems: 'center', zIndex: 12, transform: [{ translateY: -11 }] },
   nowPill: { marginLeft: 5, width: 49, borderRadius: 7, height: 23, backgroundColor: semantic.timeline.now, justifyContent: 'center', alignItems: 'center' },
   nowPillText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF', fontVariant: ['tabular-nums'] },
