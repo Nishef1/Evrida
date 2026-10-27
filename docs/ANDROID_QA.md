@@ -50,7 +50,7 @@ Smaller-step pass: the previous percentage/content-sized editor moved its header
 
 ## SQLite native stress gate (P0 · [#2](https://github.com/Nishef1/Evrida/issues/2))
 
-- [ ] Use Android 35 and 36/16 hardware or emulator with saved populated v8 data; leave a dirty editor open, then change font size, theme and rotation repeatedly while backgrounding/foregrounding. Record all `exsqlite3_step`, `pthread_mutex_lock` and Java/Kotlin SQLite failures with logcat/tombstone.
+- [ ] Use Android 35 and 36/16 hardware or emulator with saved populated v13 data; leave a dirty editor open, then change font size, theme and rotation repeatedly while backgrounding/foregrounding. Record all `exsqlite3_step`, `pthread_mutex_lock` and Java/Kotlin SQLite failures with logcat/tombstone.
 - [ ] Navigate all four destinations while starting/stopping Focus and editing calendar entries, and try rapid goal creation/movement/restore; check native lifecycle behavior, not merely rendered screens.
 - [ ] Development build runtime reload 10–20 times and repeat SQLite startup probe; capture if cached handles become unusable. Validate Startup Retry works without deleting the database.
 - [ ] Compare saved IDs/relations before and after, perform an exported backup round trip and run `PRAGMA foreign_key_check`/integrity inspection. Never run these destructive tests on the user's main app data.
