@@ -9,7 +9,7 @@ import { type Palette } from '../../theme/tokens';
 import { type } from '../../theme/type';
 import { Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, useBusy } from './ui';
 
-export interface TxPreset { type?: TxType; refundOfId?: string; categoryId?: string; amount?: number; accountId?: string; date?: string; note?: string; splits?: { categoryId: string; amount: number }[] }
+export interface TxPreset { type?: TxType; refundOfId?: string; categoryId?: string; amount?: number; accountId?: string; date?: string; note?: string; splits?: { categoryId: string; amount: number }[]; tags?: string[] }
 interface SplitRow { categoryId: string; amount: string }
 
 const TYPES: { id: TxType; label: string }[] = [
@@ -59,7 +59,7 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
       setDate(preset?.date ?? periodKey('day', new Date()));
       setAccountId(preset?.accountId ?? accounts[0]?.id ?? ''); setToAccountId('');
       const original = preset?.refundOfId ? data.txs.find((t) => t.id === preset.refundOfId) : null;
-      setCategoryId(preset?.categoryId ?? original?.categoryId ?? original?.splits[0]?.categoryId ?? null); setTags([]); setPayee(''); setNote(preset?.note ?? '');
+      setCategoryId(preset?.categoryId ?? original?.categoryId ?? original?.splits[0]?.categoryId ?? null); setTags(preset?.tags ?? []); setPayee(''); setNote(preset?.note ?? '');
       setRefundOfId(preset?.refundOfId ?? null); setSplitting(!!preset?.splits?.length);
       setSplits((preset?.splits ?? []).map((s) => ({ categoryId: s.categoryId, amount: formatAmount(s.amount, settings).replace(/,/g, '') })));
     }
