@@ -31,6 +31,8 @@ Direction: **Daybreak** (2026-10-27) — warm paper by day, ink-blue night, and 
 | Accent surface | `#E3F2EF` | `#12332F` |
 | Border | `#E9E2D7` | `#2C3243` |
 
+Every sheet and modal shares one neutral ink backdrop, `scrim` (`rgba(14, 17, 24, 0.5)`), instead of per-screen tinted overlays.
+
 Horizon spectrum (`palette.horizon`): Day `#D9722A` / `#FFA45E`, Week `#D6455D` / `#FF7D8F`, Month `#B83C86` / `#E477BC`, Quarter `#8444C0` / `#B58AF0`, Year `#5654D4` / `#8C8CFF`, Decade `#2F6FB5` / `#6FA8E8`, Life `#1F3A5F` / `#6283BE` (light / dark). Keep the dark selected-control surface lighter than its track.
 
 Use `onAccent` for filled primary controls, not hard-coded white. Completion must also have a check and semantic accessibility state. Timeboxes retain a separate warm scheduling accent; calendar color never replaces exact times or labels.

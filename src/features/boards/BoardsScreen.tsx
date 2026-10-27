@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Alert, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
-import { colors, depth, radius, spacing, semantic } from '../../theme/tokens';
+import { colors, depth, radius, spacing, semantic, scrim } from '../../theme/tokens';
 import Check from 'lucide-react-native/icons/check';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   noticeText: { fontSize: 13, lineHeight: 21 },
   loading: { marginTop: 35 },
   action: { minHeight: 48, justifyContent: 'center' },
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(9,22,18,0.45)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   sheet: { borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: spacing.lg, gap: 12 },
   pickerSheet: { maxHeight: '88%', borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: spacing.lg, gap: 12 },
   sheetHeading: { fontSize: 24, fontWeight: '700', marginBottom: 9 },

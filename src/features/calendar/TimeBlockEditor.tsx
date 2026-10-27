@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, St
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import type { Goal } from '../../domain/goals';
 import { localClock, localDayKey, timeRangeFromInput, type BlockInput, type BlockKind, type TimeBlock } from '../../domain/timeblocks';
-import { colors, radius, spacing, semantic, type Palette } from '../../theme/tokens';
+import { colors, radius, spacing, semantic, type Palette, scrim } from '../../theme/tokens';
 import { DateTimeField } from '../shared/DateTimeField';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import Check from 'lucide-react-native/icons/check';
@@ -227,7 +227,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
   );
 }
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(9,22,18,0.44)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   sheet: { maxHeight: '94%', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 12, overflow: 'hidden' },
   grabber: { height: 4, width: 38, borderRadius: 8, alignSelf: 'center', marginBottom: 13 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg },

@@ -49,6 +49,9 @@ export const colors = {
   },
 } as const;
 
+// Modal backdrop shared by every sheet: neutral ink, not a tinted overlay.
+export const scrim = 'rgba(14, 17, 24, 0.5)';
+
 // Small layered shadows define surfaces; dark mode uses borders for separation.
 export const depth = {
   light: {

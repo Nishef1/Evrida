@@ -8,7 +8,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { getFocusRemainingMs, formatFocusTime } from '../../domain/focus';
 import { useFocusSession } from '../focus/FocusProvider';
 import { motion } from '../../theme/motion';
-import { colors, radius, semantic } from '../../theme/tokens';
+import { colors, radius, semantic, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import CalendarDays from 'lucide-react-native/icons/calendar-days';
 import ChartNoAxesCombined from 'lucide-react-native/icons/chart-no-axes-combined';
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, minHeight: 58, alignItems: 'center', justifyContent: 'center', gap: 3 },
   navIndicator: { width: 64, height: 32, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   navLabel: { fontSize: 11, marginTop: 2, fontWeight: '600' },
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(6,15,12,0.55)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   panel: { borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 25, paddingTop: 15, paddingBottom: 12 },
   grabber: { width: 38, height: 4, alignSelf: 'center', borderRadius: 3, marginBottom: 24 },
   eyebrow: { fontSize: 10, letterSpacing: 1.5, fontWeight: '800', marginBottom: 10 },

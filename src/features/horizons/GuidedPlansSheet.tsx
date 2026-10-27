@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GUIDED_PLANS, type GuidedPlan } from '../../domain/guided-plans';
-import { colors, type Palette } from '../../theme/tokens';
+import { colors, type Palette, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 
 
@@ -70,7 +70,7 @@ export function GuidedPlansSheet({ visible, palette, busy, onClose, onCreate }: 
   </Modal>;
 }
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   sheet: { maxHeight: '94%', borderTopLeftRadius: 26, borderTopRightRadius: 26, overflow: 'hidden' },
   content: { padding: 20, gap: 12, paddingBottom: 22 },
   kicker: { fontSize: 10, letterSpacing: 1.2, fontWeight: '800' },

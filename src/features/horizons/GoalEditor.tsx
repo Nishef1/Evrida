@@ -5,7 +5,7 @@ import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-
 import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, parseDateInput, periodKey, periodLabel, shiftPeriod, type Horizon } from '../../domain/horizons';
 import type { Goal, GoalInput } from '../../domain/goals';
 import { REPEAT_LABELS, REPEAT_RULES, type RepeatRule } from '../../domain/planning';
-import { colors, radius, spacing, type Palette } from '../../theme/tokens';
+import { colors, radius, spacing, type Palette, scrim } from '../../theme/tokens';
 import { DateTimeField } from '../shared/DateTimeField';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
@@ -301,7 +301,7 @@ export function GoalEditor({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(9, 22, 18, 0.42)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   sheet: { flex: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 10, overflow: 'hidden' },
   grabber: { height: 4, width: 36, alignSelf: 'center', borderRadius: 10, marginBottom: 18 },
   header: { paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

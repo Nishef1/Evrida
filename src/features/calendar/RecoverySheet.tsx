@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { colors, type Palette } from '../../theme/tokens';
+import { colors, type Palette, scrim } from '../../theme/tokens';
 import { localClock, type TimeBlock } from '../../domain/timeblocks';
 import { previewReplan, type ReplanPreview } from '../../domain/replan';
 import { useReducedMotion } from '../../theme/useReducedMotion';
@@ -182,7 +182,7 @@ export function RecoverySheet({ visible, day, blocks, palette, busy, activeBlock
   </Modal>;
 }
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   sheet: { maxHeight: '94%', borderTopLeftRadius: 27, borderTopRightRadius: 27, overflow: 'hidden' },
   content: { padding: 21, gap: 14, paddingBottom: 20 },
   kicker: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },

@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { HORIZON_TITLES } from '../../domain/horizons';
 import type { Goal } from '../../domain/goals';
-import { colors, radius, spacing, type Palette } from '../../theme/tokens';
+import { colors, radius, spacing, type Palette, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import CalendarDays from 'lucide-react-native/icons/calendar-days';
 import Check from 'lucide-react-native/icons/check';
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   focusHeading: { fontSize: 14, fontWeight: '600' }, focusDurations: { flexDirection: 'row', gap: 6 },
   focusDuration: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: radius.md, borderWidth: 1 },
   focusStart: { minHeight: 50, justifyContent: 'center', alignItems: 'center', borderRadius: radius.md, flexDirection: 'row', gap: 8 },
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(9, 22, 18, 0.42)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   sheet: { maxHeight: '88%', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 11 },
   grabber: { height: 4, width: 38, borderRadius: 10, alignSelf: 'center', marginBottom: 12 },
   header: { paddingHorizontal: spacing.md, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' },

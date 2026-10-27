@@ -8,7 +8,7 @@ import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, periodKey, periodLabel, sh
 import { availableGoalParents, type Goal, type GoalInput } from '../../domain/goals';
 import { buildPerspectiveSections } from '../../domain/perspective';
 import { archiveGoal, createGoal, editGoal, getGoal, listAllGoals, listArchivedGoals, listChildGoals, listGoalAncestors, listGoals, listInboxGoals, listPerspectiveGoals, moveGoal, planGoal, restoreGoal, setGoalCompleted } from '../../storage/goals';
-import { colors, depth, radius, spacing, semantic, type Palette } from '../../theme/tokens';
+import { colors, depth, radius, spacing, semantic, type Palette, scrim } from '../../theme/tokens';
 import Archive from 'lucide-react-native/icons/archive';
 import Check from 'lucide-react-native/icons/check';
 import ChevronDown from 'lucide-react-native/icons/chevron-down';
@@ -753,7 +753,7 @@ export function HorizonsScreen() {
 const styles = StyleSheet.create({
   guidedPrompt: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 70,
     padding: 14, borderRadius: radius.lg, borderWidth: 1, marginTop: 10 },
-  organizeOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(9, 22, 18, 0.43)' },
+  organizeOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: scrim },
   organizePanel: { padding: spacing.lg, paddingBottom: 35, borderTopLeftRadius: 28, borderTopRightRadius: 28, gap: 10 },
   grabber: { width: 36, height: 4, borderRadius: 4, alignSelf: 'center', marginBottom: 10 },
   horizonOption: { minHeight: 54, borderWidth: 1, borderRadius: radius.md, flexDirection: 'row', gap: 10, alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8 },
