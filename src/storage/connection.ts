@@ -8,12 +8,12 @@ let opening: Promise<SQLiteDatabase> | null = null;
 /**
  * One native handle for the life of the process, never closed by React.
  *
- * An Android font-scale change relaunches MainActivity and restarts the React
- * surface. A provider that closes its connection on unmount frees the native
- * handle while Focus/dock queries are still running on SDK 57's coroutine
- * threads; the reproduced SIGSEGVs (issue #2) were statement operations on that
- * freed handle. Keeping the handle in module scope lets in-flight work finish
- * and lets the remounted tree reuse the same connection.
+ * Android font-scale/theme changes can recreate the React surface. An older
+ * Expo SQLite configuration reproduced native statement crashes when a provider
+ * closed its handle while Focus/dock work was still in flight. SDK 58 emulator
+ * stress has not reproduced that crash, but issue #2 remains open pending the
+ * documented native acceptance matrix. Keeping the handle in module scope is
+ * defense in depth: remounted screens reuse it and React never closes it.
  *
  * A failed startup is not cached, so Retry can attempt a fresh open.
  */
