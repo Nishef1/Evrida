@@ -211,7 +211,7 @@ export function tagTotals(txs: FinTx[], month: string): Map<string, number> {
   return totals;
 }
 
-export function accountBalance(account: FinAccount, txs: FinTx[], accounts: FinAccount[] = []): number {
+export function accountBalance(account: FinAccount, txs: FinTx[], accounts: FinAccount[]): number {
   let balance = account.opening;
   for (const tx of txs) {
     if (tx.type === 'transfer') {
