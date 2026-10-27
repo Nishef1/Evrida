@@ -4,7 +4,7 @@ Status: **prepared, not executed**. The current TypeScript / JS bundle / config 
 
 ## Automated simulator journey
 
-The native QA build uses `EONWARD_BUILD_VARIANT=qa`, which is already supported in `app.config.js`. Both Android and iOS use `com.nishef.eonward.qa`, while the normal build stays `com.nishef.eonward`. **All Maestro flows clear QA-app storage. Never point them at a personal installation.**
+The native QA build uses `EVRIDA_BUILD_VARIANT=qa`, which is already supported in `app.config.js`. Both Android and iOS use `com.nishef.evrida.qa`, while the normal build stays `com.nishef.evrida`. **All Maestro flows clear QA-app storage. Never point them at a personal installation.**
 
 - Profile: `eas.json → e2e-test` (credentials-free APK / iOS simulator app).
 - Workflow: `.eas/workflows/native-smoke.yml`.
@@ -23,9 +23,9 @@ Only run `eas init` when linking a new project is actually necessary. If already
 
 ## Android P0 database crash reproduction
 
-Issue: [#2](https://github.com/Nishef1/Eonward/issues/2). External Expo reports [#48999](https://github.com/expo/expo/issues/48999) and [#48995](https://github.com/expo/expo/issues/48995) are plausible related cases, not proof of identical causes.
+Issue: [#2](https://github.com/Nishef1/Evrida/issues/2). External Expo reports [#48999](https://github.com/expo/expo/issues/48999) and [#48995](https://github.com/expo/expo/issues/48995) are plausible related cases, not proof of identical causes.
 
-1. Install an **isolated Eonward QA** Android APK on an emulator, create a synthetic goal and leave its editor with unsaved text.
+1. Install an **isolated Evrida QA** Android APK on an emulator, create a synthetic goal and leave its editor with unsaved text.
 2. Make sure `adb` is installed, then run `bash scripts/android-sqlite-stress.sh` from the project root. The script explicitly rejects physical devices, changes font scale/night theme, and restores their previous values on exit. It neither wipes data nor changes the main app's ID.
 3. Review the local `.qa-evidence/` crash-buffer output, Android Studio logcat and device tombstones. **Do not upload unsanitized logs or personal data to public GitHub.**
 4. Repeat with background/foreground, rotation, runtime reloads, active/paused Focus and a populated migrated v5→v8 database. Verify database integrity, preserved goal IDs and relationships across process restart.
@@ -68,4 +68,4 @@ Release remains **blocked** until P0 SQLite native stability, Android/iOS on-dev
 5. **Time zones / DST:** Create a 09:00 reservation in one zone and change device zone to another. Existing absolute instant remains fixed; local display changes. Validate 23/25-hour transition list and daylight fall-back ambiguity.
 6. **Focus midnight / weekly cutover:** Keep Focus active across midnight, end it after date change and verify history is credited to its end day (as expressly disclosed in Review), while recorded focused minutes do not get duplicated.
 7. **Timeline overflow:** Create four to twelve simultaneous reservations. Three-layer ribbon must disclose peak density and the full timeline must show all overlapping items without invisible title hit targets.
-8. **Native OS backup:** Compare Android device-to-device/cloud restore with Eonward's in-app file import, ensuring users understand that account-managed device backups are separate. Do not delete personal app data.
+8. **Native OS backup:** Compare Android device-to-device/cloud restore with Evrida's in-app file import, ensuring users understand that account-managed device backups are separate. Do not delete personal app data.
