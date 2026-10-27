@@ -46,5 +46,10 @@ export async function fetchUsdRate(unit: string): Promise<FetchedRate> {
   const data = await getJson('https://open.er-api.com/v6/latest/USD');
   const rate = Number(data?.rates?.[code]);
   if (!reasonable(rate)) throw new Error(`No rate was found for ${code}.`);
-  return { x100: Math.round(rate * 100), date: today, source: 'open.er-api.com daily reference rate' };
+  const updatedAt = Number(data?.time_last_update_unix);
+  if (!Number.isFinite(updatedAt) || updatedAt <= 0) {
+    throw new Error('The rate source did not provide a valid update date.');
+  }
+  const date = new Date(updatedAt * 1000).toISOString().slice(0, 10);
+  return { x100: Math.round(rate * 100), date, source: 'open.er-api.com daily reference rate' };
 }
