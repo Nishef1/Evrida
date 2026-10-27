@@ -64,7 +64,7 @@ Checked: TypeScript, all 20 domain/real-SQLite cases, the shared database/design
 - [ ] Timezone “floating” scheduling mode: existing stable UTC instant is explicit; switching reservations to local 09:00 across travel would require a new timezone-anchor field and migration, not a cosmetic clock conversion.
 - [ ] Concurrent navigation refresh and deeply overlapping Native gesture layouts: current React focus/revision guards and source overlap count reduce risk but don't replace EAS Maestro/device recordings.
 - [ ] Real-world privacy of plaintext exported JSON and OS cloud backup status: verify with an isolated QA installation; never test destructive restore on the only copy of a user's plans.
-- [ ] Android Native expo-sqlite P0 [#2](https://github.com/Nishef1/Evrida/issues/2) and visual/gesture Native acceptance [#3](https://github.com/Nishef1/Evrida/issues/3) remain release blockers.
+- [ ] Android Native expo-sqlite P0 [#2](https://github.com/Nishef1/Eonward/issues/2) and visual/gesture Native acceptance [#3](https://github.com/Nishef1/Eonward/issues/3) remain release blockers.
 
 **Self-critique:** Don't equate prepared test cases and passing TypeScript/SQLite simulations with real native reboot, wall-clock tampering, animation responsiveness, notification delivery or store readiness. Avoid adding more general-purpose state, sync or AI features until the native acceptance matrix is proven.
 
@@ -151,7 +151,7 @@ This sweep is intentionally **cross-boundary**, not another palette refactor. It
 
 **Deliberately not generalized:** React Native's `StyleSheet.create` is local to each screen by design: flex structures and page-specific dimensions are not duplicated concepts just because their numeric values match. A global "CSS class for every row" would add complexity and conceal intent. Standard `colors`, `spacing`, `radius`, `depth`, `semantic` and the shared `Palette` type are the appropriate cross-screen contract.
 
-**Remaining acceptance and risks:** Text at maximum OS font scale may still need responsive restructuring (not blanket fontSize replacement), especially Calendar ribbon, compact blocks, Board lens and Review graph. Native dynamic font scaling, TalkBack/VoiceOver, clipped flex layouts and gesture negotiation must be checked on Android/iOS. The native SQLite SIGSEGV remains [P0 issue #2](https://github.com/Nishef1/Evrida/issues/2), unrelated to StyleSheet tokens. UI appearance has not been physically screenshot-reviewed. This source audit is not a claim of full visual polish or store readiness.
+**Remaining acceptance and risks:** Text at maximum OS font scale may still need responsive restructuring (not blanket fontSize replacement), especially Calendar ribbon, compact blocks, Board lens and Review graph. Native dynamic font scaling, TalkBack/VoiceOver, clipped flex layouts and gesture negotiation must be checked on Android/iOS. The native SQLite SIGSEGV remains [P0 issue #2](https://github.com/Nishef1/Eonward/issues/2), unrelated to StyleSheet tokens. UI appearance has not been physically screenshot-reviewed. This source audit is not a claim of full visual polish or store readiness.
 
 ## Premium daily time interaction: design correction pass (2026-10-15)
 
@@ -168,7 +168,7 @@ This sweep is intentionally **cross-boundary**, not another palette refactor. It
 - [ ] Android native touch test for long drag grips vs parent scroll, short/dense item long-press, cancel, and Save after zoom; run at 56, 76, 104dp/hour, 100%, 130%, 200% fonts, both themes, TalkBack and landscape.
 - [ ] iOS Simulator/real-device review for responder negotiation, VoiceOver's increment/decrement actions, day ribbon safe area, low-end rendering and reduced-motion.
 - [ ] Visual user acceptance: live screenshots/videos of Plan, Boards, Calendar (empty/dense) and Review; no automatic claim that these changes make every screen finished.
-- [ ] The Android SQLite native lifecycle P0 [issue #2](https://github.com/Nishef1/Evrida/issues/2) remains open; successful CI does not clear release.
+- [ ] The Android SQLite native lifecycle P0 [issue #2](https://github.com/Nishef1/Eonward/issues/2) remains open; successful CI does not clear release.
 
 **Self-critique:** Native long-block grips are not identical to a polished physics-based draggable calendar. The deliberate fallback for sub-hour and overlapping blocks is a stepper / exact editor so controls do not occlude data. Gesture latency, accessibility, hit-testing and user aesthetic preference have not been confirmed by on-device recordings.
 
@@ -182,7 +182,7 @@ This sweep is intentionally **cross-boundary**, not another palette refactor. It
 - [x] Prepare separate Android APK and iOS Simulator build/test jobs through EAS Workflows and isolated Maestro navigation/quick-capture flows; outputs target `com.nishef.evrida.qa`. See [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md).
 - [x] Add emulator-only Android font/theme stress script, native crash-buffer collection and local-only `.qa-evidence/` ignore rule; never alter phone settings or wipe main app data from scripts.
 - [ ] **EAS project authentication/linking** and actual native Android/iOS smoke run. Existing CI validates the files and identities; it does not execute the EAS Maestro jobs.
-- [ ] Reproduce/diagnose issue [#2](https://github.com/Nishef1/Evrida/issues/2) with emulator/physical native evidence before a release or any claim of crash resolution.
+- [ ] Reproduce/diagnose issue [#2](https://github.com/Nishef1/Eonward/issues/2) with emulator/physical native evidence before a release or any claim of crash resolution.
 - [ ] Complete manual Focus, Recovery, backup, accessibility and store signing gates in [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md).
 
 **Self-critique:** Passing TypeScript and exporting Android/iOS JavaScript previously allowed the team to overestimate coverage. Native E2E workflows are now prepared, but it would be inaccurate to call them passing until an actual simulator/device build is run. The QA variant existed already; rebuilding it from scratch would have been redundant and riskier than extending its EAS profile.
@@ -269,7 +269,7 @@ The following items describe code merged into `main`, **not independently accept
 - [ ] Validate daylight-saving transition days, timezone changes, overnight sessions and backup migration from native test data.
 - [x] Regenerate locked Expo 57/Expo Router patch dependencies; clean npm ci, SDK compatibility, TypeScript, 20/20 tests and both JS exports passed in the one-time verification workflow.
 - [x] Introduce a per-handle SQLite statement/transaction serialization boundary shared by all seven feature/Focus consumers; maintain 20 tests including a 40-call concurrency assertion. Source-only crash mitigation, not a native fix.
-- [ ] Reproduce, diagnose and close the observed Android native SQLite configuration-change crash. P0 tracked in [issue #2](https://github.com/Nishef1/Evrida/issues/2); SDK 57 native lifetime reports are suspicious but not proven identical.
+- [ ] Reproduce, diagnose and close the observed Android native SQLite configuration-change crash. P0 tracked in [issue #2](https://github.com/Nishef1/Eonward/issues/2); SDK 57 native lifetime reports are suspicious but not proven identical.
 
 **Product boundary:** No AI scheduler, automatic task deletion, invisible reshuffle, implicit promotion of existing events to flexible, or cross-midnight move is implemented. The current week budget is a target, not a hard restriction; overlapping planned reservations are not deduplicated. Older Focus entries without goal IDs cannot be retroactively assigned reliably.
 
