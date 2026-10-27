@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Manual, emulator-only native stress companion for issue #2.
-# Open a dirty goal/time editor in Eonward QA before running this script.
+# Open a dirty goal/time editor in Evrida QA before running this script.
 # Captures crash logs locally. Never uses the production app ID or deletes data.
 set -euo pipefail
 
@@ -10,9 +10,9 @@ if [[ "$device" != "1" ]]; then
   echo "This script deliberately runs only on an Android emulator." >&2
   exit 2
 fi
-package="com.nishef.eonward.qa"
+package="com.nishef.evrida.qa"
 adb shell pm path "$package" | grep -q 'package:' || {
-  echo "Install the isolated Eonward QA APK first." >&2
+  echo "Install the isolated Evrida QA APK first." >&2
   exit 2
 }
 original_scale="$(adb shell settings get system font_scale | tr -d '\r')"
@@ -27,7 +27,7 @@ restore() {
 }
 trap restore EXIT
 
-directory="${EONWARD_QA_EVIDENCE_DIR:-.qa-evidence}"
+directory="${EVRIDA_QA_EVIDENCE_DIR:-.qa-evidence}"
 mkdir -p "$directory"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 adb shell am start -n "$package/.MainActivity" >/dev/null
