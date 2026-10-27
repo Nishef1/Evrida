@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, AppState, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import type { FocusHistory } from '../../domain/focus';
 import type { Goal } from '../../domain/goals';
 import { periodKey, startOfWeek } from '../../domain/horizons';
@@ -21,7 +21,7 @@ function duration(ms: number): string {
 }
 export function InsightsScreen() {
   const focus = useFocusSession();
-  const db = useEonwardDatabase(), router = useRouter();
+  const db = useEvridaDatabase(), router = useRouter();
   const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
   const [weekHistory, setWeekHistory] = useState<FocusHistory[]>([]);
   const [recent, setRecent] = useState<FocusHistory[]>([]);
@@ -73,7 +73,7 @@ export function InsightsScreen() {
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: palette.background }}>
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <View style={{ flex: 1, gap: 6 }}><Text style={[styles.brand, { color: palette.muted }]}>EONWARD</Text><Text style={[styles.title, { color: palette.foreground }]}>This week</Text><Text style={[styles.muted, { color: palette.muted }]}>{periodKey('day', monday)} – {periodKey('day', days[6])}</Text></View>
+        <View style={{ flex: 1, gap: 6 }}><Text style={[styles.brand, { color: palette.muted }]}>EVRIDA</Text><Text style={[styles.title, { color: palette.foreground }]}>This week</Text><Text style={[styles.muted, { color: palette.muted }]}>{periodKey('day', monday)} – {periodKey('day', days[6])}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh weekly review" onPress={() => setRevision((n) => n + 1)} style={styles.icon}><RefreshCw size={21} color={palette.foreground} strokeWidth={1.8} /></Pressable>
       </View>
       {loading ? <ActivityIndicator color={palette.accent} /> : error ? <View style={styles.section}>
