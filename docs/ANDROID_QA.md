@@ -74,7 +74,7 @@ Smaller-step pass: the previous percentage/content-sized editor moved its header
 - [ ] **Boards end-to-end:** On a populated v2 install create/edit/delete a board, create a goal directly within a board, add another existing goal to two boards, toggle completion, open the original detail, remove a membership without removing the goal, archive the goal and verify active board counts; restart the app and confirm everything persists.
 - [ ] **Keyboard and safe area:** Create Goal with keyboard visible, scroll through its fields and tap fixed Save; verify system navigation never covers it. Open/close Details and Organize sheets.
 - [ ] **Single first action:** Focus empty screen exposes New goal without duplicate clipped CTAs; Perspective shows per-horizon Add without a sticky bottom footer.
-- [ ] **End-to-end goal:** Create, edit, complete and reopen a goal; close and relaunch Eonward; the item, its notes, and status persist.
+- [ ] **End-to-end goal:** Create, edit, complete and reopen a goal; close and relaunch Evrida; the item, its notes, and status persist.
 - [ ] **Seven horizons:** Switch Focus/Perspective, add from a Horizon card, change its period, find exactly one saved item at the intended destination.
 - [ ] **Hierarchy:** Create Life → Year → Month → Day, navigate Goal Path, reparent safely, and reject cycles.
 - [ ] **Archive lifecycle:** Archive a parent and active children; separately archive a child before the parent and ensure that child stays archived after the parent is restored.
