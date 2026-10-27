@@ -17,7 +17,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: palette.background, justifyContent: 'center', padding: 28, gap: 18 }}>
     <Text style={{ color: palette.foreground, fontSize: 25, fontWeight: '700' }}>Let’s get your plan open.</Text>
-    <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 24 }}>Something interrupted Eonward. Try again to reopen it. Retrying does not clear your local data.</Text>
+    <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 24 }}>Something interrupted Evrida. Try again to reopen it. Retrying does not clear your local data.</Text>
     <Pressable accessibilityRole="button" onPress={() => { void retry(); }} style={{ minHeight: 52, borderRadius: 14,
       backgroundColor: palette.accent, justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ color: palette.onAccent, fontWeight: '700' }}>Try again</Text>
@@ -58,7 +58,7 @@ export default function RootLayout() {
       <View style={{ flex: 1 }}>
         {/* Suspense mode caches rejected startup promises globally in this SDK;
             a fresh provider must be able to reopen the DB when Retry is tapped. */}
-        <SQLiteProvider databaseName="eonward.db" onInit={initializeDatabase}>
+        <SQLiteProvider databaseName="evrida.db" onInit={initializeDatabase}>
           <DatabaseContent onReady={setDatabaseReady} reducedMotion={reducedMotion} />
         </SQLiteProvider>
         {!databaseReady ? <View style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0 }}><LoadingDatabase /></View> : null}
