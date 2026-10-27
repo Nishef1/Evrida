@@ -90,19 +90,19 @@ export function SettingsScreen() {
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: palette.background }}>
     <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 32 + dockInset }]}>
       <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel="Back to Plan" onPress={() => router.back()} style={styles.back}><ChevronLeft size={23} color={palette.foreground} strokeWidth={1.8} /></Pressable><Text style={[styles.title, { color: palette.foreground }]}>Your data & settings</Text></View>
-      <Text style={[styles.copy, { color: palette.muted }]}>Your plans live on this device. Times are stored as fixed instants; travel across time zones changes the displayed local hour. Keep an exported backup to recover them on another device.</Text>
+      <Text style={[styles.copy, { color: palette.muted }]}>Your plans live on this device. Export a backup to keep them safe or move them.</Text>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Text style={[styles.heading, { color: palette.foreground }]}>Backup & restore</Text>
-        <Text style={[styles.copy, { color: palette.muted }]}>Includes goals, notes, deadlines, repeats, boards, schedules, archive and recorded progress. Active focus timers are not copied.</Text>
+        <Text style={[styles.copy, { color: palette.muted }]}>Goals, boards, schedules and recorded progress. Running focus timers are not included.</Text>
         <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(exportData); }} style={[styles.primary, { backgroundColor: palette.accent, opacity: busy ? .5 : 1 }]}><Text style={{ color: palette.onAccent, fontWeight: '700' }}>{busy ? 'Working…' : 'Export backup'}</Text></Pressable>
         <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(pickBackup); }} style={[styles.secondary, { borderColor: palette.border }]}><Text style={{ color: palette.foreground, fontWeight: '700' }}>Restore from a file</Text></Pressable>
-        <Text style={[styles.caption, { color: palette.muted }]}>Exports are readable JSON. A temporary copy is placed in app cache for sharing, not permanent Documents. Old cached exports are removed on a later export when safe. Confirm your chosen destination actually saved the file.</Text>
+        <Text style={[styles.caption, { color: palette.muted }]}>Exports are readable JSON shared from a temporary copy. Check that your chosen destination saved the file.</Text>
       </View>
       {notice ? <Text accessibilityRole="alert" style={[styles.copy, { color: palette.accent }]}>{notice}</Text> : null}
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Text style={[styles.heading, { color: palette.foreground }]}>Local data check</Text>
         <Text style={[styles.copy, { color: palette.muted }]}>
-          Check the local database structure and linked records without changing or uploading anything. This is not a native crash test or a backup.
+          A read-only check of your local data. It changes nothing and is not a backup.
         </Text>
         <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(inspectHealth); }}
           style={[styles.secondary, { borderColor: palette.border, opacity: busy ? 0.5 : 1 }]}>
@@ -115,13 +115,13 @@ export function SettingsScreen() {
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Text style={[styles.heading, { color: palette.foreground }]}>Focus alerts</Text>
-        <Text style={[styles.copy, { color: palette.muted }]}>Notification access is controlled by {Platform.OS === 'ios' ? 'iOS' : 'Android'}. Focus remains usable when alerts are off.{Platform.OS === 'android' ? ' On Android 14+, also check Settings → Special app access → Alarms & reminders. Notification access and exact alarm permission are separate; battery restrictions can delay alerts. Force stop silences alerts until reopening.' : ''}</Text>
+        <Text style={[styles.copy, { color: palette.muted }]}>{Platform.OS === 'ios' ? 'iOS' : 'Android'} controls notifications; Focus works with alerts off.{Platform.OS === 'android' ? ' On Android 14+ also allow Alarms & reminders under Special app access. Battery limits can delay alerts.' : ''}</Text>
         <Pressable accessibilityRole="button" onPress={() => { void Linking.openSettings().catch(() => Alert.alert('Open system settings', 'Choose Evrida → Notifications in your device settings.')); }} style={[styles.secondary, { borderColor: palette.border }]}><Text style={{ color: palette.foreground }}>Open app settings</Text></Pressable>
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Text style={[styles.heading, { color: palette.foreground }]}>Private by design</Text>
-        <Text style={[styles.copy, { color: palette.muted }]}>Evrida works without an account. Your goals and focus history are stored locally. This app has no advertising, analytics or cloud sync. Nothing is uploaded by Evrida.</Text>
-        <Text style={[styles.copy, { color: palette.muted }]}>Your operating system may include app data in device backups, depending on its settings. Exported files are readable JSON; keep them somewhere you trust. Removing the app or clearing its storage removes local plans, so export first if you want to keep them.</Text>
+        <Text style={[styles.copy, { color: palette.muted }]}>No account, ads, analytics or cloud sync. Your goals and focus history stay on this device.</Text>
+        <Text style={[styles.copy, { color: palette.muted }]}>Your phone's own backups may include app data. Removing the app or clearing its storage deletes your plans, so export first.</Text>
         <Text style={[styles.caption, { color: palette.muted }]}>Evrida · {Constants.expoConfig?.version ?? '0.1.0'} · Every day with Evrida.</Text>
       </View>
     </ScrollView>

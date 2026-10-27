@@ -141,3 +141,5 @@ The CI source contract `scripts/check-design-ssot.mjs` blocks repeated Palette d
 - Review's *Goal impact* rows pair the focused time with a bar in the goal's horizon hue, scaled to the week's biggest goal, so the week's weight reads at a glance. Explanatory captions stay to one sentence.
 - Timeline blocks that sit three or more across show only their start time (no range, icons or duration), so nothing is cut with an ellipsis.
 - Research notes: reviewer write-ups and design-library guidance agree that an empty state should say what it is, why it is empty and the next step, and that a review should be able to end ("nothing needs a decision") rather than keep asking. Pinterest was login-walled and Dribbble returned generic dashboards, so these come from articles, not from copied layouts.
+- The Timebox editor's goal picker marks each goal with its horizon dot (and the chosen goal in the field), so a reader sees which timeline hue the block will wear before saving.
+- Settings copy is one or two short sentences per card; platform caveats stay but lose repetition. Technical claims (not a backup, nothing uploaded, running timers excluded) are unchanged.

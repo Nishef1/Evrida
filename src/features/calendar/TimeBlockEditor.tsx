@@ -119,6 +119,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
               <Text style={[styles.label, { color: palette.muted }]}>GOAL</Text>
               <Pressable onPress={() => setShowGoals(!showGoals)} accessibilityRole="button"
                 style={[styles.select, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+                {goal ? <View style={[styles.horizonDot, { backgroundColor: palette.horizon[goal.horizon] }]} /> : null}
                 <Text numberOfLines={2} style={[styles.selectText, { color: palette.foreground }]}>
                   {goal?.title ?? 'Choose a goal'}
                 </Text>
@@ -132,9 +133,12 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                   {filtered.length ? filtered.map((item) => (
                     <Pressable key={item.id} accessibilityRole="button" style={styles.choice}
                       onPress={() => { setGoalId(item.id); setShowGoals(false); }}>
-                      <Text numberOfLines={1} style={[styles.choiceText, { color: palette.foreground }]}>
-                        {item.id === goalId ? '✓  ' : '○  '}{item.title}
-                      </Text>
+                      <View style={styles.choiceRow}>
+                        <View style={[styles.horizonDot, { backgroundColor: palette.horizon[item.horizon] }]} />
+                        <Text numberOfLines={1} style={[styles.choiceText, { color: palette.foreground,
+                          fontWeight: item.id === goalId ? '700' : '400' }]}>{item.title}</Text>
+                        {item.id === goalId ? <Check size={16} color={palette.accent} /> : null}
+                      </View>
                     </Pressable>
                   )) : <Text style={[styles.hint, { color: palette.muted }]}>No matching goals. Create one in Plan or Boards first.</Text>}
                 </View>
@@ -233,7 +237,9 @@ const styles = StyleSheet.create({
   choices: { borderWidth: 1, borderRadius: radius.lg, padding: 9, maxHeight: 300 },
   input: { borderWidth: 1, minHeight: 49, borderRadius: radius.md, paddingHorizontal: 13, fontSize: 15 },
   choice: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 10 },
-  choiceText: { fontSize: 13 },
+  choiceText: { flex: 1, fontSize: 14 },
+  choiceRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  horizonDot: { width: 10, height: 10, borderRadius: 5 },
   when: { borderWidth: 1, borderRadius: radius.lg, padding: 14, gap: 10 },
   summary: { ...type.numeral, fontSize: 24, lineHeight: 30 },
   nextDay: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
