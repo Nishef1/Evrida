@@ -422,8 +422,10 @@ export function validateFinanceBackup(t: Record<string, Row[]>, goalIds: Set<unk
   const ids = (rows: Row[]) => new Set(rows.map((r) => r.id));
   const accounts = ids(t.fin_accounts), categories = ids(t.fin_categories), tags = ids(t.fin_tags),
     txs = ids(t.fin_transactions), finGoals = ids(t.fin_goals);
-  const categoryRows = new Map(t.fin_categories.map((r) => [r.id, r]));
-  const transactionRows = new Map(t.fin_transactions.map((r) => [r.id, r]));
+  const categoryRows = new Map<unknown, Row>();
+  for (const row of t.fin_categories) categoryRows.set(row.id, row);
+  const transactionRows = new Map<unknown, Row>();
+  for (const row of t.fin_transactions) transactionRows.set(row.id, row);
   for (const r of t.fin_settings) {
     if ((r.usd_rate_x100 !== null && (!int(r.usd_rate_x100) || r.usd_rate_x100 <= 0))
       || (r.usd_rate_date !== null && !isDateKey(String(r.usd_rate_date))) || (r.usd_rate_source !== null && !text(r.usd_rate_source, 80))
