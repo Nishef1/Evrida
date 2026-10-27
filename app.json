@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Eonward",
-    "slug": "eonward",
-    "scheme": "eonward",
+    "name": "Evrida",
+    "slug": "evrida",
+    "scheme": "evrida",
     "version": "0.1.0",
     "icon": "./assets/brand/icon.png",
     "orientation": "portrait",
@@ -20,7 +20,7 @@
       }]
     ],
     "android": {
-      "package": "com.nishef.eonward",
+      "package": "com.nishef.evrida",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/brand/adaptive-foreground.png",
@@ -33,7 +33,7 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.nishef.eonward",
+      "bundleIdentifier": "com.nishef.evrida",
       "buildNumber": "1",
       "supportsTablet": false,
       "infoPlist": { "ITSAppUsesNonExemptEncryption": false }
