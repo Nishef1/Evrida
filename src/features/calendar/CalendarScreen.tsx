@@ -30,6 +30,9 @@ import { GoalEditor } from '../horizons/GoalEditor';
 import { DateTimeField } from '../shared/DateTimeField';
 import { type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
+import Animated from 'react-native-reanimated';
+import { listMotion } from '../../theme/motion';
+import { useReducedMotion } from '../../theme/useReducedMotion';
 
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -78,8 +81,13 @@ export function CalendarScreen() {
   const [chosenGoal, setChosenGoal] = useState<string | null>(null);
   const [suggestedHour, setSuggestedHour] = useState<number | null>(null);
   const [mode, setMode] = useState<'timeline' | 'week' | 'month' | 'list'>('timeline');
+  // Scrolling the timeline down hands the week strip, view toggle and chips back to the day itself.
+  const [chromeHidden, setChromeHidden] = useState(false);
+  const reduced = useReducedMotion();
+  const motionProps = listMotion(reduced);
   const usedGoalParam = useRef<string | null>(null);
   const key = localDayKey(day);
+  useEffect(() => { setChromeHidden(false); }, [mode, key]);
   const week = useMemo(() => weekOf(day), [key]);
   const dayBounds = localDayBounds(day);
   const weekFromMs = Date.parse(localDayBounds(week[0]).from);
@@ -163,6 +171,7 @@ export function CalendarScreen() {
   const ordered = useMemo(() => [...blocks].sort((a, b) => a.startAt.localeCompare(b.startAt)), [blocks]);
   const localDayHours = (Date.parse(dayBounds.to) - Date.parse(dayBounds.from)) / 3_600_000;
   const displayMode = mode === 'timeline' && localDayHours !== 24 ? 'list' : mode;
+  const compact = chromeHidden && displayMode === 'timeline';
   const dayLoad = useMemo(() => analyzeDayLoad(blocks, day), [blocks, key]);
   // All calendar headers use the same occupied-wall-time accounting as their cards.
   const weekLoad = analyzeRangeLoad(weekBlocks, weekFromMs, weekToMs);
@@ -313,7 +322,7 @@ export function CalendarScreen() {
             <Plus size={23} color={palette.onAccent} strokeWidth={1.8} />
           </Pressable>
         </View>
-        {mode !== 'month' ? <View style={styles.weekStrip}>
+        {mode !== 'month' && !compact ? <Animated.View {...motionProps} style={styles.weekStrip}>
           {week.map((date, index) => {
             const selected = localDayKey(date) === key;
             const today = localDayKey(date) === todayKey;
@@ -332,8 +341,8 @@ export function CalendarScreen() {
               </Pressable>
             );
           })}
-        </View> : null}
-        <View style={[styles.summaryRow, { borderColor: palette.border }]}>
+        </Animated.View> : null}
+        {compact ? null : <Animated.View {...motionProps} style={[styles.summaryRow, { borderColor: palette.border }]}>
           {displayMode !== 'timeline' ? <View style={styles.summaryStats}>
             <Text style={[styles.summaryValue, { color: foreground }]}>{durationLabel(activeLoad.occupiedMinutes)}
               <Text style={[styles.summaryLabel, { color: palette.muted }]}> occupied</Text>
@@ -360,8 +369,8 @@ export function CalendarScreen() {
               </Pressable>
             ))}
           </View>
-        </View>
-        {(displayMode === 'timeline' && key === todayKey && blocks.length > 0) || (untimed.length > 0 && (mode === 'timeline' || mode === 'list')) ? <View style={styles.chipRow}>
+        </Animated.View>}
+        {!compact && ((displayMode === 'timeline' && key === todayKey && blocks.length > 0) || (untimed.length > 0 && (mode === 'timeline' || mode === 'list'))) ? <Animated.View {...motionProps} style={styles.chipRow}>
           {displayMode === 'timeline' && key === todayKey && blocks.length > 0 ? <Pressable accessibilityRole="button" onPress={() => setRecoveryOpen(true)}
             accessibilityLabel="Preview day recovery" style={[styles.chip, { backgroundColor: palette.surface, borderColor: palette.border }]}>
             <Text style={[styles.chipText, { color: palette.accent }]}>Preview recovery</Text>
@@ -375,7 +384,7 @@ export function CalendarScreen() {
             style={[styles.chip, { backgroundColor: palette.surface, borderColor: palette.border }]}>
             <Text style={[styles.chipText, { color: palette.accent }]}>{untimed.length} unscheduled</Text>
           </Pressable> : null}
-        </View> : null}
+        </Animated.View> : null}
       </View>
       {mode === 'timeline' && localDayHours !== 24 ? (
         <View accessibilityRole="summary" style={[styles.clockChangeNotice,
@@ -399,6 +408,7 @@ export function CalendarScreen() {
           <DayTimeline date={day} blocks={ordered} palette={palette}
             actualByBlock={actualByBlock} activeSession={focus.session}
             busy={busy} onApplyTimeEdit={(preview, onSaved) => { void commitTimelineEdit(preview, onSaved); }}
+            onChromeHidden={setChromeHidden}
             onEdit={edit} onQuickAdd={(hour) => createAt(hour)}
             onOpenGoal={(id) => router.push({ pathname: '/', params: { goalId: id } })} />
         </View>

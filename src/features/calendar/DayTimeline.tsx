@@ -45,8 +45,10 @@ interface Props {
   activeSession: FocusSession | null;
   busy: boolean;
   onApplyTimeEdit: (preview: TimelineEditPreview, onSaved: () => void) => void;
+  /** True once the reader scrolls down into the day; false when they scroll back up. */
+  onChromeHidden?: (hidden: boolean) => void;
 }
-export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit }: Props) {
+export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit, onChromeHidden }: Props) {
   const ref = useRef<ComponentRef<typeof ScrollView>>(null);
   const didScroll = useRef<string | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -54,6 +56,8 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
   const hourHeight = ZOOM_LEVELS[zoomIndex];
   const zoomedHeight = useRef<number>(hourHeight);
   const scrollOffset = useRef(0);
+  const userScrolled = useRef(false);
+  const travel = useRef(0);
   const dragOriginY = useRef(0);
   const [draft, setDraft] = useState<{ id: string; mode: TimelineEditMode; delta: number; sourceRevision?: string } | null>(null);
   const dateKey = localDayKey(date);
@@ -85,7 +89,12 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
       return { preview: null, error: err instanceof Error ? err.message : 'Unable to preview this change.' };
     }
   }, [draft, editing, blocks, dateKey, activeSession?.blockId]);
-  useEffect(() => { setDraft(null); }, [dateKey]);
+  useEffect(() => {
+    setDraft(null);
+    // A fresh day starts with its own programmatic scroll; only a finger counts as reading.
+    userScrolled.current = false;
+    scrollOffset.current = 0;
+  }, [dateKey]);
   const ghost = useMemo(() => {
     if (!candidate.preview || !editing || draft?.delta === 0) return null;
     const proposed = { ...editing, startAt: candidate.preview.toStart, endAt: candidate.preview.toEnd };
@@ -267,8 +276,18 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
       <View style={[styles.canvasFrame, { borderColor: palette.border, backgroundColor: palette.surface }]}>
         <ScrollView key={dateKey} ref={ref} nestedScrollEnabled showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.canvasScrollContent, { minHeight: hourHeight * 24 + 10 }]}
-          scrollEventThrottle={100}
-          onScroll={(event) => { scrollOffset.current = event.nativeEvent.contentOffset.y; }}
+          scrollEventThrottle={32}
+          onScrollBeginDrag={() => { userScrolled.current = true; travel.current = 0; }}
+          onScroll={(event) => {
+            const y = event.nativeEvent.contentOffset.y;
+            const delta = y - scrollOffset.current;
+            scrollOffset.current = y;
+            if (!userScrolled.current || !onChromeHidden) return;
+            // Accumulate travel in one direction so a small wobble never flips the header.
+            travel.current = Math.sign(delta) === Math.sign(travel.current) ? travel.current + delta : delta;
+            if (travel.current > 36 && y > 60) onChromeHidden(true);
+            else if (travel.current < -36 || y < 8) onChromeHidden(false);
+          }}
           onContentSizeChange={() => {
             if (didScroll.current !== dateKey) {
               didScroll.current = dateKey;

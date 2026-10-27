@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import type { Goal } from '../../domain/goals';
 import { localClock, localDayKey, timeRangeFromInput, type BlockInput, type BlockKind, type TimeBlock } from '../../domain/timeblocks';
@@ -77,6 +77,15 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
   let validation: string | null = null;
   try { timeRangeFromInput({ date: dayText, start, end, endsNextDay }); }
   catch (error) { validation = error instanceof Error ? error.message : 'Invalid time.'; }
+  let summary = '';
+  if (!validation) {
+    const range = timeRangeFromInput({ date: dayText, start, end, endsNextDay });
+    const minutes = Math.round((Date.parse(range.endAt) - Date.parse(range.startAt)) / 60000);
+    const hours = Math.floor(minutes / 60);
+    summary = `${start} – ${end} · ${hours ? `${hours}h${minutes % 60 ? ` ${minutes % 60}m` : ''}` : `${minutes}m`}`;
+  }
+  // Only ask about the next day when the times themselves cross midnight.
+  const showNextDay = endsNextDay || end <= start;
   const editingActive = !!initial && initial.id === activeBlockId;
   let changed = !initial;
   if (initial) {
@@ -85,7 +94,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
     changed = dayText !== localDayKey(new Date(initial.startAt)) || start !== localClock(new Date(initial.startAt)) ||
       end !== localClock(new Date(initial.endAt)) ||
       endsNextDay !== (localDayKey(new Date(initial.startAt)) !== localDayKey(new Date(initial.endAt))) || goalId !== initial.goalId ||
-      kind !== initial.kind || intention.trim() !== initial.intention || flexible !== initial.flexible;
+      intention.trim() !== initial.intention || flexible !== initial.flexible;
   }
   const valid = !!goalId && !goal?.completed && !initial?.goalCompleted && !validation && !saving && !editingActive && changed;
 
@@ -98,9 +107,8 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
             <View style={[styles.grabber, { backgroundColor: palette.border }]} />
             <View style={styles.header}>
               <View style={styles.headerText}>
-                <Text style={[styles.eyebrow, { color: palette.accent }]}>MAKE TIME FOR WHAT MATTERS</Text>
                 <Text style={[styles.heading, { color: palette.foreground }]}>
-                  {initial ? 'Edit time block' : 'Plan a time block'}
+                  {initial ? 'Edit timebox' : 'Timebox'}
                 </Text>
               </View>
               <Pressable style={styles.close} onPress={requestCancel} accessibilityRole="button" accessibilityLabel="Close">
@@ -131,68 +139,50 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                   )) : <Text style={[styles.hint, { color: palette.muted }]}>No matching goals. Create one in Plan or Boards first.</Text>}
                 </View>
               ) : null}
-              <Text style={[styles.label, { color: palette.muted }]}>PLANNING STYLE</Text>
-              <View style={[styles.switch, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-                {(['block', 'box'] as const).map((item) => (
-                  <Pressable key={item} onPress={() => setKind(item)} accessibilityRole="button"
-                    accessibilityState={{ selected: kind === item }}
-                    style={[styles.switchButton, kind === item && { backgroundColor: palette.foreground }]}>
-                    <Text style={[styles.switchText, { color: kind === item ? palette.background : palette.muted }]}>
-                      {item === 'block' ? 'Time Block' : 'Timebox'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Text style={[styles.hint, { color: palette.muted }]}>
-                {kind === 'box' ? 'A fixed work limit. Stop or reassess when it ends.' :
-                  'A planned reservation. Turn on Flexible below only if Recovery may propose moving it.'}
-              </Text>
-              <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: flexible }}
-                onPress={() => setFlexible((current) => !current)}
-                style={[styles.overnight, { borderColor: palette.border, backgroundColor: palette.surface }]}>
-                <View style={[styles.check, { backgroundColor: flexible ? palette.accent : 'transparent',
-                  borderColor: flexible ? palette.accent : palette.muted }]}>
-                  {flexible ? <Check size={15} color={palette.onAccent} /> : null}
+              <Text style={[styles.label, { color: palette.muted }]}>WHEN</Text>
+              <View style={[styles.when, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+                <Text accessibilityRole="summary" style={[styles.summary, { color: validation ? palette.muted : palette.foreground }]}>
+                  {summary || 'Pick a start and an end'}
+                </Text>
+                <DateTimeField value={dayText} onChange={setDayText} label="Scheduled date" />
+                <View style={styles.times}>
+                  <View style={styles.half}>
+                    <Text style={[styles.label, { color: palette.muted }]}>FROM</Text>
+                    <DateTimeField mode="time" value={start} onChange={setStart} label="Start time" />
+                  </View>
+                  <View style={styles.half}>
+                    <Text style={[styles.label, { color: palette.muted }]}>TO</Text>
+                    <DateTimeField mode="time" value={end} onChange={setEnd} label="End time" />
+                  </View>
                 </View>
+                {showNextDay ? <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: endsNextDay }}
+                  accessibilityLabel="End time is on the next day"
+                  onPress={() => setEndsNextDay((current) => !current)} style={styles.nextDay}>
+                  <View style={[styles.check, { backgroundColor: endsNextDay ? palette.accent : 'transparent',
+                    borderColor: endsNextDay ? palette.accent : palette.muted }]}>
+                    {endsNextDay ? <Check size={15} color={palette.onAccent} /> : null}
+                  </View>
+                  <Text style={[styles.overnightTitle, { color: palette.foreground }]}>Ends the next day</Text>
+                </Pressable> : null}
+              </View>
+              <Text style={[styles.label, { color: palette.muted }]}>OUTCOME (OPTIONAL)</Text>
+              <TextInput value={intention} onChangeText={setIntention} multiline maxLength={500}
+                placeholder="What should be done when time is up?"
+                placeholderTextColor={palette.muted} accessibilityLabel="Timebox outcome"
+                style={[styles.input, styles.notes, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.foreground }]} />
+              <View style={[styles.fixedRow, { borderColor: palette.border, backgroundColor: palette.surface }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.overnightTitle, { color: palette.foreground }]}>Flexible reservation</Text>
+                  <Text style={[styles.overnightTitle, { color: palette.foreground }]}>Keep this time fixed</Text>
                   <Text style={[styles.hint, { color: palette.muted }]}>
-                    Recovery may suggest moving this time only after you approve a preview. Off keeps it protected.
+                    {flexible ? 'Recovery may propose moving it, only after you approve a preview.'
+                      : 'Recovery will never move it.'}
                   </Text>
                 </View>
-              </Pressable>
-              <Text style={[styles.label, { color: palette.muted }]}>DATE</Text>
-              <DateTimeField value={dayText} onChange={setDayText} label="Scheduled date" />
-              <View style={styles.times}>
-                <View style={styles.half}>
-                  <Text style={[styles.label, { color: palette.muted }]}>START</Text>
-                  <DateTimeField mode="time" value={start} onChange={setStart} label="Start time" />
-                </View>
-                <View style={styles.half}>
-                  <Text style={[styles.label, { color: palette.muted }]}>END</Text>
-                  <DateTimeField mode="time" value={end} onChange={setEnd} label="End time" />
-                </View>
+                <Switch value={!flexible} onValueChange={(fixed) => setFlexible(!fixed)}
+                  accessibilityLabel="Keep this time fixed"
+                  trackColor={{ true: palette.accent, false: palette.border }}
+                  thumbColor="#FFFFFF" />
               </View>
-              <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: endsNextDay }}
-                accessibilityLabel="End time is on the next day"
-                onPress={() => setEndsNextDay((current) => !current)}
-                style={[styles.overnight, { borderColor: palette.border, backgroundColor: palette.surface }]}>
-                <View style={[styles.check, { backgroundColor: endsNextDay ? palette.accent : 'transparent',
-                  borderColor: endsNextDay ? palette.accent : palette.muted }]}>
-                  {endsNextDay ? <Check size={15} color={palette.onAccent} /> : null}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.overnightTitle, { color: palette.foreground }]}>End on the next day</Text>
-                  <Text style={[styles.hint, { color: palette.muted }]}>For late-night work crossing midnight</Text>
-                </View>
-              </Pressable>
-              <Text style={[styles.label, { color: palette.muted }]}>
-                {kind === 'box' ? 'WHAT SHOULD BE DONE BEFORE TIME IS UP?' : 'FOCUS (OPTIONAL)'}
-              </Text>
-              <TextInput value={intention} onChangeText={setIntention} multiline maxLength={500}
-                placeholder={kind === 'box' ? 'Define an outcome for this timebox…' : 'What will you focus on?'}
-                placeholderTextColor={palette.muted} accessibilityLabel="Time block intention"
-                style={[styles.input, styles.notes, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.foreground }]} />
               {validation ? <Text style={[styles.validation, { color: palette === colors.dark ? semantic.dark.danger : semantic.light.danger }]}>{validation}</Text> : null}
               {(goal?.completed || initial?.goalCompleted) ? <Text style={[styles.validation, { color: palette.muted }]}>
                 This goal is complete. Reopen it in Plan before scheduling new time.
@@ -211,14 +201,14 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                     opacity: saving || changed ? 0.5 : 1,
                   }]}>
                   <Text style={[styles.focusActionText, { color: palette.accent }]}>
-                    {changed ? 'Save edits before starting Focus' : '◷  Start saved timebox'}
+                    {changed ? 'Save edits before starting Focus' : 'Start Focus now'}
                   </Text>
                 </Pressable>
               ) : null}
               <Pressable disabled={!valid} accessibilityRole="button" accessibilityState={{ disabled: !valid }}
-                onPress={() => { if (valid && goalId) void onSave({ goalId, date: dayText, start, end, endsNextDay, kind, intention, flexible }); }}
+                onPress={() => { if (valid && goalId) void onSave({ goalId, date: dayText, start, end, endsNextDay, kind: 'box', intention, flexible }); }}
                 style={[styles.save, { backgroundColor: palette.accent, opacity: valid ? 1 : 0.45 }]}>
-                <Text style={[styles.saveText, { color: palette.onAccent }]}>{saving ? 'Saving…' : initial ? 'Save changes' : 'Schedule time'}</Text>
+                <Text style={[styles.saveText, { color: palette.onAccent }]}>{saving ? 'Saving…' : initial ? 'Save changes' : 'Add to timeline'}</Text>
               </Pressable>
             </SafeAreaView>
           </View>
@@ -244,9 +234,10 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, minHeight: 49, borderRadius: radius.md, paddingHorizontal: 13, fontSize: 15 },
   choice: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 10 },
   choiceText: { fontSize: 13 },
-  switch: { borderWidth: 1, padding: 5, flexDirection: 'row', gap: 6, borderRadius: radius.full },
-  switchButton: { flex: 1, minHeight: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  switchText: { fontSize: 13, fontWeight: '700' },
+  when: { borderWidth: 1, borderRadius: radius.lg, padding: 14, gap: 10 },
+  summary: { ...type.numeral, fontSize: 24, lineHeight: 30 },
+  nextDay: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
+  fixedRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 66, paddingHorizontal: 14, borderWidth: 1, borderRadius: radius.lg },
   hint: { fontSize: 12, lineHeight: 19 },
   overnight: { flexDirection: 'row', alignItems: 'center', gap: 13, minHeight: 66, paddingHorizontal: 13,
     borderWidth: 1, borderRadius: radius.lg },
