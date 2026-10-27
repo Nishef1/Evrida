@@ -24,8 +24,9 @@ const clean = (value: string, max: number, what: string): string => {
 
 /** Finance is optional: null until the user chooses to set it up. */
 export async function loadFinance(db: Reader): Promise<FinanceSnapshot | null> {
-  const s = await db.getFirstAsync<{ unit: string; decimals: 0 | 2; inflation_bp: number | null }>(
-    "SELECT unit, decimals, inflation_bp FROM fin_settings WHERE id = 'main'");
+  const s = await db.getFirstAsync<{ unit: string; decimals: 0 | 2; inflation_bp: number | null;
+    usd_rate_x100: number | null; usd_rate_date: string | null; usd_rate_source: string | null }>(
+  "SELECT unit, decimals, inflation_bp, usd_rate_x100, usd_rate_date, usd_rate_source FROM fin_settings WHERE id = 'main'");
   if (!s) return null;
   const accounts = await db.getAllAsync<Row>('SELECT * FROM fin_accounts ORDER BY created_at, id');
   const categories = await db.getAllAsync<Row>('SELECT * FROM fin_categories ORDER BY kind, group_name, name');
@@ -42,7 +43,8 @@ export async function loadFinance(db: Reader): Promise<FinanceSnapshot | null> {
   const tagsBy = new Map<string, string[]>();
   for (const r of links) tagsBy.set(r.tx_id, [...(tagsBy.get(r.tx_id) ?? []), r.tag_id]);
   return {
-    settings: { unit: s.unit, decimals: s.decimals, inflationBp: s.inflation_bp },
+    settings: { unit: s.unit, decimals: s.decimals, inflationBp: s.inflation_bp,
+      usdRateX100: s.usd_rate_x100, usdRateDate: s.usd_rate_date, usdRateSource: s.usd_rate_source },
     accounts: accounts.map((r) => ({ id: r.id, name: r.name, kind: r.kind, opening: r.opening, archived: !!r.archived_at })),
     categories: categories.map((r) => ({ id: r.id, name: r.name, kind: r.kind, group: r.group_name, archived: !!r.archived_at })),
     tags,
@@ -85,13 +87,20 @@ export async function setupFinance(db: SQLiteDatabase, input: { unit: string; de
   });
 }
 
-export async function updateFinanceSettings(db: SQLiteDatabase, input: { unit: string; inflationBp: number | null }): Promise<void> {
+export async function updateFinanceSettings(db: SQLiteDatabase, input: {
+  unit: string; inflationBp: number | null; usdRateX100: number | null; usdRateDate: string | null; usdRateSource: string | null;
+}): Promise<void> {
+  if (input.usdRateX100 !== null && (!Number.isSafeInteger(input.usdRateX100) || input.usdRateX100 <= 0 || !input.usdRateDate || !isDateKey(input.usdRateDate))) {
+    throw new Error('A dollar rate needs a positive value and the date it applies to.');
+  }
   const unit = clean(input.unit, 16, 'Currency or unit');
   if (input.inflationBp !== null && (!Number.isSafeInteger(input.inflationBp) || input.inflationBp < 0 || input.inflationBp > 1000000)) {
     throw new Error('Enter an inflation rate between 0% and 10,000%.');
   }
-  await db.runAsync("UPDATE fin_settings SET unit = ?, inflation_bp = ?, updated_at = ? WHERE id = 'main'",
-    [unit, input.inflationBp, now()]);
+  const dated = input.usdRateX100 === null;
+  await db.runAsync(`UPDATE fin_settings SET unit = ?, inflation_bp = ?, usd_rate_x100 = ?, usd_rate_date = ?, usd_rate_source = ?, updated_at = ?
+    WHERE id = 'main'`, [unit, input.inflationBp, input.usdRateX100, dated ? null : input.usdRateDate,
+    dated ? null : (input.usdRateSource ?? '').slice(0, 80) || null, now()]);
 }
 
 export async function saveAccount(db: SQLiteDatabase, input: { id?: string; name: string; kind: AccountKind; opening: number }): Promise<string> {

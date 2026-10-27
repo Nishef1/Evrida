@@ -5,6 +5,7 @@ import { radius, scrim, spacing, type Palette } from '../../theme/tokens';
 import { fonts, type } from '../../theme/type';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import X from 'lucide-react-native/icons/x';
+import { formatAmount, formatUsd, groupDigits, parseAmount, toUsd, type FinSettings } from '../../domain/finance';
 
 /** Bottom sheet with a fixed footer, shared by every Money editor. */
 export function Sheet({ visible, title, onClose, palette, children, footer }: {
@@ -34,18 +35,30 @@ export function Label({ children, palette }: { children: string; palette: Palett
   return <Text style={[type.overline, { color: palette.muted, marginTop: 6 }]}>{children}</Text>;
 }
 
-export function Field({ label, value, onChangeText, palette, placeholder, keyboardType, multiline, suffix, maxLength, hint }: {
+/** A money amount: thousands separators appear as you type, and the dollar value shows when a rate is set. */
+export function usdNote(value: string, settings: FinSettings): string | null {
+  const parsed = parseAmount(value, settings.decimals);
+  const usd = parsed === null ? null : toUsd(parsed, settings);
+  if (usd === null || !settings.usdRateX100 || !settings.usdRateDate) return null;
+  return `≈ ${formatUsd(usd)} at ${formatAmount(settings.usdRateX100, { decimals: 2 }).replace(/\.00$/, '')} ${settings.unit} per $ · ${dateName(settings.usdRateDate)}`;
+}
+
+export function Field({ label, value, onChangeText, palette, placeholder, keyboardType, multiline, suffix, maxLength, hint, money, negative }: {
   label: string; value: string; onChangeText: (text: string) => void; palette: Palette; placeholder?: string;
   keyboardType?: KeyboardTypeOptions; multiline?: boolean; suffix?: string; maxLength?: number; hint?: string;
+  money?: FinSettings; negative?: boolean;
 }) {
+  const shown = money ? groupDigits(value, money.decimals, negative) : value;
+  const note = money ? usdNote(value, money) : null;
   return <View style={{ gap: 6 }}>
     <Label palette={palette}>{label.toUpperCase()}</Label>
     <View style={[styles.field, multiline && { minHeight: 84, alignItems: 'flex-start' }, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={palette.muted}
+      <TextInput value={shown} onChangeText={money ? (text) => onChangeText(groupDigits(text, money.decimals, negative)) : onChangeText} placeholder={placeholder} placeholderTextColor={palette.muted}
         keyboardType={keyboardType} multiline={multiline} maxLength={maxLength} accessibilityLabel={label}
         style={[styles.input, { color: palette.foreground }, multiline && { textAlignVertical: 'top' }]} />
       {suffix ? <Text style={{ color: palette.muted, fontSize: 13 }}>{suffix}</Text> : null}
     </View>
+    {note ? <Text accessibilityLiveRegion="polite" style={[type.caption, { color: palette.accent, fontWeight: '600' }]}>{note}</Text> : null}
     {hint ? <Text style={[type.caption, { color: palette.muted }]}>{hint}</Text> : null}
   </View>;
 }

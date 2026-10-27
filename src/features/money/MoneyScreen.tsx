@@ -8,7 +8,7 @@ import {
 } from '../../storage/finance';
 import {
   ACCOUNT_KINDS, accountBalance, addMonthsToMonth, bpToPercent, categoryChange, categoryTotals, compactAmount, coveredMonths,
-  formatAmount, formatMoney, monthOf, monthSummary, netWorth, parseAmount, parsePercent, tagTotals, trend, type AccountKind, type FinAccount, type FinTx,
+  formatAmount, formatMoney, formatUsd, groupDigits, monthOf, monthSummary, netWorth, parseAmount, parsePercent, parseRate, tagTotals, toUsd, trend, type AccountKind, type FinAccount, type FinTx,
 } from '../../domain/finance';
 import { periodKey } from '../../domain/horizons';
 import { colors, radius, spacing, withAlpha, type Palette } from '../../theme/tokens';
@@ -23,7 +23,8 @@ import Wallet from 'lucide-react-native/icons/wallet';
 import { TransactionSheet, type TxPreset } from './TransactionSheet';
 import { GoalsPanel } from './GoalsPanel';
 import { PlanPanel } from './PlanPanel';
-import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, monthName, useBusy } from './ui';
+import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, dateName, monthName, useBusy } from './ui';
+import { fetchUsdRate } from './rates';
 
 type Tab = 'overview' | 'ledger' | 'goals' | 'plan';
 const monthLabel = monthName;
@@ -141,7 +142,7 @@ function Setup({ palette, onDone, onSkip }: { palette: Palette; onDone: () => vo
     <Segments palette={palette} value={String(decimals) as '0' | '2'} onChange={(v) => setDecimals(v === '2' ? 2 : 0)}
       options={[{ id: '0', label: 'None' }, { id: '2', label: 'Two (cents)' }]} />
     <Field label="First account" value={name} onChangeText={setName} palette={palette} maxLength={80} />
-    <Field label="What it holds today (optional)" value={opening} onChangeText={setOpening} palette={palette} keyboardType="decimal-pad" suffix={finalUnit || undefined}
+    <Field label="What it holds today (optional)" value={opening} onChangeText={setOpening} palette={palette} keyboardType="decimal-pad" suffix={finalUnit || undefined} money={{ unit: finalUnit, decimals, inflationBp: null, usdRateX100: null, usdRateDate: null, usdRateSource: null }}
       hint="Your starting balance. Later records adjust it, and you can correct it any time." />
     {error ? <Text style={{ color: '#C0392B', fontSize: 13 }}>{error}</Text> : null}
     <PrimaryButton label={busy ? 'Starting…' : 'Start tracking'} onPress={() => void start()} palette={palette} disabled={busy} />
@@ -188,10 +189,14 @@ function Overview({ data, month, palette, onAdd, onAccount }: {
       <View style={styles.row}><Text style={[type.heading, { color: palette.foreground, flex: 1 }]}>Accounts</Text><TextButton label="＋ Account" onPress={() => onAccount('new')} palette={palette} /></View>
       {accounts.filter((a) => !a.archived).map((a) => <Pressable key={a.id} accessibilityRole="button" accessibilityLabel={`${a.name}, ${money(accountBalance(a, txs))}`} onPress={() => onAccount(a)} style={styles.listRow}>
         <View style={{ flex: 1 }}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{a.name}</Text><Text style={[type.caption, { color: palette.muted }]}>{KIND_LABEL[a.kind]}</Text></View>
-        <Text style={[type.numeral, { color: palette.foreground, fontSize: 16 }]}>{formatAmount(accountBalance(a, txs), settings)}</Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={[type.numeral, { color: palette.foreground, fontSize: 16 }]}>{formatAmount(accountBalance(a, txs), settings)}</Text>
+          {toUsd(accountBalance(a, txs), settings) !== null ? <Text style={[type.caption, { color: palette.muted }]}>≈ {formatUsd(toUsd(accountBalance(a, txs), settings)!)}</Text> : null}
+        </View>
       </Pressable>)}
       {worth !== null && accounts.filter((a) => !a.archived).length > 1 ? <View style={[styles.listRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.border }]}>
-        <Text style={{ color: palette.muted, flex: 1 }}>Net worth (debts subtracted)</Text><Text style={[type.numeral, { color: palette.foreground, fontSize: 16 }]}>{formatAmount(worth, settings)}</Text></View> : null}
+        <Text style={{ color: palette.muted, flex: 1 }}>Net worth (debts subtracted)</Text><View style={{ alignItems: 'flex-end' }}><Text style={[type.numeral, { color: palette.foreground, fontSize: 16 }]}>{formatAmount(worth, settings)}</Text>
+        {toUsd(worth, settings) !== null ? <Text style={[type.caption, { color: palette.muted }]}>≈ {formatUsd(toUsd(worth, settings)!)}</Text> : null}</View></View> : null}
     </Card>
 
     <Card palette={palette}>
@@ -304,7 +309,7 @@ function AccountSheet({ data, target, palette, onClose, onChanged }: { data: Fin
     <Label palette={palette}>TYPE</Label>
     <ChipRow>{ACCOUNT_KINDS.map((k) => <Chip key={k} label={KIND_LABEL[k]} selected={kind === k} palette={palette} onPress={() => setKind(k)} />)}</ChipRow>
     <Field label={kind === 'liability' ? 'Amount owed at the start' : 'Balance at the start'} value={opening} onChangeText={setOpening} palette={palette}
-      keyboardType="decimal-pad" suffix={settings.unit} hint="Records you add later change the balance. To fix a wrong balance, add an adjustment rather than editing history." />
+      keyboardType="decimal-pad" suffix={settings.unit} money={settings} negative hint="Records you add later change the balance. To fix a wrong balance, add an adjustment rather than editing history." />
   </Sheet>;
 }
 
@@ -313,21 +318,55 @@ function SettingsSheet({ data, visible, palette, onClose, onChanged }: { data: F
   const { busy, run } = useBusy();
   const [unit, setUnit] = useState('');
   const [inflation, setInflation] = useState('');
+  const [rate, setRate] = useState('');
+  const [rateMeta, setRateMeta] = useState<{ date: string; source: string } | null>(null);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => { if (visible) { setUnit(data.settings.unit); setInflation(data.settings.inflationBp === null ? '' : String(data.settings.inflationBp / 100)); setError(null); } }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  const s = data.settings;
+  useEffect(() => {
+    if (!visible) return;
+    setUnit(s.unit); setInflation(s.inflationBp === null ? '' : String(s.inflationBp / 100)); setError(null);
+    setRate(s.usdRateX100 === null ? '' : groupDigits(String(s.usdRateX100 / 100), 2));
+    setRateMeta(s.usdRateDate ? { date: s.usdRateDate, source: s.usdRateSource ?? 'Entered by you' } : null);
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isUsd = unit.trim().toUpperCase() === 'USD';
+  async function fetchRate() {
+    setFetching(true); setError(null);
+    try {
+      const fetched = await fetchUsdRate(unit);
+      setRate(groupDigits(String(fetched.x100 / 100), 2)); setRateMeta({ date: fetched.date, source: fetched.source });
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not fetch the rate.'); }
+    finally { setFetching(false); }
+  }
   async function save() {
     const bp = inflation.trim() ? parsePercent(inflation) : null;
     if (inflation.trim() && bp === null) { setError('Enter the yearly rate as a percentage, for example 35 or 4.5.'); return; }
-    await run(async () => { await updateFinanceSettings(db, { unit, inflationBp: bp }); onChanged(); onClose(); }, setError);
+    const x100 = rate.trim() && !isUsd ? parseRate(rate) : null;
+    if (rate.trim() && !isUsd && x100 === null) { setError('Enter the dollar price as a number, for example 160000.'); return; }
+    // Typing clears the metadata, so a typed rate is dated today; a fetched or untouched one keeps its own date and source.
+    const meta = x100 === null ? null : rateMeta ?? { date: periodKey('day', new Date()), source: 'Entered by you' };
+    await run(async () => {
+      await updateFinanceSettings(db, { unit, inflationBp: bp, usdRateX100: x100, usdRateDate: meta?.date ?? null, usdRateSource: meta?.source ?? null });
+      onChanged(); onClose();
+    }, setError);
   }
   return <Sheet visible={visible} title="Money settings" palette={palette} onClose={onClose}
-    footer={<>{error ? <Text style={{ color: '#C0392B', fontSize: 13, marginBottom: 6 }}>{error}</Text> : null}
-      <PrimaryButton label={busy ? 'Saving…' : 'Save'} onPress={() => void save()} palette={palette} disabled={busy} /></>}>
+    footer={<>{error ? <Text accessibilityLiveRegion="polite" style={{ color: '#C0392B', fontSize: 13, marginBottom: 6 }}>{error}</Text> : null}
+      <PrimaryButton label={busy ? 'Saving…' : 'Save'} onPress={() => void save()} palette={palette} disabled={busy || fetching} /></>}>
     <Field label="Currency or unit label" value={unit} onChangeText={setUnit} palette={palette} maxLength={16}
-      hint={`Amounts use ${data.settings.decimals} decimals. Changing the label does not convert any amount.`} />
+      hint={`Amounts use ${s.decimals} decimals. Changing the label does not convert any amount.`} />
+    {isUsd ? <Text style={[type.caption, { color: palette.muted }]}>Your amounts are already in dollars, so no dollar rate is needed.</Text> : <>
+      <Field label={`Price of 1 US dollar (in ${unit.trim() || 'your unit'})`} value={rate} onChangeText={(t) => { setRate(groupDigits(t, 2)); setRateMeta(null); }} palette={palette}
+        keyboardType="decimal-pad" suffix={unit.trim() || undefined}
+        hint={rateMeta ? `${rateMeta.source} · ${dateName(rateMeta.date)}. Amounts show a dollar value using this rate; stored amounts never change.`
+          : 'Optional. Type today’s rate, or fetch it. Amount fields then show their dollar value.'} />
+      <PrimaryButton label={fetching ? 'Fetching…' : 'Get today’s rate online'} onPress={() => void fetchRate()} palette={palette} disabled={fetching} />
+      <Text style={[type.caption, { color: palette.muted }]}>
+        Only a request for the public rate is sent; none of your records leave this device. For Toman and Rial the rate is the market price of a dollar-pegged token (USDT) on a public exchange, which tracks the open-market dollar but is not an official or guaranteed rate. Review it before saving.</Text>
+    </>}
     <Field label="General inflation scenario (per year)" value={inflation} onChangeText={setInflation} palette={palette} keyboardType="decimal-pad" suffix="%"
-      hint={data.settings.inflationBp === null ? 'Optional. Your own assumption, used only to express future amounts in today’s purchasing power. Evrida does not look up inflation figures.'
-        : `Currently ${bpToPercent(data.settings.inflationBp)} a year. This is a scenario you entered, not observed inflation.`} />
+      hint={s.inflationBp === null ? 'Optional. Your own assumption, used only to express future amounts in today’s purchasing power. Evrida does not look up inflation figures.'
+        : `Currently ${bpToPercent(s.inflationBp)} a year. This is a scenario you entered, not observed inflation.`} />
   </Sheet>;
 }
 

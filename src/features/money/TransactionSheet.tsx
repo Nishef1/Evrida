@@ -128,7 +128,7 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
     {refunded ? <Text style={[type_.caption, { color: palette.muted }]}>
       Refund of {formatMoney(refunded.amount, settings)} · {categoryName(refunded.categoryId)}. It lowers that category’s net spending instead of counting as income.</Text> : null}
 
-    <Field label="Amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit}
+    <Field label="Amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings} negative={type === 'adjustment'}
       placeholder={settings.decimals ? '0.00' : '0'} />
     <DateTimeField value={date} onChange={setDate} label="Date" />
 
@@ -148,7 +148,7 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
             {categories.map((c) => <Chip key={c.id} label={c.name} selected={row.categoryId === c.id} palette={palette}
               onPress={() => setSplits(splits.map((r, j) => j === i ? { ...r, categoryId: c.id } : r))} />)}
           </ScrollView>
-          <Field label={`Part ${i + 1}`} value={row.amount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit}
+          <Field label={`Part ${i + 1}`} value={row.amount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings}
             onChangeText={(v) => setSplits(splits.map((r, j) => j === i ? { ...r, amount: v } : r))} />
         </View>)}
         <Text style={[type_.caption, { color: total !== null && splitTotal === total ? palette.accent : palette.muted }]}>

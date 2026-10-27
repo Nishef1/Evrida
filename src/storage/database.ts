@@ -243,7 +243,15 @@ const V9_SCHEMA = `
   );
 `;
 
-export const SCHEMA_VERSION = 9;
+const V10_SCHEMA = `
+  -- An optional, dated exchange rate (units of the reporting currency per 1 USD, times 100)
+  -- used only to show amounts in dollars. It never changes any stored amount.
+  ALTER TABLE fin_settings ADD COLUMN usd_rate_x100 INTEGER;
+  ALTER TABLE fin_settings ADD COLUMN usd_rate_date TEXT;
+  ALTER TABLE fin_settings ADD COLUMN usd_rate_source TEXT;
+`;
+
+export const SCHEMA_VERSION = 10;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
@@ -265,6 +273,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     if (version <= 6) await tx.execAsync(V7_SCHEMA);
     if (version <= 7) await tx.execAsync(V8_SCHEMA);
     if (version <= 8) await tx.execAsync(V9_SCHEMA);
+    if (version <= 9) await tx.execAsync(V10_SCHEMA);
     await tx.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   });
 }

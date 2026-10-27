@@ -190,3 +190,7 @@ Recommendations should be transparent arithmetic and trade-offs, not opaque comm
 ## Research basis
 
 This design borrows established patterns—not proprietary implementation—from personal-finance products that separate transaction type, category and cross-cutting tags, support custom categories, budget by month, recurring bills, goal-linked balances and spending reports. For inflation-adjusted values, use the documented price-index approach rather than applying an unlabeled flat multiplier to every financial figure. Product-specific research links are maintained outside this public implementation spec; only public, non-sensitive design decisions belong here.
+
+## Dollar view (added 2026-10-27)
+
+An optional, dated USD rate (units of the reporting currency per 1 US dollar) lets amount fields and account balances show a dollar value. It never changes a stored amount and is not a second currency in the ledger. The rate can be typed or fetched on request from a public source: for Toman/Rial the market price of USDT on Bitpin (fallback Wallex), otherwise a daily reference rate from open.er-api.com. Only a request for the rate leaves the device. The source and date are stored with the rate and shown wherever it is used. Native-currency amounts always remain the source of truth.

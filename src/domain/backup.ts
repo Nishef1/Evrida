@@ -16,7 +16,7 @@ export const BACKUP_COLUMNS = {
   time_blocks: [...V1_COLUMNS.time_blocks, 'flexible'],
   focus_history: [...V1_COLUMNS.focus_history, 'goal_id', 'block_id'],
   time_budgets: ['goal_id', 'weekly_minutes'],
-  fin_settings: ['id', 'unit', 'decimals', 'inflation_bp', 'created_at', 'updated_at'],
+  fin_settings: ['id', 'unit', 'decimals', 'inflation_bp', 'usd_rate_x100', 'usd_rate_date', 'usd_rate_source', 'created_at', 'updated_at'],
   fin_accounts: ['id', 'name', 'kind', 'opening', 'archived_at', 'created_at', 'updated_at'],
   fin_categories: ['id', 'name', 'kind', 'group_name', 'archived_at', 'created_at', 'updated_at'],
   fin_tags: ['id', 'name', 'created_at', 'updated_at'],
@@ -34,7 +34,7 @@ const FINANCE_TABLES = Object.keys(BACKUP_COLUMNS).filter((name) => name.startsW
 export type BackupTable = keyof typeof BACKUP_COLUMNS;
 export type BackupRow = Record<string, string | number | null>;
 export interface Backup {
-  format: 'evrida-backup' | 'eonward-backup'; version: 2 | 3; schemaVersion: 8 | 9; createdAt: string;
+  format: 'evrida-backup' | 'eonward-backup'; version: 2 | 3 | 4; schemaVersion: 8 | 9 | 10; createdAt: string;
   tables: Record<BackupTable, BackupRow[]>;
 }
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
@@ -58,7 +58,7 @@ export function parseBackup(text: string): Backup {
   const incomingSchema: number = data?.schemaVersion;
   if (!data || !['eonward-backup', 'evrida-backup'].includes(data.format) ||
     !((incomingVersion === 1 && incomingSchema === 7) || (incomingVersion === 2 && incomingSchema === 8)
-      || (incomingVersion === 3 && incomingSchema === 9)) ||
+      || (incomingVersion === 3 && incomingSchema === 9) || (incomingVersion === 4 && incomingSchema === 10)) ||
     !stamp(data.createdAt) || !data.tables || Array.isArray(data.tables)) fail('unsupported format or version.');
   if (incomingVersion === 1) {
     // Validate legacy row shapes before adding the new opt-in columns.
@@ -81,9 +81,15 @@ export function parseBackup(text: string): Backup {
   if (data.version === 2) {
     // Older backups predate optional finance; they carry none of its tables.
     if (FINANCE_TABLES.some((name) => name in data.tables)) fail('unexpected collection.');
-    data = { ...data, version: 3, schemaVersion: 9, tables: {
+    data = { ...data, version: 4, schemaVersion: 10, tables: {
       ...data.tables, ...Object.fromEntries(FINANCE_TABLES.map((name) => [name, []])),
     } };
+  }
+  if (data.version === 3) {
+    // Version 3 finance settings predate the optional dollar rate.
+    if (!Array.isArray(data.tables.fin_settings)) fail('invalid fin_settings collection.');
+    data = { ...data, version: 4, schemaVersion: 10, tables: { ...data.tables,
+      fin_settings: data.tables.fin_settings.map((row) => ({ ...row, usd_rate_x100: null, usd_rate_date: null, usd_rate_source: null })) } };
   }
   if (Object.keys(data.tables).some((key) => !(key in BACKUP_COLUMNS))) fail('unexpected collection.');
   for (const table of Object.keys(BACKUP_COLUMNS) as BackupTable[]) {

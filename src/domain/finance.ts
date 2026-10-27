@@ -14,7 +14,11 @@ export type Cadence = typeof CADENCES[number];
 export const NATURES = ['fixed', 'flexible', 'irregular'] as const;
 export type Nature = typeof NATURES[number];
 
-export interface FinSettings { unit: string; decimals: 0 | 2; inflationBp: number | null }
+export interface FinSettings {
+  unit: string; decimals: 0 | 2; inflationBp: number | null;
+  /** Units of the reporting currency per 1 USD, times 100; null until the user sets or fetches one. */
+  usdRateX100: number | null; usdRateDate: string | null; usdRateSource: string | null;
+}
 export interface FinAccount { id: string; name: string; kind: AccountKind; opening: number; archived: boolean }
 export interface FinCategory { id: string; name: string; kind: 'income' | 'expense'; group: string; archived: boolean }
 export interface FinTx {
@@ -106,6 +110,32 @@ export function compactAmount(amount: number, settings: Pick<FinSettings, 'decim
   if (value >= 1e6) return `${sign}${+(value / 1e6).toFixed(1)}M`;
   if (value >= 1e4) return `${sign}${+(value / 1e3).toFixed(0)}K`;
   return formatAmount(amount, settings);
+}
+/** Group the integer part by thousands while typing; Persian/Arabic digits become Latin, extra characters are dropped. */
+export function groupDigits(text: string, decimals: 0 | 2, allowNegative = false): string {
+  const latin = text.replace(/[۰-۹٠-٩]/g, (c) => DIGITS[c]).replace(/[٫،٬]/g, (c) => (c === '٫' ? '.' : ','));
+  const negative = allowNegative && latin.trimStart().startsWith('-');
+  let [whole, ...rest] = latin.replace(/[^\d.]/g, '').split('.');
+  whole = whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fraction = decimals && rest.length ? '.' + rest.join('').slice(0, decimals) : '';
+  return (negative ? '-' : '') + whole + fraction;
+}
+/** The amount in dollars, or null when no rate is set or the reporting unit already is USD. */
+export function toUsd(amount: number, s: Pick<FinSettings, 'decimals' | 'usdRateX100' | 'unit'>): number | null {
+  if (!s.usdRateX100 || s.unit.trim().toUpperCase() === 'USD') return null;
+  return (amount / 10 ** s.decimals) / (s.usdRateX100 / 100);
+}
+export function formatUsd(usd: number): string {
+  const abs = Math.abs(usd);
+  const text = abs >= 100 ? Math.round(abs).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    : abs.toFixed(2);
+  return `${usd < 0 ? '−' : ''}$${text}`;
+}
+export function parseRate(text: string): number | null {
+  const clean = text.replace(/[۰-۹٠-٩]/g, (c) => DIGITS[c]).replace(/[\s,،٬]/g, '').replace('٫', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null;
+  const x100 = Math.round(Number(clean) * 100);
+  return x100 > 0 && x100 <= 1e13 ? x100 : null;
 }
 export const bpToPercent = (bp: number): string => `${+(bp / 100).toFixed(2)}%`;
 export function parsePercent(text: string): number | null {
@@ -357,6 +387,9 @@ export function validateFinanceBackup(t: Record<string, Row[]>, goalIds: Set<unk
   const accounts = ids(t.fin_accounts), categories = ids(t.fin_categories), tags = ids(t.fin_tags),
     txs = ids(t.fin_transactions), finGoals = ids(t.fin_goals);
   for (const r of t.fin_settings) {
+    if ((r.usd_rate_x100 !== null && (!int(r.usd_rate_x100) || r.usd_rate_x100 <= 0))
+      || (r.usd_rate_date !== null && !isDateKey(String(r.usd_rate_date))) || (r.usd_rate_source !== null && !text(r.usd_rate_source, 80))
+      || (r.usd_rate_x100 === null) !== (r.usd_rate_date === null)) bad('dollar rate');
     if (r.id !== 'main' || !text(r.unit, 16) || !String(r.unit).trim() || ![0, 2].includes(r.decimals as number)
       || (r.inflation_bp !== null && (!int(r.inflation_bp) || r.inflation_bp < 0 || r.inflation_bp > 1000000))) bad('finance settings');
   }

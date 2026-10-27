@@ -143,7 +143,7 @@ function BudgetSheet({ data, target, palette, onClose, onChanged }: { data: Fina
         onPress={() => { setCategoryId(c.id); const cur = data.budgets.find((b) => b.categoryId === c.id); setAmount(cur ? formatAmount(cur.amount, settings).replace(/,/g, '') : ''); }} />)}
       <Chip label="All spending" selected={categoryId === null} palette={palette} onPress={() => { setCategoryId(null); const cur = data.budgets.find((b) => b.categoryId === null); setAmount(cur ? formatAmount(cur.amount, settings).replace(/,/g, '') : ''); }} />
     </ChipRow></> : null}
-    <Field label="Monthly amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit}
+    <Field label="Monthly amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings}
       hint="Budgets compare against recorded spending, net of refunds. Unused amounts don’t carry over." />
   </Sheet>;
 }
@@ -207,7 +207,7 @@ function PlanSheet({ data, target, palette, onClose, onChanged }: { data: Financ
     <Segments palette={palette} value={direction} onChange={(d) => { setDirection(d); setCategoryId(null); if (d === 'income') setNature('fixed'); }}
       options={[{ id: 'expense', label: 'Expense' }, { id: 'income', label: 'Income' }]} />
     <Field label="Name" value={title} onChangeText={setTitle} palette={palette} maxLength={120} placeholder={direction === 'income' ? 'Salary' : 'Rent'} />
-    <Field label="Amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} />
+    <Field label="Amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings} />
     {direction === 'expense' ? <>
       <Label palette={palette}>KIND</Label>
       <ChipRow>{NATURES.map((n) => <Chip key={n} label={NATURE_LABEL[n]} selected={nature === n} palette={palette} onPress={() => { setNature(n); if (n === 'irregular') setCadence('yearly'); }} />)}</ChipRow>

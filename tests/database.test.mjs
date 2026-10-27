@@ -63,7 +63,7 @@ test('native links reject malformed and oversized input before tolerant URI deco
 });
 
 test('newer database is rejected and SQLite gate serializes native calls', async () => {
-  const fake = fakeDatabase(10);
+  const fake = fakeDatabase(11);
   await assert.rejects(() => migrateDatabase(fake.db), /newer Evrida database/);
   assert.equal(fake.transactionCalls, 0);
   let inFlight = 0, maximum = 0, calls = 0;
@@ -105,11 +105,11 @@ test('newer database is rejected and SQLite gate serializes native calls', async
   assert.deepEqual(eventLog, ['begin', 'inside', 'commit', 'outside']);
 });
 
-test('real SQLite migrates populated v5 data to v9 without losing goals, boards or timer state', async () => {
+test('real SQLite migrates populated v5 data to v10 without losing goals, boards or timer state', async () => {
   const { sqlite, db } = realDatabase();
   try {
     await migrateDatabase(db);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 9);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 10);
     const stamp = '2026-10-14T21:00:00.000Z';
     sqlite.prepare(`INSERT INTO goals
       (id, title, notes, horizon, period_key, created_at, updated_at)
@@ -126,6 +126,8 @@ test('real SQLite migrates populated v5 data to v9 without losing goals, boards 
     );
     // Emulate the exact structural difference from v5 (not a fresh v6 database).
     sqlite.exec(`
+      DROP TABLE fin_plans; DROP TABLE fin_budgets; DROP TABLE fin_allocations; DROP TABLE fin_goals; DROP TABLE fin_tx_tags;
+      DROP TABLE fin_splits; DROP TABLE fin_transactions; DROP TABLE fin_tags; DROP TABLE fin_categories; DROP TABLE fin_accounts; DROP TABLE fin_settings;
       DROP TABLE replan_checkpoint;
       DROP TABLE time_budgets;
       DROP INDEX focus_history_by_goal_end;
@@ -148,7 +150,7 @@ test('real SQLite migrates populated v5 data to v9 without losing goals, boards 
       (id, block_id, status, duration_ms, remaining_ms, deadline_ms, updated_at_ms)
       VALUES (1, ?, 'paused', ?, ?, ?, ?)`).run('t1', 1200000, 720000, 1500000, 1500000);
     await migrateDatabase(db);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 9);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 10);
     assert.equal(sqlite.prepare('SELECT notes FROM goals WHERE id = ?').get('g1').notes, 'Keep this note');
     assert.equal(sqlite.prepare('SELECT count(*) AS n FROM board_goals').get().n, 1);
     assert.equal(sqlite.prepare('SELECT intention FROM time_blocks WHERE id = ?').get('t1').intention, 'Deep work');
@@ -401,7 +403,7 @@ test('offline planning lifecycle preserves identity, recurrence, completion hist
     assert.equal((await getGoal(source.db, step)).dueDate, '2026-02-02');
     await archiveGoal(source.db, parent); await restoreGoal(source.db, parent);
     const snapshot = await exportBackup(source.db), text = JSON.stringify(snapshot);
-    assert.equal(snapshot.version, 3);
+    assert.equal(snapshot.version, 4);
     // The backup size contract applies to the serialized file itself, not
     // a compact validation copy followed by a larger pretty-printed export.
     assert.doesNotThrow(() => parseBackup(JSON.stringify(snapshot)));

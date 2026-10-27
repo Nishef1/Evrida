@@ -155,10 +155,10 @@ function GoalSheet({ data, target, today, palette, onClose, onChanged, onMove }:
       </View>
     </Card> : null}
     <Field label="Name" value={title} onChangeText={setTitle} palette={palette} maxLength={120} placeholder="e.g. Car repair reserve" />
-    <Field label="Target at today’s price" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} />
+    <Field label="Target at today’s price" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings} />
     <Label palette={palette}>TARGET DATE (OPTIONAL)</Label>
     <DateTimeField value={date} onChange={setDate} onClear={() => setDate('')} label="Target date" placeholder="No fixed date" />
-    <Field label="Planned monthly amount" value={monthly} onChangeText={setMonthly} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} />
+    <Field label="Planned monthly amount" value={monthly} onChangeText={setMonthly} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings} />
     {suggestion ? <ChipRow><Chip palette={palette} selected={false} label={`Use your recent average: ${formatAmount(suggestion.amount, settings)}`}
       onPress={() => setMonthly(plain(suggestion.amount))} /></ChipRow> : null}
     {suggestion ? <Text style={[type.caption, { color: palette.muted }]}>Average net saving over the last {suggestion.months} month{suggestion.months === 1 ? '' : 's'} with records. It is a starting point, not a promise.</Text> : null}
@@ -194,7 +194,7 @@ function MoveSheet({ data, move, today, palette, onClose, onChanged }: {
       {move?.release ? `${formatMoney(held, settings)} is assigned to this goal. Released money becomes available for other goals.`
         : `${formatMoney(free, settings)} is not assigned to any goal. This does not move money between accounts.`}
     </Text>
-    <Field label="Amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} />
+    <Field label="Amount" value={amount} onChangeText={setAmount} palette={palette} keyboardType="decimal-pad" suffix={settings.unit} money={settings} />
     <ChipRow><Chip palette={palette} selected={false} label={move?.release ? 'All of it' : 'All available'}
       onPress={() => setAmount(formatAmount(move?.release ? held : Math.max(0, free), settings).replace(/,/g, ''))} /></ChipRow>
   </Sheet>;

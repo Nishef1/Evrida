@@ -6,10 +6,10 @@ import { exportBackup, restoreBackup } from '../src/storage/backup.ts';
 import { parseBackup } from '../src/domain/backup.ts';
 import {
   accountBalance, categoryChange, categoryTotals, coveredMonths, forecastGoal, formatMoney, monthSummary, netWorth,
-  parseAmount, tagTotals, unallocatedFunds, validateTx,
+  groupDigits, parseAmount, parseRate, tagTotals, toUsd, unallocatedFunds, validateTx,
 } from '../src/domain/finance.ts';
 import {
-  allocate, confirmPlan, deleteTransaction, loadFinance, saveAccount, saveFinGoal, savePlan, saveTransaction, setBudget, setupFinance,
+  allocate, confirmPlan, deleteTransaction, loadFinance, saveAccount, saveFinGoal, savePlan, saveTransaction, setBudget, setupFinance, updateFinanceSettings,
 } from '../src/storage/finance.ts';
 
 function realDatabase() {
@@ -36,6 +36,13 @@ test('finance math keeps transfers, refunds, splits, history gaps, inflation and
   assert.equal(parseAmount('12.5', 0), null, 'a fraction is rejected when the unit has no decimals');
   assert.equal(parseAmount('12.50', 2), 1250);
   assert.equal(formatMoney(1250000, { unit: 'Toman', decimals: 0 }), '1,250,000 Toman');
+  assert.equal(groupDigits('۴۰۰۰۰۰۰', 0), '4,000,000');
+  assert.equal(groupDigits('1234567.891', 2), '1,234,567.89');
+  assert.equal(groupDigits('-0042', 0, true), '-42');
+  const dollar = { unit: 'Toman', decimals: 0, usdRateX100: parseRate('160,000') };
+  assert.equal(toUsd(4000000, dollar), 25, '4 million Toman at 160,000 per dollar is $25');
+  assert.equal(toUsd(4000000, { ...dollar, usdRateX100: null }), null);
+  assert.equal(toUsd(10, { unit: 'USD', decimals: 2, usdRateX100: 100 }), null, 'no conversion note when the unit already is dollars');
 
   const accounts = [{ id: 'a', name: 'Bank', kind: 'bank', opening: 1000, archived: false },
     { id: 'b', name: 'Cash', kind: 'cash', opening: 0, archived: false }];
@@ -127,7 +134,17 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(data.txs.filter((t) => t.note === 'Rent').length, 1);
 
     const backup = await exportBackup(source.db);
-    assert.equal(backup.version, 3);
+    assert.equal(backup.version, 4);
+    await updateFinanceSettings(source.db, { unit: 'Toman', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
+    const withRate = await exportBackup(source.db);
+    assert.equal(withRate.tables.fin_settings[0].usd_rate_x100, 16000000);
+    const v3 = structuredClone(withRate);
+    v3.version = 3; v3.schemaVersion = 9;
+    for (const row of v3.tables.fin_settings) { delete row.usd_rate_x100; delete row.usd_rate_date; delete row.usd_rate_source; }
+    assert.equal(parseBackup(JSON.stringify(v3)).tables.fin_settings[0].usd_rate_x100, null, 'version 3 backups gain an empty rate');
+    const badRate = structuredClone(withRate);
+    badRate.tables.fin_settings[0].usd_rate_date = null;
+    assert.throws(() => parseBackup(JSON.stringify(badRate)), /dollar rate/);
     assert.equal(backup.tables.fin_transactions.length, data.txs.length);
     assert.equal(await restoreBackup(target.db, JSON.stringify(backup)) > 0, true);
     const restored = await loadFinance(target.db);
