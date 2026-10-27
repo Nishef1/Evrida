@@ -27,11 +27,11 @@ jobs:
         run: |
           EXPO_NO_GIT_STATUS=1 npx expo prebuild --platform all --no-install --clean
           grep -q 'android.permission.SCHEDULE_EXACT_ALARM' android/app/src/main/AndroidManifest.xml
-          test -f ios/Eonward.xcodeproj/project.pbxproj
-          test -f ios/Eonward/Info.plist
+          test -f ios/Evrida.xcodeproj/project.pbxproj
+          test -f ios/Evrida/Info.plist
       - name: Verify Android JavaScript bundle
-        run: npx expo export --platform android --output-dir /tmp/eonward-android-export
+        run: npx expo export --platform android --output-dir /tmp/evrida-android-export
       - name: Verify iOS JavaScript bundle
-        run: npx expo export --platform ios --output-dir /tmp/eonward-ios-export
+        run: npx expo export --platform ios --output-dir /tmp/evrida-ios-export
       - name: Verify SDK dependency alignment
         run: npm run deps:check
