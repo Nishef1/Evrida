@@ -448,7 +448,7 @@ export function HorizonsScreen() {
             {searching ? 'Search your plans' : view === 'inbox' ? 'Inbox' : view === 'perspective' ? 'Your horizons' : view === 'archive' ? 'Archive' : horizon === 'day' && key === clockDay ? 'Today' : HORIZON_TITLES[horizon]}
           </Text>
           {!searching ? <Text style={[styles.caption, { color: palette.muted }]}>
-            {view === 'inbox' ? 'Capture now. Decide when later.' : view === 'perspective' ? 'Daily steps. Longer-term direction.' : view === 'archive' ? 'Saved for another season.' : caption}
+            {view === 'inbox' ? 'Capture now. Decide when later.' : view === 'perspective' ? 'Daily steps. Longer-term direction.' : view === 'archive' ? 'Saved for another season.' : openGoals.length ? `${caption} · ${openGoals.length} open` : caption}
           </Text> : null}
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={searching ? 'Close search' : 'Search all goals and notes'}
@@ -459,7 +459,8 @@ export function HorizonsScreen() {
           <MoreHorizontal size={23} color={palette.foreground} strokeWidth={1.8} />
         </Pressable>
       </View>
-      {!searching ? <View style={styles.spectrum}><HorizonSpectrum palette={palette} active={view === 'focus' ? horizon : undefined} /></View> : null}
+      {!searching ? <View style={styles.spectrum}><HorizonSpectrum palette={palette} active={view === 'focus' ? horizon : undefined}
+          onSelect={(target) => { setView('focus'); setHorizon(target); }} /></View> : null}
       {searching ? <TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search goals, notes or parent goals"
         accessibilityLabel="Search goals and notes" placeholderTextColor={palette.muted}
         style={[styles.searchInput, { color: palette.foreground, backgroundColor: palette.surface, borderColor: palette.border }]} /> : <>
@@ -495,15 +496,10 @@ export function HorizonsScreen() {
           </View>
         </> : null}
       </>}
-      {showingList && !searching && !waitingForList && !failure && goals.length > 0 ?
+      {showingList && !searching && !waitingForList && !failure && goals.length > 0 && openGoals.length === 0 ?
         <View style={[styles.planSummary, { borderColor: palette.border }]}>
-          <Text style={[styles.summaryText, { color: palette.foreground }]}>
-            {openGoals.length === 0 ? 'Room to breathe.' : `${openGoals.length} open ${openGoals.length === 1 ? 'intention' : 'intentions'}`}
-          </Text>
-          <Text style={[styles.summaryDetail, { color: palette.muted }]}>
-            {openGoals.length === 0 ? 'Your planned intentions are complete. Leave some space for yourself.' :
-              view === 'inbox' ? 'Captured safely. Choose a time when you’re ready.' : 'One step at a time. Your plan can change.'}
-          </Text>
+          <Text style={[styles.summaryText, { color: palette.foreground }]}>Room to breathe.</Text>
+          <Text style={[styles.summaryDetail, { color: palette.muted }]}>Everything planned here is done. Leave some space for yourself.</Text>
         </View> : null}
       {!showingList && view === 'perspective' ? <PerspectiveView sections={perspectiveSections} palette={palette}
         loading={perspectiveLoading} error={perspectiveError} onRetry={() => setPerspectiveRevision((n) => n + 1)}
@@ -530,7 +526,7 @@ export function HorizonsScreen() {
             <Text style={[styles.sectionTitle, { color: palette.muted, flex: 1 }]}>Completed · {doneGoals.length}</Text>
             {showCompleted ? <ChevronDown size={18} color={palette.muted} /> : <ChevronRight size={18} color={palette.muted} />}
           </Pressable>
-        ) : section.data.length ? <View style={styles.sectionHeader}>
+        ) : section.data.length && view === 'inbox' ? <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: palette.foreground }]}>{section.title}</Text>
           <Text style={[styles.sectionCount, { color: palette.muted }]}>{section.data.length}</Text>
         </View> : null}
@@ -588,7 +584,8 @@ export function HorizonsScreen() {
         )}
       />
       {showingList && !searching ? <View>
-        <Text accessibilityLiveRegion="polite" style={[styles.captureContext, { color: palette.muted }]}>{captureNotice?.context === listContext ? captureNotice.label : (view === 'inbox' ? 'INBOX · no date needed' : `ADDING TO · ${caption}`)}</Text>
+        {captureNotice?.context === listContext || view === 'inbox' || !(horizon === 'day' && key === clockDay) ?
+          <Text accessibilityLiveRegion="polite" style={[styles.captureContext, { color: palette.muted }]}>{captureNotice?.context === listContext ? captureNotice.label : (view === 'inbox' ? 'INBOX · no date needed' : `ADDING TO · ${caption}`)}</Text> : null}
         <View style={[styles.quickBar, { borderColor: palette.border, backgroundColor: palette.surface, boxShadow: palette === colors.dark ? depth.dark.control : depth.light.control }]}>
           <TextInput ref={quickInput} value={quickTitle} onChangeText={(value) => { setQuickTitle(value); setCaptureNotice(null); }} maxLength={180}
             placeholder={view === 'inbox' ? 'Get it off your mind…' : 'One thing for now…'}
@@ -770,7 +767,7 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 20, paddingBottom: 28, flexGrow: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingTop: 12, paddingBottom: 16 },
   pageTitle: { fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -1.1 },
-  spectrum: { marginBottom: 16 },
+  spectrum: { marginBottom: 4, marginTop: -8 },
   caption: { fontSize: 13, lineHeight: 20, marginTop: 6 },
   utility: { minHeight: 48, minWidth: 48, alignItems: 'center', justifyContent: 'center' },
   modes: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 20, marginBottom: 16 },

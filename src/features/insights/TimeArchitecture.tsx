@@ -74,8 +74,7 @@ export function TimeArchitecture({ palette, history, refreshKey }: Props) {
   return <View style={styles.section}>
     <Text style={[styles.title, { color: palette.foreground }]}>Goal impact</Text>
     <Text style={[styles.caption, { color: palette.muted }]}>
-      Recorded Focus tied to your goals this week. Legacy sessions without an ID are not guessed or attributed.
-      Parent paths reflect today's hierarchy.
+      Recorded Focus tied to your goals this week. Parent paths reflect today's hierarchy.
     </Text>
     {impact.length ? impact.map((item) => <View key={item.goal!.id}
       style={[styles.row, { borderBottomColor: palette.border }]}>
@@ -90,7 +89,7 @@ export function TimeArchitecture({ palette, history, refreshKey }: Props) {
       Start and finish Focus for a goal to see its actual time here.
     </Text>}
     <View style={[styles.head, { marginTop: 15 }]}>
-      <Text style={[styles.title, { color: palette.foreground }]}>Time architecture</Text>
+      <Text style={[styles.title, { color: palette.foreground }]}>Weekly time budget</Text>
       <Pressable accessibilityRole="button" disabled={!available}
         accessibilityState={{ disabled: !available }}
         onPress={() => {

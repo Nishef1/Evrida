@@ -8,7 +8,7 @@ Direction: **Daybreak** (2026-10-27) — warm paper by day, ink-blue night, and 
 ## Visual grammar
 
 - A warm paper canvas supports white cards in light mode; dark mode is an ink-blue night with lifted horizon colors.
-- Indigo is the single action color: selected destination, primary buttons, links and completion fill. Horizon colors appear only as small marks (dot, ring, strip). Do not tint whole surfaces with them, and never rely on a horizon color alone to carry meaning.
+- Turquoise (firouzeh, deep teal by day, luminous by night) is the single action color — calm and focused, the natural complement of the sunrise-orange Day hue, and a color with long standing in Persian art: selected destination, primary buttons, links and completion fill. Horizon colors appear only as small marks (dot, ring, strip). Do not tint whole surfaces with them, and never rely on a horizon color alone to carry meaning.
 - Small layered shadows distinguish cards and selected controls. Dark mode relies primarily on border and surface separation. Shadows must never carry essential state alone.
 - Keep controls soft and rounded: 14dp controls, 20dp cards, 28dp sheets, full pills for capture, chips and the dock indicator. Nested radii should follow the actual inset rather than matching outer radii indiscriminately.
 - Typography uses the native system family. Screen titles are 28–32sp, goal titles 15–16sp, ordinary copy 13–15sp. Supporting text may be smaller, while respecting dynamic font scaling. Decorative brand labels are secondary.
@@ -26,12 +26,12 @@ Direction: **Daybreak** (2026-10-27) — warm paper by day, ink-blue night, and 
 | Inset/control group | `#F1ECE4` | `#161A25` |
 | Primary text | `#1F1B16` | `#F2EFE9` |
 | Secondary text | `#6B6358` | `#A7A9B8` |
-| Accent | `#4F46C8` | `#A9A3FF` |
-| On accent | `#FFFFFF` | `#17143A` |
-| Accent surface | `#ECEAFB` | `#25234A` |
+| Accent | `#0E7670` | `#5FD3C4` |
+| On accent | `#FFFFFF` | `#06302C` |
+| Accent surface | `#E3F2EF` | `#12332F` |
 | Border | `#E9E2D7` | `#2C3243` |
 
-Horizon spectrum (`palette.horizon`): Day `#D9722A` / `#FFA45E`, Week `#D6455D` / `#FF7D8F`, Month `#B83C86` / `#E477BC`, Quarter `#8444C0` / `#B58AF0`, Year `#5654D4` / `#8C8CFF`, Decade `#2F6FB5` / `#6FA8E8`, Life `#1F3A5F` / `#8FA7D0` (light / dark). Keep the dark selected-control surface lighter than its track.
+Horizon spectrum (`palette.horizon`): Day `#D9722A` / `#FFA45E`, Week `#D6455D` / `#FF7D8F`, Month `#B83C86` / `#E477BC`, Quarter `#8444C0` / `#B58AF0`, Year `#5654D4` / `#8C8CFF`, Decade `#2F6FB5` / `#6FA8E8`, Life `#1F3A5F` / `#6283BE` (light / dark). Keep the dark selected-control surface lighter than its track.
 
 Use `onAccent` for filled primary controls, not hard-coded white. Completion must also have a check and semantic accessibility state. Timeboxes retain a separate warm scheduling accent; calendar color never replaces exact times or labels.
 
@@ -46,8 +46,8 @@ Use `onAccent` for filled primary controls, not hard-coded white. Completion mus
 - Goal cards lead with the title and optionally show a compact connected-parent badge. Completion and organization have separate touch targets.
 - Plan separates open goals from a collapsed Completed section with a real count and an explicit show/hide control. Completed goals stay searchable and can be reopened. The count describes the selected planning context, not when completion happened.
 - A goal's next steps can expand inline: show up to three canonical children, their actual planning contexts and independent completion controls, with access to all steps through goal details. Read children on expansion and refresh an expanded preview after writes; avoid replacing the entire list during a same-context refresh.
-- Capture names its destination above the input and announces a successful save there. Changing planning context must not carry a previous destination's success message. Keep the keyboard available for consecutive captures and retain the typed title when opening Details.
-- Horizons displays the seven time scales along a quiet rail. The rail connects time scales, not arbitrary goal entities. Actual parent relationships are shown only from stored relationships.
+- Capture names its destination above the input and announces a successful save there; the line is omitted only for the obvious default (Today) when nothing is being announced. Changing planning context must not carry a previous destination's success message. Keep the keyboard available for consecutive captures and retain the typed title when opening Details.
+- The Plan screen's seven-band spectrum strip is also a quick horizon switch (44dp bands, tab role); the chip beside it names the horizon and opens the full picker. The list leads with the date and open count in the subtitle instead of separate summary and section-header blocks. Horizons displays the seven time scales along a quiet rail. The rail connects time scales, not arbitrary goal entities. Actual parent relationships are shown only from stored relationships.
 - Empty states guide one useful action without fake progress, sample goals inserted into user data, or a second competing primary button.
 
 ## Goal detail and editing

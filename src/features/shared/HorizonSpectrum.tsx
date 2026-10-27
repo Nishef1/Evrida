@@ -1,20 +1,24 @@
-import { View } from 'react-native';
-import { HORIZONS, type Horizon } from '../../domain/horizons';
+import { Pressable, View } from 'react-native';
+import { HORIZONS, HORIZON_TITLES, type Horizon } from '../../domain/horizons';
 import type { Palette } from '../../theme/tokens';
 
 /**
- * The seven planning horizons as one sunrise-to-midnight strip. It repeats the
- * horizon selector's state visually and is hidden from screen readers so the
- * selector remains the single accessible control.
+ * The seven planning horizons as one sunrise-to-midnight strip and a quick
+ * switch between them. Every band keeps its full color; the active one is
+ * taller, so the strip reads as a map of time scales rather than progress.
+ * Each band is a 44dp touch target with a labeled tab role.
  */
-export function HorizonSpectrum({ palette, active, height = 6 }: { palette: Palette; active?: Horizon; height?: number }) {
-  // Every band keeps its full color; the active one is simply taller, so the strip
-  // reads as a map of time scales rather than a progress bar.
-  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-    style={{ flexDirection: 'row', gap: 3, height: height + 4, alignItems: 'center' }}>
+export function HorizonSpectrum({ palette, active, height = 6, onSelect }: {
+  palette: Palette; active?: Horizon; height?: number; onSelect?: (horizon: Horizon) => void;
+}) {
+  return <View style={{ flexDirection: 'row', gap: 3 }} accessibilityRole="tablist">
     {HORIZONS.map((item) => {
       const size = active === item ? height + 4 : active ? height - 2 : height;
-      return <View key={item} style={{ flex: 1, height: size, borderRadius: size / 2, backgroundColor: palette.horizon[item] }} />;
+      return <Pressable key={item} accessibilityRole="tab" accessibilityLabel={`${HORIZON_TITLES[item]} horizon`}
+        accessibilityState={{ selected: active === item }} disabled={!onSelect}
+        onPress={() => onSelect?.(item)} style={{ flex: 1, height: 44, justifyContent: 'center' }}>
+        <View style={{ height: size, borderRadius: size / 2, backgroundColor: palette.horizon[item] }} />
+      </Pressable>;
     })}
   </View>;
 }

@@ -126,7 +126,7 @@ export function GoalDetails({
                 <Text style={[styles.counter, { color: palette.muted }]}>{children.length}</Text>
               </View>
               {children.length === 0 ? (
-                <Text style={[styles.empty, { color: palette.muted }]}>Break a big intention into one small, actionable step.</Text>
+                <Text style={[styles.empty, { color: palette.muted }]}>Break a big goal into one small, actionable step.</Text>
               ) : children.map((child) => (
                 <View key={child.id} style={[styles.child, { backgroundColor: palette.surface, borderColor: palette.border }]}>
                   <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: child.completed }}

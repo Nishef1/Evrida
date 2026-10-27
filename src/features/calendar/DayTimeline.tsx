@@ -137,7 +137,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
         <Pressable accessibilityRole="button" accessibilityLabel="How to use the timeline"
           onPress={() => Alert.alert('Your timeline', 'Tap an empty hour to reserve time. Tap a block to edit, or hold it to adjust its schedule in 15-minute steps. Long blocks also have drag and resize grips. Nothing moves until you confirm.')}
           style={[styles.toolbarCopy, { minHeight: 48, justifyContent: 'center' }]}>
-          <Text style={[styles.heading, { color: palette.foreground }]}>Living timeline ⓘ</Text>
+          <Text style={[styles.heading, { color: palette.foreground }]}>Timeline ⓘ</Text>
           <Text style={{ color: palette.muted, fontSize: 11 }}>
             {Math.floor(recordedMs / 60000)}m linked Focus · sessions ending here + active time
           </Text>
