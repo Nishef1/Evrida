@@ -24,6 +24,20 @@ Evrida should support learning as a measurable, long-running project rather than
 - Track content completed, actual minutes, assessment/recall results and long-range milestones. Time spent alone must not be represented as proof of mastery.
 - Keep the core workflow local/offline. Resource parsing with AI, cloud sync and external calendar integration are later optional decisions, not prerequisites.
 
+## Personal Finance & Money Goals (planned, optional)
+
+Evrida may include a lightweight, offline-first personal-finance workspace for manual balances, income, expenses, categories/tags, budgets and savings goals. It should connect money goals to the existing long-range goal system without turning Evrida into a full accounting or investment product.
+
+- Keep finance optional and onboarding progressive; core planning must work without financial data.
+- Distinguish transaction type, category and cross-cutting tags; transfers between the user's own accounts must not count as income or expenses.
+- Show monthly cash flow and spending trends only when enough recorded history exists.
+- Let users allocate money explicitly to savings goals and forecast a completion window from current balance, contributions and assumptions.
+- Show nominal amounts separately from inflation-adjusted purchasing power; distinguish general inflation from target-specific price growth.
+- Make assumptions, source dates, uncertainty and missing inputs visible. Never fabricate current inflation data or promise an exact financial outcome.
+- Keep financial records local/offline and include them in validated backup/restore. Bank connections, cloud sync, investment advice, tax workflows and AI categorization are deferred.
+
+See [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md) for the full specification and acceptance criteria.
+
 ## Capability map
 
 | Capability | Initial milestone | Notes |
@@ -33,7 +47,7 @@ Evrida should support learning as a measurable, long-running project rather than
 | Boards and ordering | M3 | References, not duplicate item records |
 | Calendar and time blocks | M3 | Do not confuse due dates with blocks |
 | Notes, recurring goals and habits | M4 | Rich editor choice deferred |
-| Templates, guided plans and insights | M4 | Personal and offline |
+| Templates, guided plans and insights | M4 | Personal and offline |\n| Personal finance and money goals | Planned | Optional, manual-first ledger; budgeting, goal forecasts and inflation-aware scenarios |
 | Notifications, widgets and quick-add | M5 | Native integration where necessary |
 | Backup/restore | M5 | Must precede release |
 | Localization and Jalali presentation | M5 | Logical storage separate from display |
