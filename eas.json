@@ -7,7 +7,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EONWARD_BUILD_VARIANT": "qa"
+        "EVRIDA_BUILD_VARIANT": "qa"
       },
       "android": {
         "buildType": "apk"
@@ -27,7 +27,7 @@
     "e2e-test": {
       "withoutCredentials": true,
       "env": {
-        "EONWARD_BUILD_VARIANT": "qa"
+        "EVRIDA_BUILD_VARIANT": "qa"
       },
       "android": {
         "buildType": "apk"
