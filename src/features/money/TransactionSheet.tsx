@@ -9,7 +9,7 @@ import { type Palette } from '../../theme/tokens';
 import { type } from '../../theme/type';
 import { Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, useBusy } from './ui';
 
-export interface TxPreset { type?: TxType; refundOfId?: string; categoryId?: string; amount?: number; accountId?: string; date?: string; note?: string }
+export interface TxPreset { type?: TxType; refundOfId?: string; categoryId?: string; amount?: number; accountId?: string; date?: string; note?: string; splits?: { categoryId: string; amount: number }[] }
 interface SplitRow { categoryId: string; amount: string }
 
 const TYPES: { id: TxType; label: string }[] = [
@@ -58,11 +58,12 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
       setDate(preset?.date ?? periodKey('day', new Date()));
       setAccountId(preset?.accountId ?? accounts[0]?.id ?? ''); setToAccountId('');
       setCategoryId(preset?.categoryId ?? null); setTags([]); setPayee(''); setNote(preset?.note ?? '');
-      setRefundOfId(preset?.refundOfId ?? null); setSplitting(false); setSplits([]);
+      setRefundOfId(preset?.refundOfId ?? null); setSplitting(!!preset?.splits?.length);
+      setSplits((preset?.splits ?? []).map((s) => ({ categoryId: s.categoryId, amount: formatAmount(s.amount, settings).replace(/,/g, '') })));
     }
   }, [visible, initial?.id, preset?.refundOfId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const categories = data.categories.filter((c) => !c.archived && c.kind === (type === 'income' ? 'income' : 'expense'));
+  const categories = data.categories.filter((c) => !c.archived && c.kind === (refundOfId ? 'expense' : type === 'income' ? 'income' : 'expense'));
   const refunded = refundOfId ? data.txs.find((t) => t.id === refundOfId) : null;
   const total = parseAmount(amount, settings.decimals);
   const splitTotal = splits.reduce((sum, s) => sum + (parseAmount(s.amount, settings.decimals) ?? 0), 0);
@@ -157,13 +158,13 @@ export function TransactionSheet({ visible, data, initial, preset, palette, onCl
         </Text>
         <View style={{ flexDirection: 'row' }}>
           <TextButton label="＋ Add part" palette={palette} onPress={() => setSplits([...splits, { categoryId: '', amount: '' }])} />
-          <TextButton label="Remove split" palette={palette} muted onPress={() => toggleSplit(false)} />
+          {!refundOfId ? <TextButton label="Remove split" palette={palette} muted onPress={() => toggleSplit(false)} /> : null}
         </View>
       </> : <>
         <ChipRow>
           {categories.map((c) => <Chip key={c.id} label={c.group !== c.name ? `${c.group} · ${c.name}` : c.name} selected={categoryId === c.id}
             palette={palette} onPress={() => setCategoryId(c.id)} />)}
-          <Chip label="＋ New" selected={newCategory !== null} palette={palette} onPress={() => setNewCategory(newCategory === null ? '' : null)} />
+          {!refundOfId ? <Chip label="＋ New" selected={newCategory !== null} palette={palette} onPress={() => setNewCategory(newCategory === null ? '' : null)} /> : null}
         </ChipRow>
         {newCategory !== null ? <View style={{ gap: 6 }}>
           <Field label="New category" value={newCategory} onChangeText={setNewCategory} palette={palette} maxLength={80} placeholder="e.g. Pets" />
