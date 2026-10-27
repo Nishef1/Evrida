@@ -52,7 +52,7 @@ function fakeDatabase(version) {
 }
 
 test('native links reject malformed and oversized input before tolerant URI decoding', () => {
-  const valid = 'eonward://calendar?goalId=abc-123';
+  const valid = 'evrida://calendar?goalId=abc-123';
   assert.equal(safeNativePath(valid), valid);
   const persian = '/?goalId=' + encodeURIComponent('قدم بعدی');
   assert.equal(safeNativePath(persian), persian);
@@ -64,7 +64,7 @@ test('native links reject malformed and oversized input before tolerant URI deco
 
 test('newer database is rejected and SQLite gate serializes native calls', async () => {
   const fake = fakeDatabase(9);
-  await assert.rejects(() => migrateDatabase(fake.db), /newer Eonward database/);
+  await assert.rejects(() => migrateDatabase(fake.db), /newer Evrida database/);
   assert.equal(fake.transactionCalls, 0);
   let inFlight = 0, maximum = 0, calls = 0;
   const handle = {
