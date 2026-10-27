@@ -8,7 +8,7 @@ export async function exportBackup(db: SQLiteDatabase): Promise<Backup> {
       tables[name] = await tx.getAllAsync<BackupRow>(`SELECT ${BACKUP_COLUMNS[name].join(', ')} FROM ${name}`);
     }
   });
-  return parseBackup(JSON.stringify({ format: 'evrida-backup', version: 2, schemaVersion: 8,
+  return parseBackup(JSON.stringify({ format: 'evrida-backup', version: 3, schemaVersion: 9,
     createdAt: new Date().toISOString(), tables }));
 }
 

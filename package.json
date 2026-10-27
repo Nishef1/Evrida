@@ -9,7 +9,7 @@
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "deps:check": "expo install --check",
-    "test:domain": "node scripts/check-test-budget.mjs && node scripts/check-database-access.mjs && node scripts/check-design-ssot.mjs && node --experimental-strip-types --import ./tests/register-runtime.mjs --test tests/horizons.test.mjs tests/database.test.mjs",
+    "test:domain": "node scripts/check-test-budget.mjs && node scripts/check-database-access.mjs && node scripts/check-design-ssot.mjs && node --experimental-strip-types --import ./tests/register-runtime.mjs --test tests/horizons.test.mjs tests/database.test.mjs tests/finance.test.mjs",
     "bundle:ios": "expo export --platform ios"
   },
   "engines": {

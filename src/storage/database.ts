@@ -128,7 +128,122 @@ const V8_SCHEMA = `
   );
 `;
 
-export const SCHEMA_VERSION = 8;
+const V9_SCHEMA = `
+  -- Optional personal finance. Amounts are integers in the smallest displayed unit of one
+  -- reporting unit; percentages are basis points. Nothing here is required by planning.
+  CREATE TABLE IF NOT EXISTS fin_settings (
+    id TEXT PRIMARY KEY NOT NULL CHECK (id = 'main'),
+    unit TEXT NOT NULL CHECK (length(trim(unit)) > 0),
+    decimals INTEGER NOT NULL CHECK (decimals IN (0, 2)),
+    inflation_bp INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS fin_accounts (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    kind TEXT NOT NULL CHECK (kind IN ('cash', 'bank', 'wallet', 'liability')),
+    opening INTEGER NOT NULL DEFAULT 0,
+    archived_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS fin_categories (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    kind TEXT NOT NULL CHECK (kind IN ('income', 'expense')),
+    group_name TEXT NOT NULL,
+    archived_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS fin_tags (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE CHECK (length(trim(name)) > 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS fin_transactions (
+    id TEXT PRIMARY KEY NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('income', 'expense', 'transfer', 'adjustment')),
+    amount INTEGER NOT NULL CHECK (amount <> 0),
+    date TEXT NOT NULL,
+    account_id TEXT NOT NULL REFERENCES fin_accounts(id) ON DELETE RESTRICT,
+    to_account_id TEXT REFERENCES fin_accounts(id) ON DELETE RESTRICT,
+    category_id TEXT REFERENCES fin_categories(id) ON DELETE RESTRICT,
+    refund_of_id TEXT REFERENCES fin_transactions(id) ON DELETE SET NULL,
+    payee TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS fin_tx_by_date ON fin_transactions(date, created_at);
+  CREATE INDEX IF NOT EXISTS fin_tx_by_account ON fin_transactions(account_id);
+  CREATE TABLE IF NOT EXISTS fin_splits (
+    id TEXT PRIMARY KEY NOT NULL,
+    tx_id TEXT NOT NULL REFERENCES fin_transactions(id) ON DELETE CASCADE,
+    category_id TEXT NOT NULL REFERENCES fin_categories(id) ON DELETE RESTRICT,
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS fin_splits_by_tx ON fin_splits(tx_id);
+  CREATE TABLE IF NOT EXISTS fin_tx_tags (
+    id TEXT PRIMARY KEY NOT NULL,
+    tx_id TEXT NOT NULL REFERENCES fin_transactions(id) ON DELETE CASCADE,
+    tag_id TEXT NOT NULL REFERENCES fin_tags(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (tx_id, tag_id)
+  );
+  CREATE TABLE IF NOT EXISTS fin_goals (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+    target INTEGER NOT NULL CHECK (target > 0),
+    target_date TEXT,
+    monthly INTEGER NOT NULL DEFAULT 0 CHECK (monthly >= 0),
+    growth_bp INTEGER,
+    goal_id TEXT REFERENCES goals(id) ON DELETE SET NULL,
+    archived_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  -- Only explicit allocations count toward a money goal; tagging a purchase never does.
+  CREATE TABLE IF NOT EXISTS fin_allocations (
+    id TEXT PRIMARY KEY NOT NULL,
+    fin_goal_id TEXT NOT NULL REFERENCES fin_goals(id) ON DELETE CASCADE,
+    amount INTEGER NOT NULL CHECK (amount <> 0),
+    date TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS fin_alloc_by_goal ON fin_allocations(fin_goal_id, date);
+  CREATE TABLE IF NOT EXISTS fin_budgets (
+    id TEXT PRIMARY KEY NOT NULL,
+    category_id TEXT REFERENCES fin_categories(id) ON DELETE CASCADE,
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  -- Planned items are forecasts. Confirming one records a real transaction.
+  CREATE TABLE IF NOT EXISTS fin_plans (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+    direction TEXT NOT NULL CHECK (direction IN ('income', 'expense')),
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    cadence TEXT NOT NULL CHECK (cadence IN ('monthly', 'yearly')),
+    nature TEXT NOT NULL CHECK (nature IN ('fixed', 'flexible', 'irregular')),
+    due_date TEXT NOT NULL,
+    category_id TEXT REFERENCES fin_categories(id) ON DELETE SET NULL,
+    account_id TEXT REFERENCES fin_accounts(id) ON DELETE SET NULL,
+    archived_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+`;
+
+export const SCHEMA_VERSION = 9;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
@@ -149,6 +264,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     if (version <= 5) await tx.execAsync(V6_SCHEMA);
     if (version <= 6) await tx.execAsync(V7_SCHEMA);
     if (version <= 7) await tx.execAsync(V8_SCHEMA);
+    if (version <= 8) await tx.execAsync(V9_SCHEMA);
     await tx.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   });
 }

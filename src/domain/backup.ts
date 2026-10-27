@@ -1,5 +1,6 @@
 import { HORIZONS, parseDateInput } from './horizons';
 import { REPEAT_RULES, validatePlanning } from './planning';
+import { validateFinanceBackup } from './finance';
 
 const V1_COLUMNS = {
   goals: ['id', 'title', 'notes', 'horizon', 'period_key', 'parent_id', 'completed', 'created_at', 'updated_at',
@@ -15,11 +16,25 @@ export const BACKUP_COLUMNS = {
   time_blocks: [...V1_COLUMNS.time_blocks, 'flexible'],
   focus_history: [...V1_COLUMNS.focus_history, 'goal_id', 'block_id'],
   time_budgets: ['goal_id', 'weekly_minutes'],
+  fin_settings: ['id', 'unit', 'decimals', 'inflation_bp', 'created_at', 'updated_at'],
+  fin_accounts: ['id', 'name', 'kind', 'opening', 'archived_at', 'created_at', 'updated_at'],
+  fin_categories: ['id', 'name', 'kind', 'group_name', 'archived_at', 'created_at', 'updated_at'],
+  fin_tags: ['id', 'name', 'created_at', 'updated_at'],
+  fin_transactions: ['id', 'type', 'amount', 'date', 'account_id', 'to_account_id', 'category_id', 'refund_of_id',
+    'payee', 'note', 'created_at', 'updated_at'],
+  fin_splits: ['id', 'tx_id', 'category_id', 'amount', 'created_at', 'updated_at'],
+  fin_tx_tags: ['id', 'tx_id', 'tag_id', 'created_at', 'updated_at'],
+  fin_goals: ['id', 'title', 'target', 'target_date', 'monthly', 'growth_bp', 'goal_id', 'archived_at', 'created_at', 'updated_at'],
+  fin_allocations: ['id', 'fin_goal_id', 'amount', 'date', 'note', 'created_at', 'updated_at'],
+  fin_budgets: ['id', 'category_id', 'amount', 'created_at', 'updated_at'],
+  fin_plans: ['id', 'title', 'direction', 'amount', 'cadence', 'nature', 'due_date', 'category_id', 'account_id',
+    'archived_at', 'created_at', 'updated_at'],
 } as const;
+const FINANCE_TABLES = Object.keys(BACKUP_COLUMNS).filter((name) => name.startsWith('fin_')) as BackupTable[];
 export type BackupTable = keyof typeof BACKUP_COLUMNS;
 export type BackupRow = Record<string, string | number | null>;
 export interface Backup {
-  format: 'evrida-backup' | 'eonward-backup'; version: 2; schemaVersion: 8; createdAt: string;
+  format: 'evrida-backup' | 'eonward-backup'; version: 2 | 3; schemaVersion: 8 | 9; createdAt: string;
   tables: Record<BackupTable, BackupRow[]>;
 }
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
@@ -42,7 +57,8 @@ export function parseBackup(text: string): Backup {
   const incomingVersion: number = data?.version;
   const incomingSchema: number = data?.schemaVersion;
   if (!data || !['eonward-backup', 'evrida-backup'].includes(data.format) ||
-    !((incomingVersion === 1 && incomingSchema === 7) || (incomingVersion === 2 && incomingSchema === 8)) ||
+    !((incomingVersion === 1 && incomingSchema === 7) || (incomingVersion === 2 && incomingSchema === 8)
+      || (incomingVersion === 3 && incomingSchema === 9)) ||
     !stamp(data.createdAt) || !data.tables || Array.isArray(data.tables)) fail('unsupported format or version.');
   if (incomingVersion === 1) {
     // Validate legacy row shapes before adding the new opt-in columns.
@@ -62,6 +78,13 @@ export function parseBackup(text: string): Backup {
       time_budgets: [],
     } };
   }
+  if (data.version === 2) {
+    // Older backups predate optional finance; they carry none of its tables.
+    if (FINANCE_TABLES.some((name) => name in data.tables)) fail('unexpected collection.');
+    data = { ...data, version: 3, schemaVersion: 9, tables: {
+      ...data.tables, ...Object.fromEntries(FINANCE_TABLES.map((name) => [name, []])),
+    } };
+  }
   if (Object.keys(data.tables).some((key) => !(key in BACKUP_COLUMNS))) fail('unexpected collection.');
   for (const table of Object.keys(BACKUP_COLUMNS) as BackupTable[]) {
     const rows = data.tables[table];
@@ -78,6 +101,7 @@ export function parseBackup(text: string): Backup {
         if (typeof value === 'number' && !Number.isSafeInteger(value)) fail(`invalid number in ${key}.`);
         if (typeof value === 'string' && value.length > 1000000) fail(`oversized ${key}.`);
         if (['created_at', 'updated_at', 'added_at', 'occurred_at'].includes(key) && !stamp(value)) fail(`invalid ${key}.`);
+        if (key === 'archived_at' && value !== null && !stamp(value)) fail('invalid archive date.');
       }
       const id = table === 'board_goals' ? JSON.stringify([row.board_id, row.goal_id]) :
         table === 'time_budgets' ? row.goal_id : row.id;
@@ -150,6 +174,7 @@ export function parseBackup(text: string): Backup {
     if (!goals.has(row.goal_id) || !Number.isInteger(row.weekly_minutes)
       || Number(row.weekly_minutes) < 30 || Number(row.weekly_minutes) > 10080) fail('invalid weekly time budget.');
   }
+  validateFinanceBackup(data.tables, new Set(goals.keys()));
   for (const row of data.tables.focus_history) {
     if ((row.goal_id !== null && !identifier(row.goal_id)) ||
       (row.block_id !== null && !identifier(row.block_id))) fail('invalid focus attribution.');

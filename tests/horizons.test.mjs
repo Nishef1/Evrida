@@ -20,22 +20,16 @@ test('all seven horizon keys use independent periods', () => {
   assert.equal(periodKey('life', date), 'life');
 });
 
-test('ISO week-year follows Thursday at New Year', () => {
+test('week boundaries, ISO week-year and period navigation stay on the right calendar day', () => {
   assert.equal(isoWeekKey(new Date(2020, 11, 31, 12)), '2020-W53');
   assert.equal(isoWeekKey(new Date(2021, 0, 1, 12)), '2020-W53');
   assert.equal(isoWeekKey(new Date(2021, 0, 4, 12)), '2021-W01');
-});
-
-test('period navigation does not roll into the wrong month', () => {
   const endOfMonth = new Date(2024, 0, 31, 12);
   assert.equal(periodKey('month', shiftPeriod('month', endOfMonth, 1)), '2024-02');
   assert.equal(periodKey('quarter', shiftPeriod('quarter', endOfMonth, 1)), '2024-Q2');
   assert.equal(periodKey('year', shiftPeriod('year', endOfMonth, 1)), '2025');
   assert.equal(periodKey('decade', shiftPeriod('decade', endOfMonth, 1)), '2030');
   assert.equal(periodKey('day', shiftPeriod('day', endOfMonth, 1)), '2024-02-01');
-});
-
-test('week starts Monday without mutating input', () => {
   const date = new Date(2026, 9, 18, 12);
   const start = startOfWeek(date);
   assert.equal(periodKey('day', start), '2026-10-12');
