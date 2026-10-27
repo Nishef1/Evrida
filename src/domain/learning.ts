@@ -34,14 +34,18 @@ export function weekStart(key: string): string {
   return addDays(key, -((day + 6) % 7));
 }
 
+const normalizeNumericDigits = (text: string) => text
+  .replace(/[۰-۹]/g, (c) => String(c.charCodeAt(0) - 0x06f0))
+  .replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660));
+
 export function parseScore(text: string): number | null {
-  const t = text.trim();
+  const t = normalizeNumericDigits(text.trim());
   if (!/^\d{1,2}$/.test(t)) return null;
   const n = Number(t);
   return n >= MIN_SCORE && n <= MAX_SCORE ? n : null;
 }
 export function parseMinutes(text: string): number | null | 'invalid' {
-  const t = text.replace(/[,\s]/g, '');
+  const t = normalizeNumericDigits(text).replace(/[,،٬\s]/g, '');
   if (!t) return null;
   if (!/^\d{1,5}$/.test(t)) return 'invalid';
   const n = Number(t);
