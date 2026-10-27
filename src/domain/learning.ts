@@ -6,7 +6,7 @@ import { isDateKey } from './finance';
  */
 export interface LearnTopic {
   id: string; subject: string; name: string; note: string; focus: boolean; archived: boolean;
-  targetScore: number | null; targetDate: string | null;
+  targetScore: number | null; targetDate: string | null; goalId: string | null;
 }
 export interface LearnCheckin {
   id: string; topicId: string; date: string; score: number; minutes: number | null; covered: string; note: string; createdAt: string;
@@ -138,14 +138,15 @@ export function paceEstimate(history: LearnCheckin[], targetScore: number, today
 type Row = Record<string, unknown>;
 const bad = (what: string): never => { throw new Error(`Invalid backup: invalid learning ${what}.`); };
 const text = (v: unknown, max: number) => typeof v === 'string' && v.length <= max;
-export function validateLearningBackup(t: Record<string, Row[]>): void {
+export function validateLearningBackup(t: Record<string, Row[]>, goalIds: Set<unknown>): void {
   const topics = new Set<unknown>();
   for (const r of t.learn_topics) {
     if (!text(r.subject, 80) || !String(r.subject).trim() || !text(r.name, 120) || !String(r.name).trim() || !text(r.note, 2000)
       || ![0, 1].includes(r.focus as number)
       || (r.target_score !== null && (!Number.isInteger(r.target_score) || Number(r.target_score) < MIN_SCORE || Number(r.target_score) > MAX_SCORE))
       || (r.target_date !== null && (typeof r.target_date !== 'string' || !isDateKey(r.target_date)))
-      || (r.target_date !== null && r.target_score === null)) bad('topic');
+      || (r.target_date !== null && r.target_score === null)
+      || (r.goal_id !== null && !goalIds.has(r.goal_id))) bad('topic');
     topics.add(r.id);
   }
   for (const r of t.learn_checkins) {

@@ -12,6 +12,7 @@ import { type } from '../../theme/type';
 import { DateTimeField } from '../shared/DateTimeField';
 import { EmptyState } from '../shared/EmptyState';
 import Target from 'lucide-react-native/icons/target';
+import { GoalPicker } from '../shared/GoalPicker';
 import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Sheet, TextButton, dateName, useBusy } from './ui';
 
 const dateLabel = dateName;
@@ -107,13 +108,14 @@ function GoalSheet({ data, target, today, palette, onClose, onChanged, onMove }:
   const [date, setDate] = useState('');
   const [monthly, setMonthly] = useState('');
   const [growth, setGrowth] = useState('');
+  const [linked, setLinked] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const plain = (n: number) => formatAmount(n, settings).replace(/,/g, '');
   useEffect(() => {
     if (!target) return;
     setError(null);
     setTitle(existing?.title ?? ''); setAmount(existing ? plain(existing.target) : ''); setDate(existing?.targetDate ?? '');
-    setMonthly(existing && existing.monthly ? plain(existing.monthly) : ''); setGrowth(existing?.growthBp != null ? String(existing.growthBp / 100) : '');
+    setMonthly(existing && existing.monthly ? plain(existing.monthly) : ''); setGrowth(existing?.growthBp != null ? String(existing.growthBp / 100) : ''); setLinked(existing?.linkedGoalId ?? null);
   }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const suggestion = useMemo(() => suggestedContribution(data.txs, monthOf(today)), [data.txs, today]);
@@ -131,7 +133,7 @@ function GoalSheet({ data, target, today, palette, onClose, onChanged, onMove }:
     if (parsed.target === null || parsed.monthly === null) { setError(`Enter amounts with up to ${settings.decimals} decimals.`); return; }
     if (growth.trim() && growthBp === null) { setError('Enter price growth as a percentage per year, for example 20 or −5.'); return; }
     await run(async () => {
-      await saveFinGoal(db, { id: existing?.id, title, target: parsed.target!, targetDate: date || null, monthly: parsed.monthly!, growthBp, linkedGoalId: existing?.linkedGoalId ?? null });
+      await saveFinGoal(db, { id: existing?.id, title, target: parsed.target!, targetDate: date || null, monthly: parsed.monthly!, growthBp, linkedGoalId: linked });
       onChanged(); onClose();
     }, setError);
   }
@@ -167,6 +169,7 @@ function GoalSheet({ data, target, today, palette, onClose, onChanged, onMove }:
     {suggestion ? <Text style={[type.caption, { color: palette.muted }]}>Average net saving over the last {suggestion.months} month{suggestion.months === 1 ? '' : 's'} with records. It is a starting point, not a promise.</Text> : null}
     <Field label="This target’s own price growth per year (optional)" value={growth} onChangeText={setGrowth} palette={palette} keyboardType="numbers-and-punctuation" suffix="%"
       hint={`Separate from general inflation${settings.inflationBp === null ? ' (not set in Money settings)' : ` (${bpToPercent(settings.inflationBp)} scenario)`}. Use it for prices that move on their own, like housing or cars.`} />
+    <GoalPicker label="Supports a planning goal (optional)" value={linked} onChange={setLinked} palette={palette} active={!!target} />
     <Label palette={palette}>ESTIMATE</Label>
     {forecast && parsed.target ? <Card palette={palette}><ForecastView forecast={forecast} monthly={parsed.monthly ?? 0} goal={{ target: parsed.target, targetDate: date || null }} settings={settings} palette={palette} /></Card> : null}
     {!forecast ? <Text style={[type.caption, { color: palette.muted }]}>Enter a target to see an estimate.</Text> : null}

@@ -11,6 +11,9 @@ import {
   trendPoints, weekStart, weeklyReview, type LearnCheckin, type LearnTopic,
 } from '../../domain/learning';
 import { isDateKey } from '../../domain/finance';
+import { createGoal, listAllGoals } from '../../storage/goals';
+import { saveBlock } from '../../storage/timeblocks';
+import { GoalPicker } from '../shared/GoalPicker';
 import { periodKey } from '../../domain/horizons';
 import { colors, radius, spacing, type Palette } from '../../theme/tokens';
 import { type } from '../../theme/type';
@@ -65,12 +68,14 @@ export function LearningScreen() {
   const [detail, setDetail] = useState<string | null>(null);
   const [reminder, setReminderState] = useState<ReminderPref | null>(null);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const [session, setSession] = useState<LearnTopic | null>(null);
+  const [goalTitles, setGoalTitles] = useState<Map<string, string>>(new Map());
 
   const reload = useCallback(() => {
     loadLearning(db).then((value) => { setData(value); setFailure(null); },
       (error) => setFailure(error instanceof Error ? error.message : 'Learning could not be loaded.'));
   }, [db]);
-  useFocusEffect(useCallback(() => { reload(); void resyncReminder().then(getReminder).then(setReminderState); }, [reload]));
+  useFocusEffect(useCallback(() => { listAllGoals(db).then((all) => setGoalTitles(new Map(all.map((g) => [g.id, g.title]))), () => {}); reload(); void resyncReminder().then(getReminder).then(setReminderState); }, [reload, db]));
 
   const open = useMemo(() => (data?.topics ?? []).filter((t) => !t.archived), [data]);
   const review = useMemo(() => data ? weeklyReview(data.topics, data.checkins, week) : null, [data, week]);
@@ -114,6 +119,7 @@ export function LearningScreen() {
       {p.latest ? <Text style={[type.caption, { color: palette.muted }]}>{bandLabel(p.latest.score)}</Text> : null}
       <Trend history={history} palette={palette} />
       {targetLine(topic, history, today) ? <Text style={[type.caption, { color: palette.muted }]}>{targetLine(topic, history, today)}</Text> : null}
+      {topic.goalId && goalTitles.get(topic.goalId) ? <Text style={[type.caption, { color: palette.muted }]}>Supports: {goalTitles.get(topic.goalId)}</Text> : null}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
         <TextButton label={p.latest ? 'Check in' : 'Rate it'} onPress={() => setCheckin({ topic, entry: null })} palette={palette} />
       </View>
@@ -193,14 +199,57 @@ export function LearningScreen() {
       </>}
     </ScrollView>
 
+    <SessionSheet topic={session} today={today} palette={palette} onClose={() => setSession(null)} onPlanned={() => setSession(null)} />
     <ReminderSheet visible={reminderOpen} current={reminder} palette={palette} onClose={() => setReminderOpen(false)}
       onSaved={(pref) => { setReminderState(pref); setReminderOpen(false); }} />
     <TopicSheet visible={topicSheet !== null} topic={topicSheet === 'new' ? null : topicSheet} subjects={[...new Set(data.topics.map((t) => t.subject))]}
       palette={palette} onClose={() => setTopicSheet(null)} onSaved={() => { setTopicSheet(null); reload(); }} />
     <CheckinSheet state={checkin} data={data} today={today} palette={palette} onClose={() => setCheckin(null)} onSaved={() => { setCheckin(null); reload(); }} />
     <DetailSheet topicId={detail} data={data} today={today} palette={palette} onClose={() => setDetail(null)}
-      onEdit={(topic) => { setDetail(null); setTopicSheet(topic); }} onCheckin={(topic, entry) => { setDetail(null); setCheckin({ topic, entry }); }} onChanged={reload} />
+      onSession={(topic) => { setDetail(null); setSession(topic); }} onEdit={(topic) => { setDetail(null); setTopicSheet(topic); }} onCheckin={(topic, entry) => { setDetail(null); setCheckin({ topic, entry }); }} onChanged={reload} />
   </SafeAreaView>;
+}
+
+/** Turn a topic into a study goal on a chosen day (under its linked goal, if any), with an optional time reservation. */
+function SessionSheet({ topic, today, palette, onClose, onPlanned }: {
+  topic: LearnTopic | null; today: string; palette: Palette; onClose: () => void; onPlanned: () => void;
+}) {
+  const db = useEvridaDatabase();
+  const router = useRouter();
+  const { busy, run } = useBusy();
+  const [date, setDate] = useState(today);
+  const [start, setStart] = useState('18:00');
+  const [end, setEnd] = useState('18:30');
+  const [reserve, setReserve] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [shownFor, setShownFor] = useState<string | null>(null);
+  const key = topic?.id ?? null;
+  if (key !== shownFor) { setShownFor(key); if (topic) { setDate(today); setStart('18:00'); setEnd('18:30'); setReserve(true); setError(null); } }
+  const plan = () => void run(async () => {
+    if (!topic) return;
+    if (!isDateKey(date)) throw new Error('Enter the date as YYYY-MM-DD.');
+    const goalId = await createGoal(db, { title: `Study: ${topic.name}`.slice(0, 180), notes: topic.note, horizon: 'day', periodKey: date, parentId: topic.goalId });
+    if (reserve) {
+      try { await saveBlock(db, { goalId, date, start, end, kind: 'block', intention: topic.name }); }
+      catch (reason) { throw new Error(`The study goal was added for ${dateName(date)}, but the time could not be reserved: ${reason instanceof Error ? reason.message : 'check the times'}.`); }
+    }
+    onPlanned();
+    Alert.alert('Study session planned', reserve ? `Added to ${dateName(date)}, ${start}–${end}. Find it in Plan or Calendar.` : `Added to your plan for ${dateName(date)}.`,
+      [{ text: 'OK' }, { text: 'Open Calendar', onPress: () => router.push('/calendar' as never) }]);
+  }, setError);
+  return <Sheet visible={!!topic} title="Plan a study session" onClose={onClose} palette={palette}
+    footer={<PrimaryButton label={busy ? 'Planning…' : 'Add to my plan'} onPress={plan} palette={palette} disabled={busy} />}>
+    <Text style={{ color: palette.foreground, fontSize: 18, fontWeight: '700' }}>{topic?.name}</Text>
+    {error ? <Text style={{ color: '#C0392B' }} accessibilityLiveRegion="polite">{error}</Text> : null}
+    <Field label="Date" value={date} onChangeText={setDate} palette={palette} placeholder="YYYY-MM-DD" maxLength={10} />
+    <ChipRow><Chip label="Reserve a time on the calendar" selected={reserve} onPress={() => setReserve(!reserve)} palette={palette} /></ChipRow>
+    {reserve ? <>
+      <Field label="From (HH:mm)" value={start} onChangeText={setStart} palette={palette} maxLength={5} placeholder="18:00" />
+      <Field label="To (HH:mm)" value={end} onChangeText={setEnd} palette={palette} maxLength={5} placeholder="18:30" />
+    </> : null}
+    <Text style={[type.caption, { color: palette.muted }]}>
+      {topic?.goalId ? 'It is added under the goal this topic supports. ' : ''}You can move or edit it later in Plan or Calendar.</Text>
+  </Sheet>;
 }
 
 function ReminderSheet({ visible, current, palette, onClose, onSaved }: {
@@ -236,16 +285,17 @@ function TopicSheet({ visible, topic, subjects, palette, onClose, onSaved }: {
   const [note, setNote] = useState('');
   const [target, setTarget] = useState<number | null>(null);
   const [targetDate, setTargetDate] = useState('');
+  const [goalId, setGoalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shownFor, setShownFor] = useState<string | null | undefined>(undefined);
   const key = visible ? (topic?.id ?? 'new') : null;
   if (key !== shownFor) { // reset the form whenever the sheet opens for a different topic
     setShownFor(key);
-    if (key) { setSubject(topic?.subject ?? ''); setName(topic?.name ?? ''); setNote(topic?.note ?? ''); setTarget(topic?.targetScore ?? null); setTargetDate(topic?.targetDate ?? ''); setError(null); }
+    if (key) { setSubject(topic?.subject ?? ''); setName(topic?.name ?? ''); setNote(topic?.note ?? ''); setTarget(topic?.targetScore ?? null); setTargetDate(topic?.targetDate ?? ''); setGoalId(topic?.goalId ?? null); setError(null); }
   }
   const save = () => void run(async () => {
     if (targetDate.trim() && !isDateKey(targetDate.trim())) throw new Error('Enter the target date as YYYY-MM-DD, or leave it empty.');
-    await saveTopic(db, { id: topic?.id, subject, name, note, targetScore: target, targetDate: targetDate.trim() || null });
+    await saveTopic(db, { id: topic?.id, subject, name, note, targetScore: target, targetDate: targetDate.trim() || null, goalId });
     onSaved();
   }, setError);
   const remove = () => Alert.alert('Delete this topic?', 'Its whole rating history is deleted too. Archive it instead to keep the history.', [
@@ -268,6 +318,7 @@ function TopicSheet({ visible, topic, subjects, palette, onClose, onSaved }: {
     <ChipRow>{Array.from({ length: MAX_SCORE }, (_, i) => i + 1).map((n) => <Chip key={n} label={String(n)} selected={target === n} onPress={() => setTarget(target === n ? null : n)} palette={palette} />)}</ChipRow>
     {target !== null ? <Field label="Target date (optional)" value={targetDate} onChangeText={setTargetDate} palette={palette} placeholder="YYYY-MM-DD" maxLength={10}
       hint="Once you have three ratings over two weeks, Evrida shows a rough date from your own pace." /> : null}
+    <GoalPicker label="Supports a goal (optional)" value={goalId} onChange={setGoalId} palette={palette} active={visible} />
   </Sheet>;
 }
 
@@ -327,8 +378,8 @@ function CheckinSheet({ state, data, today, palette, onClose, onSaved }: {
   </Sheet>;
 }
 
-function DetailSheet({ topicId, data, today, palette, onClose, onEdit, onCheckin, onChanged }: {
-  topicId: string | null; today: string; data: LearningSnapshot; palette: Palette; onClose: () => void;
+function DetailSheet({ topicId, data, today, palette, onClose, onEdit, onCheckin, onSession, onChanged }: {
+  topicId: string | null; today: string; onSession: (topic: LearnTopic) => void; data: LearningSnapshot; palette: Palette; onClose: () => void;
   onEdit: (topic: LearnTopic) => void; onCheckin: (topic: LearnTopic, entry: LearnCheckin | null) => void; onChanged: () => void;
 }) {
   const db = useEvridaDatabase();
@@ -337,6 +388,7 @@ function DetailSheet({ topicId, data, today, palette, onClose, onEdit, onCheckin
   const p = topicProgress(history);
   return <Sheet visible={!!topic} title={topic?.name ?? ''} onClose={onClose} palette={palette}
     footer={topic ? <><PrimaryButton label="Check in" onPress={() => onCheckin(topic, null)} palette={palette} />
+      <TextButton label="Plan a study session" onPress={() => onSession(topic)} palette={palette} />
       <TextButton label={topic.focus ? 'Remove from next week’s focus' : 'Make it next week’s focus'} onPress={() => void setTopicFocus(db, topic.id, !topic.focus).then(onChanged)} palette={palette} />
       <TextButton label="Edit topic" muted onPress={() => onEdit(topic)} palette={palette} /></> : undefined}>
     {topic ? <>

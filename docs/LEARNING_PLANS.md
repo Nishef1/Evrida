@@ -109,7 +109,7 @@ The first version can use configurable review intervals and simple recall outcom
 
 LP1 cannot know how long a learner will need to master a skill solely from a book title, page count or minutes studied. Estimates improve only when the user provides workload information and Evrida observes actual pace. Learning outcomes need evidence beyond task completion.
 
-## Implemented slice: self-rated mastery tracker (Learning, schema v12)
+## Implemented slice: self-rated mastery tracker (Learning, schema v13)
 
 Reached from Review → Learning. Optional and offline; nothing is required by planning.
 
@@ -120,6 +120,7 @@ Reached from Review → Learning. Optional and offline; nothing is required by p
 - **Next week's focus**: topics can be marked manually; suggestions come only from the user's own ratings (low or stale), never from an automatic assessment.
 - **Target and pace**: an optional target score and date per topic. From three or more ratings over at least two weeks, a least-squares slope of the user's own recent ratings gives a rough likely date and a later one; with too little data or no upward trend it says why it cannot estimate. Always labelled provisional.
 - **Weekly reminder**: an optional per-device repeating notification (day and hour). The OS delivers it, so battery saving or disabled notifications can delay or block it; it is re-armed when the Learning screen opens and contains no study data.
-- **Backup**: backup format v6 / schema 12 (`learn_topics` with target fields, `learn_checkins`); v5 and older backups upgrade with empty or null values.
+- **Goal link and study sessions**: a topic can support one open planning goal (stored as a reference, never copied). "Plan a study session" creates a day-horizon goal under that goal and, optionally, a Timebox reservation, so sessions appear in Plan and Calendar.
+- **Backup**: backup format v7 / schema 13 (`learn_topics` with target and goal-link fields, `learn_checkins`); older backups upgrade with empty or null values.
 
-Not implemented: linking topics to goals or calendar sessions, resources (books, videos, units) and effort-based time estimates, adaptive scheduling, charts beyond the score trend.
+Not implemented: resources (books, videos, units) and effort-based time estimates, adaptive scheduling, charts beyond the score trend.

@@ -198,3 +198,8 @@ An optional, dated USD rate (units of the reporting currency per 1 US dollar) le
 ## Category management
 
 Money settings → Manage categories: add, rename, regroup, and hide or show categories. Renaming updates past records that use the category; hiding only removes it from pickers and never changes history or reports.
+
+## Planning-goal link and budget alerts
+
+- A money goal can reference one open planning goal (Money → Goals → edit → "Supports a planning goal"). The reference is stored; the goal is never copied.
+- Budget alerts are opt-in (Money settings). When on, one local notification fires the first time a budget passes 80% or goes over in a month. It names the category and never includes amounts. Delivery is up to the OS; the alert is raised when Money is opened or refreshed after a record is saved, not by a background job.

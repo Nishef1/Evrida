@@ -26,6 +26,7 @@ import { PlanPanel } from './PlanPanel';
 import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, dateName, monthName, useBusy } from './ui';
 import { fetchUsdRate } from './rates';
 import { CategoriesSheet } from './CategoriesSheet';
+import { budgetAlertsOn, checkBudgetAlerts, setBudgetAlerts } from './alerts';
 
 type Tab = 'overview' | 'ledger' | 'goals' | 'plan';
 const monthLabel = monthName;
@@ -49,7 +50,7 @@ export function MoneyScreen() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
 
   const reload = useCallback(() => {
-    loadFinance(db).then((value) => { setData(value); setFailure(null); },
+    loadFinance(db).then((value) => { setData(value); setFailure(null); if (value) void checkBudgetAlerts(value, periodKey('day', new Date())); },
       (error) => setFailure(error instanceof Error ? error.message : 'Money could not be loaded.'));
   }, [db]);
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
@@ -325,6 +326,7 @@ function SettingsSheet({ data, visible, palette, onClose, onChanged, onCategorie
   const [rate, setRate] = useState('');
   const [rateMeta, setRateMeta] = useState<{ date: string; source: string } | null>(null);
   const [fetching, setFetching] = useState(false);
+  const [alerts, setAlerts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const s = data.settings;
   useEffect(() => {
@@ -332,6 +334,7 @@ function SettingsSheet({ data, visible, palette, onClose, onChanged, onCategorie
     setUnit(s.unit); setInflation(s.inflationBp === null ? '' : String(s.inflationBp / 100)); setError(null);
     setRate(s.usdRateX100 === null ? '' : groupDigits(String(s.usdRateX100 / 100), 2));
     setRateMeta(s.usdRateDate ? { date: s.usdRateDate, source: s.usdRateSource ?? 'Entered by you' } : null);
+    void budgetAlertsOn().then(setAlerts);
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
   const isUsd = unit.trim().toUpperCase() === 'USD';
   async function fetchRate() {
@@ -370,6 +373,10 @@ function SettingsSheet({ data, visible, palette, onClose, onChanged, onCategorie
         Only a request for the public rate is sent; none of your records leave this device. For Toman and Rial the rate is the market price of a dollar-pegged token (USDT) on a public exchange, which tracks the open-market dollar but may be wrong or out of date. A fetched number only fills the box; nothing changes until you press Save, and you can overwrite it with your own.</Text>
     </>}
     <TextButton label="Manage categories" onPress={onCategories} palette={palette} />
+    <TextButton label={alerts ? 'Budget alerts: on (tap to turn off)' : 'Turn on budget alerts'} palette={palette} muted={alerts}
+      onPress={() => void run(async () => { await setBudgetAlerts(!alerts); setAlerts(!alerts); }, setError)} />
+    <Text style={[type.caption, { color: palette.muted }]}>
+      Optional. One notification the first time a budget passes 80% or goes over in a month. It names the category but never shows amounts.</Text>
     <Field label="General inflation scenario (per year)" value={inflation} onChangeText={setInflation} palette={palette} keyboardType="decimal-pad" suffix="%"
       hint={s.inflationBp === null ? 'Optional. Your own assumption, used only to express future amounts in today’s purchasing power. Evrida does not look up inflation figures.'
         : `Currently ${bpToPercent(s.inflationBp)} a year. This is a scenario you entered, not observed inflation.`} />

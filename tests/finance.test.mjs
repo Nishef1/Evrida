@@ -6,7 +6,7 @@ import { exportBackup, restoreBackup } from '../src/storage/backup.ts';
 import { parseBackup } from '../src/domain/backup.ts';
 import {
   accountBalance, categoryChange, categoryTotals, coveredMonths, forecastGoal, formatMoney, monthSummary, netWorth,
-  groupDigits, parseAmount, parseRate, tagTotals, toUsd, unallocatedFunds, validateTx,
+  groupDigits, parseAmount, pendingBudgetAlerts, parseRate, tagTotals, toUsd, unallocatedFunds, validateTx,
 } from '../src/domain/finance.ts';
 import {
   allocate, confirmPlan, deleteTransaction, loadFinance, saveAccount, saveFinGoal, savePlan, saveTransaction, setBudget, setupFinance, updateFinanceSettings,
@@ -89,6 +89,15 @@ test('finance math keeps transfers, refunds, splits, history gaps, inflation and
   assert.equal(validateTx(tx({ type: 'adjustment', amount: -50, categoryId: null })), null);
 
   // A month with no records is a gap, not zero spending; a trend needs three earlier covered months.
+  const budgets = [{ id: 'bo', categoryId: null, amount: 1000 }, { id: 'bf', categoryId: 'food', amount: 500 }];
+  const cats = [{ id: 'food', name: 'Food', kind: 'expense', group: 'Home', archived: false }];
+  const spent = [tx({ amount: 850, categoryId: 'food', date: '2026-10-05' })];
+  const first = pendingBudgetAlerts(budgets, cats, spent, '2026-10', new Set());
+  assert.deepEqual(first.map((a) => [a.key, a.state]), [['2026-10:bo:near', 'near'], ['2026-10:bf:over', 'over']]);
+  assert.match(first[1].label, /Food is over/);
+  assert.ok(first.every((a) => !/\d{3}/.test(a.label)), 'alert text never carries amounts');
+  assert.deepEqual(pendingBudgetAlerts(budgets, cats, spent, '2026-10', new Set(first.map((a) => a.key))), [], 'each level is announced once');
+  assert.deepEqual(pendingBudgetAlerts(budgets, cats, spent, '2026-11', new Set(first.map((a) => a.key))), [], 'a new month with no spending is quiet');
   const history = [['2026-06', 400], ['2026-08', 500], ['2026-09', 600], ['2026-10', 900]].map(([month, amount]) =>
     tx({ date: `${month}-10`, amount, categoryId: 'food' }));
   assert.deepEqual(coveredMonths(history), ['2026-06', '2026-08', '2026-09', '2026-10']);
@@ -156,7 +165,7 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(data.txs.filter((t) => t.note === 'Rent').length, 1);
 
     const backup = await exportBackup(source.db);
-    assert.equal(backup.version, 6);
+    assert.equal(backup.version, 7);
     await updateFinanceSettings(source.db, { unit: 'Toman', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
     const withRate = await exportBackup(source.db);
     assert.equal(withRate.tables.fin_settings[0].usd_rate_x100, 16000000);

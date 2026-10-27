@@ -282,7 +282,11 @@ const V12_SCHEMA = `
   ALTER TABLE learn_topics ADD COLUMN target_score INTEGER CHECK (target_score IS NULL OR (target_score BETWEEN 1 AND 10));
   ALTER TABLE learn_topics ADD COLUMN target_date TEXT;
 `;
-export const SCHEMA_VERSION = 12;
+const V13_SCHEMA = `
+  -- A learning topic can support one planning goal. Optional; the goal is never copied.
+  ALTER TABLE learn_topics ADD COLUMN goal_id TEXT REFERENCES goals(id) ON DELETE SET NULL;
+`;
+export const SCHEMA_VERSION = 13;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
@@ -307,6 +311,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     if (version <= 9) await tx.execAsync(V10_SCHEMA);
     if (version <= 10) await tx.execAsync(V11_SCHEMA);
     if (version <= 11) await tx.execAsync(V12_SCHEMA);
+    if (version <= 12) await tx.execAsync(V13_SCHEMA);
     await tx.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   });
 }

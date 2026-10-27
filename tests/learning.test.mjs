@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
+import { createGoal } from '../src/storage/goals.ts';
 import { migrateDatabase } from '../src/storage/database.ts';
 import { exportBackup, restoreBackup } from '../src/storage/backup.ts';
 import { parseBackup } from '../src/domain/backup.ts';
@@ -75,6 +76,11 @@ test('learning keeps honest self-ratings, separates practice time, reviews weeks
     assert.ok(pace.late > pace.likely && pace.perWeek > 0, 'an estimate gives a likely date and a later one');
     assert.equal(paceEstimate(historyOf(perfect, data.checkins).slice(0, 2), 8, '2026-10-28').status, 'unknown', 'two ratings are not enough');
     assert.equal(paceEstimate(historyOf(perfect, data.checkins), 4, '2026-10-28').status, 'reached');
+    const goal = await createGoal(db, { title: 'Reach B2 English', notes: '', horizon: 'year', periodKey: '2026' });
+    await saveTopic(db, { id: perfect, subject: 'English', name: 'Past perfect', note: '', targetScore: 8, targetDate: '2027-03-01', goalId: goal });
+    assert.equal((await loadLearning(db)).topics.find((t) => t.id === perfect).goalId, goal);
+    await assert.rejects(() => saveTopic(db, { id: perfect, subject: 'English', name: 'Past perfect', note: '', goalId: 'missing' }), /no longer available/);
+    await saveTopic(db, { id: perfect, subject: 'English', name: 'Past perfect', note: '', targetScore: 8, targetDate: '2027-03-01', goalId: goal });
     await setTopicFocus(db, perfect, true);
     assert.equal((await loadLearning(db)).topics.find((t) => t.id === perfect).focus, true);
     await setTopicArchived(db, perfect, true);
@@ -92,8 +98,13 @@ test('learning keeps honest self-ratings, separates practice time, reviews weeks
     assert.throws(() => parseBackup(JSON.stringify(orphan)), /learning check-in/);
     const badScore = structuredClone(backup); badScore.tables.learn_checkins[0].score = 11;
     assert.throws(() => parseBackup(JSON.stringify(badScore)), /learning check-in/);
+    const v6 = structuredClone(backup); v6.version = 6; v6.schemaVersion = 12;
+    for (const row of v6.tables.learn_topics) delete row.goal_id;
+    assert.equal(parseBackup(JSON.stringify(v6)).tables.learn_topics[0].goal_id, null, 'version 6 backups gain an empty goal link');
+    const badGoal = structuredClone(backup); badGoal.tables.learn_topics[0].goal_id = 'missing';
+    assert.throws(() => parseBackup(JSON.stringify(badGoal)), /learning topic/);
     const v5 = structuredClone(backup); v5.version = 5; v5.schemaVersion = 11;
-    for (const row of v5.tables.learn_topics) { delete row.target_score; delete row.target_date; }
+    for (const row of v5.tables.learn_topics) { delete row.target_score; delete row.target_date; delete row.goal_id; }
     assert.equal(parseBackup(JSON.stringify(v5)).tables.learn_topics[0].target_score, null, 'version 5 backups gain empty targets');
     const v4 = structuredClone(backup); v4.version = 4; v4.schemaVersion = 10;
     delete v4.tables.learn_topics; delete v4.tables.learn_checkins;

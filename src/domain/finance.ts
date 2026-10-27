@@ -305,6 +305,23 @@ export type BudgetState = 'ok' | 'near' | 'over';
 export function budgetState(spent: number, budget: number): BudgetState {
   return spent > budget ? 'over' : spent >= budget * 0.8 ? 'near' : 'ok';
 }
+export interface BudgetAlert { key: string; state: 'near' | 'over'; label: string }
+/** Budgets that crossed 80% or went over this month and have not been announced yet (`sent` holds already-announced keys). */
+export function pendingBudgetAlerts(budgets: FinBudget[], categories: FinCategory[], txs: FinTx[], month: string, sent: Set<string>): BudgetAlert[] {
+  const byCategory = categoryTotals(txs, month);
+  const overall = monthSummary(txs, month).spent;
+  const out: BudgetAlert[] = [];
+  for (const b of budgets) {
+    const spent = b.categoryId === null ? overall : byCategory.get(b.categoryId) ?? 0;
+    const state = budgetState(spent, b.amount);
+    if (state === 'ok') continue;
+    const key = `${month}:${b.id}:${state}`;
+    if (sent.has(key) || (state === 'near' && sent.has(`${month}:${b.id}:over`))) continue;
+    const name = b.categoryId === null ? 'Overall spending' : categories.find((c) => c.id === b.categoryId)?.name ?? 'A category';
+    out.push({ key, state, label: `${name} ${state === 'over' ? 'is over its monthly budget' : 'has used more than 80% of its monthly budget'}` });
+  }
+  return out;
+}
 /** Monthly money to set aside for a planned expense; yearly items become a sinking fund. */
 export function monthlyReserve(plan: Pick<FinPlan, 'amount' | 'cadence'>): number {
   return plan.cadence === 'yearly' ? Math.ceil(plan.amount / 12) : plan.amount;
