@@ -361,8 +361,11 @@ function SettingsSheet({ data, visible, palette, onClose, onChanged, onCategorie
   return <Sheet visible={visible} title="Money settings" palette={palette} onClose={onClose}
     footer={<>{error ? <Text accessibilityLiveRegion="polite" style={{ color: '#C0392B', fontSize: 13, marginBottom: 6 }}>{error}</Text> : null}
       <PrimaryButton label={busy ? 'Saving…' : 'Save'} onPress={() => void save()} palette={palette} disabled={busy || fetching} /></>}>
-    <Field label="Currency or unit label" value={unit} onChangeText={setUnit} palette={palette} maxLength={16}
-      hint={`Amounts use ${s.decimals} decimals. Changing the label does not convert any amount.`} />
+    <Field label="Currency or unit label" value={unit} onChangeText={(next) => {
+      if (next.trim().toLowerCase() !== unit.trim().toLowerCase()) { setRate(''); setRateMeta(null); }
+      setUnit(next);
+    }} palette={palette} maxLength={16}
+      hint={`Amounts use ${s.decimals} decimals. Changing the unit does not convert stored amounts and clears the saved dollar rate.`} />
     {isUsd ? <Text style={[type.caption, { color: palette.muted }]}>Your amounts are already in dollars, so no dollar rate is needed.</Text> : <>
       <Field label={`Price of 1 US dollar (in ${unit.trim() || 'your unit'})`} value={rate} onChangeText={(t) => { setRate(groupDigits(t, 2)); setRateMeta(null); }} palette={palette}
         keyboardType="decimal-pad" suffix={unit.trim() || undefined}
