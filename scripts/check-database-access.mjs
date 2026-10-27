@@ -2,11 +2,12 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 /**
- * Architecture guard: the direct Expo SQLite hook is allowed only in the
- * database wrapper. Every screen, dock and Focus consumer uses one serial gate.
- * Root SQLiteProvider owns startup and is intentionally not restricted here.
+ * Architecture guard: opening the native handle is allowed only in
+ * src/storage/connection.ts, which keeps one never-closed connection. Every
+ * screen, dock and Focus consumer reads it through the serial gate. A React
+ * provider that owns or closes the handle reintroduces the issue #2 race.
  */
-const allowed = new Set(['src/storage/use-database.ts']);
+const allowed = new Set(['src/storage/connection.ts']);
 const violations = [];
 function walk(dir) {
   for (const name of readdirSync(dir)) {
@@ -19,8 +20,9 @@ function walk(dir) {
   }
 }
 walk('src');
+walk('app');
 if (violations.length) {
-  console.error('Direct SQLite context hook bypasses the serialized boundary:\n' + violations.join('\n'));
+  console.error('SQLite handle opened or provided outside the single guarded connection:\n' + violations.join('\n'));
   process.exitCode = 1;
 } else {
   console.log('SQLite access boundary: all feature consumers use the guarded connection.');

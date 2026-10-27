@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { SQLiteProvider } from 'expo-sqlite';
-import type { SQLiteDatabase } from 'expo-sqlite';
 import * as SplashScreen from 'expo-splash-screen';
-import { migrateDatabase } from '../src/storage/database';
+import { EvridaDatabaseProvider } from '../src/storage/use-database';
 import { FocusProvider } from '../src/features/focus/FocusProvider';
 import { AppDock } from '../src/features/shell/AppDock';
 import { colors } from '../src/theme/tokens';
@@ -25,13 +23,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   </SafeAreaView></SafeAreaProvider>;
 }
 
-async function initializeDatabase(db: SQLiteDatabase) {
-  try { await migrateDatabase(db); }
-  catch (error) { await db.closeAsync().catch(() => {}); throw error; }
-}
-
-function DatabaseContent({ onReady, reducedMotion }: { onReady: (ready: boolean) => void; reducedMotion: boolean }) {
-  useEffect(() => { onReady(true); }, [onReady]);
+function DatabaseContent({ reducedMotion }: { reducedMotion: boolean }) {
   return <FocusProvider>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={{ flex: 1 }}><Stack screenOptions={{ headerShown: false, ...(reducedMotion ? { animation: 'none' as const } : {}) }} /></View>
@@ -51,17 +43,15 @@ function LoadingDatabase() {
 
 export default function RootLayout() {
   const reducedMotion = useReducedMotion();
-  const [databaseReady, setDatabaseReady] = useState(false);
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
       <View style={{ flex: 1 }}>
-        {/* Suspense mode caches rejected startup promises globally in this SDK;
-            a fresh provider must be able to reopen the DB when Retry is tapped. */}
-        <SQLiteProvider databaseName="evrida.db" onInit={initializeDatabase}>
-          <DatabaseContent onReady={setDatabaseReady} reducedMotion={reducedMotion} />
-        </SQLiteProvider>
-        {!databaseReady ? <View style={{ position: 'absolute', top: 0, left: 0, bottom: 0, right: 0 }}><LoadingDatabase /></View> : null}
+        {/* The provider never closes the process-wide connection on unmount; a startup
+            failure throws to ErrorBoundary and Retry re-attempts the open. */}
+        <EvridaDatabaseProvider fallback={<LoadingDatabase />}>
+          <DatabaseContent reducedMotion={reducedMotion} />
+        </EvridaDatabaseProvider>
       </View>
     </SafeAreaProvider>
   );

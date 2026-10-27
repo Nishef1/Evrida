@@ -15,7 +15,7 @@ Backup format v1 contains strict schema-v7 allowlisted rows for goals, boards, m
 
 Quick Focus creates the real UTC Timebox and running session in one exclusive transaction, after validating an open active goal. Explicit replacement records the previous session first. Archiving an active subtree closes a contained Focus session atomically with its history before applying archive state.
 
-SQLiteProvider initialization uses the non-Suspense path so a rejected startup promise is not retained by the SDK's global Suspense cache. Initialization closes its failed connection; the root error boundary offers a non-destructive remount/retry. Native failure injection remains an acceptance item.
+`src/storage/connection.ts` opens one process-wide native handle and never closes it from React. `EvridaDatabaseProvider` renders a loading fallback, throws a startup failure to the root error boundary, and a failed open is not cached so Retry re-attempts it. The failed startup connection is closed before the error propagates. Native failure injection remains an acceptance item.
 
 The app shell owns keyboard avoidance and hides the dock while typing. Native modal forms own their separate keyboard/safe-area boundary. Date/time inputs use system pickers without changing civil-date or UTC-instant semantics. Shared palette/depth tokens and individually imported Lucide vectors define the Studio presentation without introducing parallel planner state.
 
@@ -134,7 +134,7 @@ Creating a new goal inside a board uses the existing goal-creation transaction w
 
 ## Focus session v5 and global app shell
 
-- The existing SQLiteProvider still owns local data; FocusProvider is mounted once above the Stack and bottom dock so route changes cannot reset a running focus session.
+- The process-wide connection in `src/storage/connection.ts` owns local data; FocusProvider is mounted once above the Stack and bottom dock so route changes cannot reset a running focus session.
 - A single-record `focus_session` table references one existing Timebox ID and stores running/paused status, original duration, deadline and frozen paused remainder in integer milliseconds. No duplicate goal record or cross-device service.
 - Exclusive SQLite transactions start, pause and resume; the current session is reread from SQLite on app foreground. Session replacement is explicit and confirmed.
 - The app-level mini-bar survives navigation. When the background freezes JS, elapsed time is recomputed from the stored deadline on return, not accumulated per timer tick. An expired session remains visible until explicitly finished.

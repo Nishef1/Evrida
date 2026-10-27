@@ -137,7 +137,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   if (version > SCHEMA_VERSION) throw new Error('This app version cannot read a newer Evrida database.');
   if (version === SCHEMA_VERSION) return;
 
-  // SQLiteProvider still owns this connection during startup. Opening an exclusive
+  // Startup runs on the single process-wide connection. Opening an exclusive
   // second connection here can contend with initialization on Android.
   await db.withTransactionAsync(async () => {
     const tx = db;

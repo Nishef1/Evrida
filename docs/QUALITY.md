@@ -13,7 +13,7 @@ This document describes whole-gate validation. Sampled current evidence is in RO
 
 ## Native E2E tooling status
 
-- [x] CI rejects a raw `useSQLiteContext` outside the canonical serialized storage hook, including the formerly bypassing Focus dock.
+- [x] CI rejects opening or providing a SQLite handle (`useSQLiteContext`, `SQLiteProvider`, `openDatabase*`) outside `src/storage/connection.ts`.
 - [x] EAS smoke definitions, isolated QA profile and Maestro flows are source-controlled, with a CI check that the QA IDs cannot overwrite the production app IDs.
 - [ ] Actually execute Maestro on native Android/iOS artifacts; record pass/fail and resulting device evidence. A source-controlled flow is not test execution.
 - [ ] Exercise the Android issue #2 font/theme lifecycle reproduction on an emulator and capture the native crash buffer. See [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md).
