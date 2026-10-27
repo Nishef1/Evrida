@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, AppState, Keyboard, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { useEonwardDatabase } from '../../storage/use-database';
+import { useEvridaDatabase } from '../../storage/use-database';
 import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, periodKey, periodLabel, shiftPeriod, type Horizon } from '../../domain/horizons';
 import { availableGoalParents, type Goal, type GoalInput } from '../../domain/goals';
 import { buildPerspectiveSections } from '../../domain/perspective';
@@ -35,7 +35,7 @@ import { useReducedMotion } from '../../theme/useReducedMotion';
 
 export function HorizonsScreen() {
   const reducedMotion = useReducedMotion();
-  const db = useEonwardDatabase();
+  const db = useEvridaDatabase();
   const router = useRouter();
   const focus = useFocusSession();
   const { goalId } = useLocalSearchParams<{ goalId?: string }>();
