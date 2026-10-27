@@ -29,8 +29,8 @@ function realDatabase() {
 }
 
 test('learning keeps honest self-ratings, separates practice time, reviews weeks and round-trips a backup', async () => {
-  assert.deepEqual([parseScore('4'), parseScore('10'), parseScore('0'), parseScore('11'), parseScore('x')], [4, 10, null, null, null]);
-  assert.deepEqual([parseMinutes(''), parseMinutes('1,200'), parseMinutes('abc'), parseMinutes('20000')], [null, 1200, 'invalid', 'invalid']);
+  assert.deepEqual([parseScore('4'), parseScore('10'), parseScore('۴'), parseScore('١٠'), parseScore('0'), parseScore('11'), parseScore('x')], [4, 10, 4, 10, null, null, null]);
+  assert.deepEqual([parseMinutes(''), parseMinutes('1,200'), parseMinutes('۱٬۲۰۰'), parseMinutes('١٬٢٠٠'), parseMinutes('abc'), parseMinutes('20000')], [null, 1200, 1200, 1200, 'invalid', 'invalid']);
   assert.match(bandLabel(4), /help/);
   assert.equal(weekStart('2026-10-28'), '2026-10-26', 'weeks start on Monday');
   assert.equal(weekStart('2026-11-01'), '2026-10-26');
