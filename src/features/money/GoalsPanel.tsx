@@ -69,6 +69,9 @@ export function GoalsPanel({ data, palette, onChanged }: { data: FinanceSnapshot
       <Text style={[type.caption, { color: palette.muted }]}>Not assigned to any goal</Text>
       <Text style={[type.numeral, { fontSize: 24, color: palette.foreground }]}>{formatMoney(free, settings)}</Text>
       <Text style={[type.caption, { color: palette.muted }]}>A goal only counts money you assign to it, and the same money can’t sit in two goals.</Text>
+      {free < 0 ? <Text style={[type.caption, { color: palette.horizon.week, fontWeight: '700' }]}>
+        Your goal allocations exceed the current balances of your asset accounts by {formatMoney(-free, settings)}. Review or release allocations before relying on goal forecasts.
+      </Text> : null}
     </Card>
     {goals.length === 0 ? <EmptyState Icon={Target} palette={palette} title="Name something worth saving for."
       copy="A home, a car, a repair fund. Assign money to it and see when it becomes reachable, with every assumption shown." actionLabel="Add a money goal" onAction={() => setEdit('new')} />
