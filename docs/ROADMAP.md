@@ -468,35 +468,40 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the full implementation inventory, in
 
 **Product guardrails:** no mandatory AI, login, cloud backend or new bottom-navigation destination for the first version. The first release should use explicit user inputs and deterministic scheduling; optional resource extraction can be evaluated after the workflow is proven.
 
-## Personal Finance & Money Goals — planned product milestone (2026-10-27)
+## Personal Finance & Money Goals — implementation status (2026-10-27)
 
-**Status: specified, implementation not started.** This is an optional capability, not a requirement for using Evrida. Full product rules and acceptance criteria live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
+**Status: partially implemented on main.** The optional Money module now has a manual ledger, accounts, editable categories and tags, budgets, planned items, explicit savings-goal allocations, and assumption-based target forecasts. The implementation has domain/SQLite test coverage; CI now includes those tests. Native device acceptance and some forecast capabilities remain incomplete. Full rules live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
 
 ### Finance 1 — Trustworthy manual ledger
 
-- [ ] Add progressive optional finance setup with explicit currency/unit and opening balances.
-- [ ] Record income, expenses, transfers and adjustments with minimal taps.
-- [ ] Add editable category hierarchy, multiple tags, notes and optional goal links.
-- [ ] Correctly handle transfers, refunds, split transactions and card payments without double counting.
-- [ ] Show monthly income, expenses, net cash flow and category/tag breakdown; do not treat missing months as zero.
-- [ ] Include finance records in versioned backup/restore and schema migration before real use.
+- [x] Progressive optional setup with explicit currency/unit and opening balances.
+- [x] Record income, expenses, transfers and adjustments.
+- [x] Editable categories, multiple tags, notes and split transactions.
+- [x] Handle transfers, refunds and splits without counting transfers as income or spending; liability-account semantics are covered by a regression test.
+- [x] Show monthly income, expenses, net cash flow and category/tag breakdown, with explicit history coverage.
+- [x] Include finance records in versioned backup/restore and schema migration.
+- [ ] Complete physical-device acceptance for ledger edits, account liabilities, backup/restore and app restarts.
 
-### Finance 2 — Budgets, recurring costs and money goals
+### Finance 2 — Budgets, planned costs and money goals
 
-- [ ] Add optional monthly/category budgets, recurring bills, opt-in reminders and irregular-expense reserves.
-- [ ] Add savings-goal allocations, target dates and planned monthly contributions.
-- [ ] Calculate required contribution and estimated completion window from explicit balances and assumptions.
-- [ ] Add monthly review and 3/6/12-month spending trends only when enough history exists.
+- [x] Optional overall/category budgets.
+- [x] Monthly/yearly planned items and monthly reserves for irregular expenses; planned items are not silently recorded as actual transactions.
+- [x] Explicit savings-goal allocations, target dates and monthly contributions.
+- [x] Estimate target completion and required monthly contribution with visible assumptions.
+- [x] Show monthly cash-flow trends and category comparisons only when enough history exists.
+- [ ] Add opt-in reminders for planned bills and goal checkpoints.
+- [ ] Complete usability and native accessibility review for the full Money flow.
 
 ### Finance 3 — Inflation-aware forecasts
 
-- [ ] Show nominal amounts separately from purchasing-power-adjusted real values with a stated base date.
-- [ ] Support dated price-index history when a trustworthy source is available, plus clearly labeled user-entered future scenarios.
-- [ ] Keep general inflation separate from target-specific price growth (for example, housing-price growth).
-- [ ] Compare a small number of scenarios for inflation, income changes, one-off costs and monthly contributions.
-- [ ] Show data coverage, missing inputs, assumptions and a forecast range; never fabricate current inflation or a guaranteed completion date.
+- [x] Accept a user-entered general-inflation scenario and keep it separate from target-specific price growth.
+- [x] Show a future target's nominal price and, when an inflation assumption exists, its value in today's purchasing power.
+- [x] Expose assumptions, missing inputs and provisional status in the forecast.
+- [ ] Add dated historical price-index data from a trustworthy, explicitly selected source.
+- [ ] Add broader what-if scenarios for income changes, one-off expenses and different inflation/contribution assumptions.
+- [ ] Improve forecast ranges and sensitivity explanations; do not imply certainty or a guaranteed completion date.
 
-**Product guardrails:** manual-first and offline-first; no mandatory AI, login, bank connection or cloud backend. Finance setup is skippable. Do not add a new bottom-navigation destination until usability evidence justifies it. Bank sync, investment/tax features, multi-currency aggregation and automatic AI categorization remain deferred. Preserve the 20-test budget by extending/replacing meaningful cases rather than adding redundant tests.
+**Product guardrails:** Finance remains optional, manual-first and offline-first. No mandatory AI, login, bank connection or cloud backend. Bank sync, investment/tax features, multi-currency aggregation and automatic AI categorization remain deferred. Preserve the 20-test budget by extending/replacing meaningful cases rather than adding redundant tests.
 
 ## Deferred (not quietly added to the current scope)
 

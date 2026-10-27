@@ -187,11 +187,11 @@ function Overview({ data, month, palette, onAdd, onAccount }: {
 
     <Card palette={palette}>
       <View style={styles.row}><Text style={[type.heading, { color: palette.foreground, flex: 1 }]}>Accounts</Text><TextButton label="＋ Account" onPress={() => onAccount('new')} palette={palette} /></View>
-      {accounts.filter((a) => !a.archived).map((a) => <Pressable key={a.id} accessibilityRole="button" accessibilityLabel={`${a.name}, ${money(accountBalance(a, txs))}`} onPress={() => onAccount(a)} style={styles.listRow}>
+      {accounts.filter((a) => !a.archived).map((a) => <Pressable key={a.id} accessibilityRole="button" accessibilityLabel={`${a.name}, ${money(accountBalance(a, txs, accounts))}`} onPress={() => onAccount(a)} style={styles.listRow}>
         <View style={{ flex: 1 }}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{a.name}</Text><Text style={[type.caption, { color: palette.muted }]}>{KIND_LABEL[a.kind]}</Text></View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[type.numeral, { color: palette.foreground, fontSize: 16 }]}>{formatAmount(accountBalance(a, txs), settings)}</Text>
-          {toUsd(accountBalance(a, txs), settings) !== null ? <Text style={[type.caption, { color: palette.muted }]}>≈ {formatUsd(toUsd(accountBalance(a, txs), settings)!)}</Text> : null}
+          <Text style={[type.numeral, { color: palette.foreground, fontSize: 16 }]}>{formatAmount(accountBalance(a, txs, accounts), settings)}</Text>
+          {toUsd(accountBalance(a, txs, accounts), settings) !== null ? <Text style={[type.caption, { color: palette.muted }]}>≈ {formatUsd(toUsd(accountBalance(a, txs, accounts), settings)!)}</Text> : null}
         </View>
       </Pressable>)}
       {worth !== null && accounts.filter((a) => !a.archived).length > 1 ? <View style={[styles.listRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.border }]}>

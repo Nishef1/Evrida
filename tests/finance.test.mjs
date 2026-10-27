@@ -60,9 +60,24 @@ test('finance math keeps transfers, refunds, splits, history gaps, inflation and
   assert.equal(byCategory.get('food'), 700);
   assert.equal(byCategory.get('health'), 100);
   assert.equal(tagTotals(rows, '2026-10').get('trip'), 900);
-  assert.equal(accountBalance(accounts[0], rows) + accountBalance(accounts[1], rows), 1000 + 5000 - 2100 - 300 + 100, 'transfer moves money without changing the total');
+  assert.equal(accountBalance(accounts[0], rows, accounts) + accountBalance(accounts[1], rows, accounts), 1000 + 5000 - 2100 - 300 + 100, 'transfer moves money without changing the total');
   assert.equal(netWorth(accounts, rows), 3700);
   assert.equal(unallocatedFunds(accounts, rows, [{ id: 'x', goalId: 'g', amount: 1000, date: '2026-10-06', note: '' }]), 2700);
+
+  const card = { id: 'card', name: 'Credit card', kind: 'liability', opening: 1000, archived: false };
+  const cardRows = [
+    tx({ id: 'card-purchase', accountId: 'card', amount: 200, categoryId: 'food' }),
+    tx({ id: 'card-payment', type: 'transfer', amount: 300, accountId: 'a', toAccountId: 'card', categoryId: null }),
+    tx({ id: 'cash-advance', type: 'transfer', amount: 100, accountId: 'card', toAccountId: 'a', categoryId: null }),
+  ];
+  assert.equal(accountBalance(card, cardRows, [accounts[0], card]), 1000, 'credit purchases increase debt, payments reduce it, and advances increase it');
+  assert.equal(accountBalance(accounts[0], cardRows, [accounts[0], card]), 800, 'payments and advances move the asset balance correctly');
+  assert.equal(netWorth([accounts[0], card], cardRows), -200, 'transfers do not change net worth; the purchase does');
+  const secondCard = { id: 'card-2', name: 'Second credit card', kind: 'liability', opening: 0, archived: false };
+  const balanceTransfer = [tx({ id: 'balance-transfer', type: 'transfer', amount: 300, accountId: 'card', toAccountId: 'card-2', categoryId: null })];
+  assert.equal(accountBalance(card, balanceTransfer, [card, secondCard]), 700, 'a liability-to-liability transfer reduces the source debt');
+  assert.equal(accountBalance(secondCard, balanceTransfer, [card, secondCard]), 300, 'a liability-to-liability transfer increases the destination debt');
+  assert.equal(netWorth([card, secondCard], balanceTransfer), -1000, 'moving debt between liabilities does not change net worth');
 
   assert.match(validateTx({ ...tx({ type: 'transfer', amount: 5, toAccountId: 'a', categoryId: null }) }), /different destination/);
   assert.match(validateTx({ ...tx({ amount: 300, categoryId: null, splits: [{ categoryId: 'food', amount: 100 }, { categoryId: 'x', amount: 100 }] }) }), /add up/);
@@ -108,6 +123,8 @@ test('finance storage records a ledger atomically and backs up, validates and re
     const salary = await saveTransaction(source.db, spend({ type: 'income', amount: 30000000, categoryId: cat('Salary') }));
     const groceries = await saveTransaction(source.db, spend({ amount: 2000000, tagNames: ['Work week', 'work week'] }));
     await saveTransaction(source.db, spend({ type: 'income', amount: 500000, refundOfId: groceries }));
+    await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 1600000, refundOfId: groceries })), /Refunds cannot exceed/);
+    await assert.rejects(() => saveTransaction(source.db, spend({ amount: 400000 }), groceries), /has refunds/);
     await saveTransaction(source.db, spend({ amount: 900000, categoryId: null, splits: [{ categoryId: cat('Groceries'), amount: 600000 }, { categoryId: cat('Health'), amount: 300000 }] }));
     await saveTransaction(source.db, spend({ type: 'transfer', amount: 1000000, toAccountId: cash, categoryId: null }));
     await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 5, refundOfId: salary })), /refund must refer to an expense/);
