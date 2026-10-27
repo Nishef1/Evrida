@@ -330,6 +330,8 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
             ))}
             <View pointerEvents="box-none" style={styles.events}>
               {positioned.map(({ block, top, height, lane, lanes }) => {
+                // Three or more side-by-side blocks have no room for a full range or icons.
+                const crowded = lanes >= 3;
                 const compact = height < 52;
                 const veryCompact = height < 39;
                 const tone = blockTone(block, palette);
@@ -364,10 +366,12 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                       <>
                         <View style={styles.eventHead}>
                           <View style={[styles.eventDot, { backgroundColor: tone }]} />
-                          <Text numberOfLines={1} style={[styles.eventTime, { color: palette.muted }]}>{visibleRange(block)}</Text>
-                          {block.kind === 'box' ? <Timer size={12} color={tone} strokeWidth={2.2} /> : null}
-                          {!block.flexible ? <Lock size={11} color={palette.muted} strokeWidth={2.4} /> : null}
-                          {height >= 52 ? <Text style={[styles.eventDuration, { color: palette.muted }]}>{blockMinutes(block)}</Text> : null}
+                          <Text numberOfLines={1} style={[styles.eventTime, { color: palette.muted }]}>
+                            {crowded ? visibleRange(block).split(' – ')[0] : visibleRange(block)}
+                          </Text>
+                          {crowded ? null : block.kind === 'box' ? <Timer size={12} color={tone} strokeWidth={2.2} /> : null}
+                          {!crowded && !block.flexible ? <Lock size={11} color={palette.muted} strokeWidth={2.4} /> : null}
+                          {height >= 52 && !crowded ? <Text style={[styles.eventDuration, { color: palette.muted }]}>{blockMinutes(block)}</Text> : null}
                         </View>
                         <Text numberOfLines={height < 75 ? 1 : 2}
                           style={[styles.eventTitle, { color: ink }, block.goalCompleted && styles.doneTitle]}>

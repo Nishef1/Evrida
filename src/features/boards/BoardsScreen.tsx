@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Alert, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
+import { EmptyState } from '../shared/EmptyState';
 import { colors, depth, radius, spacing, semantic, scrim } from '../../theme/tokens';
 import Check from 'lucide-react-native/icons/check';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
@@ -337,12 +338,8 @@ export function BoardsScreen() {
               <Plus size={19} color={palette.onAccent} /><Text style={[styles.primaryText, { color: palette.onAccent }]}>Create a board</Text>
             </Pressable>
             {boards.length === 0 ? (
-              <View style={[styles.notice, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-                <Text style={[styles.noticeTitle, { color: palette.foreground }]}>Every project needs a space.</Text>
-                <Text style={[styles.noticeText, { color: palette.muted }]}>
-                  Create a board, then add related goals without moving or duplicating them.
-                </Text>
-              </View>
+              <EmptyState Icon={FolderOpen} palette={palette} title="Every project needs a space."
+                copy="A board gathers related goals from any horizon in one place. Goals stay where they are; the board only points at them." />
             ) : boards.map((board) => (
               <Pressable key={board.id} accessibilityRole="button" accessibilityLabel={`Open board ${board.title}`}
                 onPress={() => setCurrent(board)} style={[styles.boardCard, { backgroundColor: palette.surface, borderColor: palette.border, boxShadow: palette === colors.dark ? depth.dark.card : depth.light.card }]}>

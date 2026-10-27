@@ -29,6 +29,8 @@ import { TimeBlockEditor } from './TimeBlockEditor';
 import { GoalEditor } from '../horizons/GoalEditor';
 import { DateTimeField } from '../shared/DateTimeField';
 import { type } from '../../theme/type';
+import { EmptyState } from '../shared/EmptyState';
+import CalendarClock from 'lucide-react-native/icons/calendar-clock';
 import { useDockInset } from '../shell/DockInset';
 import Animated from 'react-native-reanimated';
 import { listMotion } from '../../theme/motion';
@@ -431,15 +433,9 @@ export function CalendarScreen() {
           </> : null}
           <Text style={[styles.listHeading, { color: foreground }]}>Reserved time</Text>
           {!ordered.length ? (
-            <View style={[styles.empty, { borderColor: palette.border, backgroundColor: palette.surface }]}>
-              <Text style={[styles.emptyTitle, { color: foreground }]}>A clear day ahead.</Text>
-              <Text style={[styles.emptyCopy, { color: palette.muted }]}>
-                Reserve an hour for any goal. It will appear here and in the timeline.
-              </Text>
-              <Pressable onPress={() => createAt()} accessibilityRole="button" style={styles.emptyAction}>
-                <Text style={[styles.emptyActionLabel, { color: palette.accent }]}>＋ Plan your first block</Text>
-              </Pressable>
-            </View>
+            <EmptyState Icon={CalendarClock} palette={palette} title="A clear day ahead."
+              copy="Nothing is reserved yet. Give a goal an exact window and it appears here and in the timeline."
+              actionLabel="Add a timebox" onAction={() => createAt()} />
           ) : ordered.map((block) => (
             <View key={block.id} style={[styles.listCard, { borderColor: palette.border, backgroundColor: palette.surface }]}>
               <View style={[styles.listStripe, { backgroundColor: block.goalCompleted ? palette.muted : palette.horizon[block.goalHorizon ?? 'day'] }]} />

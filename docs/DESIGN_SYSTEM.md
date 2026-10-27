@@ -134,3 +134,10 @@ The CI source contract `scripts/check-design-ssot.mjs` blocks repeated Palette d
 - Starting Focus from a Timebox whose scheduled end is in the past must explicitly say that only a new Focus timer begins now and the historical calendar block remains unmoved.
 - Travel across timezones alters display of stored instants; no hidden "floating 09:00" promise.
 - Weekly Review groups entire sessions by end day, and cannot truthfully allocate paused segments across midnight until explicit activity-segment history exists.
+
+## Shared empty state and impact bars (2026-10-27)
+
+- Every list that can be empty uses `EmptyState` (`src/features/shared/EmptyState.tsx`): a tinted icon badge, a Fraunces title, one body sentence saying what the place is and why it is empty, and an optional single action. Boards and the Calendar List use it; new lists must not hand-roll their own card.
+- Review's *Goal impact* rows pair the focused time with a bar in the goal's horizon hue, scaled to the week's biggest goal, so the week's weight reads at a glance. Explanatory captions stay to one sentence.
+- Timeline blocks that sit three or more across show only their start time (no range, icons or duration), so nothing is cut with an ellipsis.
+- Research notes: reviewer write-ups and design-library guidance agree that an empty state should say what it is, why it is empty and the next step, and that a review should be able to end ("nothing needs a decision") rather than keep asking. Pinterest was login-walled and Dribbble returned generic dashboards, so these come from articles, not from copied layouts.

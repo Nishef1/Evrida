@@ -74,17 +74,23 @@ export function TimeArchitecture({ palette, history, refreshKey }: Props) {
   return <View style={styles.section}>
     <Text style={[styles.title, { color: palette.foreground }]}>Goal impact</Text>
     <Text style={[styles.caption, { color: palette.muted }]}>
-      Recorded Focus tied to your goals this week. Parent paths reflect today's hierarchy.
+      Recorded Focus per goal this week, in its horizon's color.
     </Text>
     {impact.length ? impact.map((item) => <View key={item.goal!.id}
-      style={[styles.row, { borderBottomColor: palette.border }]}>
-      <View style={{ flex: 1, gap: 3 }}>
-        <Text style={{ color: palette.foreground, fontWeight: '600' }} numberOfLines={1}>{item.goal!.title}</Text>
-        {item.goal!.parentTitle ? <Text style={[styles.caption, { color: palette.muted }]} numberOfLines={1}>
-          ↳ {item.goal!.parentTitle}
-        </Text> : null}
+      style={[styles.impactRow, { borderBottomColor: palette.border }]}>
+      <View style={styles.impactHead}>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Text style={{ color: palette.foreground, fontWeight: '600' }} numberOfLines={1}>{item.goal!.title}</Text>
+          {item.goal!.parentTitle ? <Text style={[styles.caption, { color: palette.muted }]} numberOfLines={1}>
+            ↳ {item.goal!.parentTitle}
+          </Text> : null}
+        </View>
+        <Text style={{ color: palette.foreground, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{format(item.minutes)}</Text>
       </View>
-      <Text style={{ color: palette.accent, fontWeight: '700' }}>{format(item.minutes)}</Text>
+      <View accessibilityElementsHidden style={[styles.impactTrack, { backgroundColor: palette.inset }]}>
+        <View style={{ height: 6, borderRadius: 3, width: `${Math.max(4, item.minutes / impact[0].minutes * 100)}%`,
+          backgroundColor: palette.horizon[item.goal!.horizon] }} />
+      </View>
     </View>) : <Text style={[styles.caption, { color: palette.muted }]}>
       Start and finish Focus for a goal to see its actual time here.
     </Text>}
@@ -99,8 +105,7 @@ export function TimeArchitecture({ palette, history, refreshKey }: Props) {
       </Pressable>
     </View>
     <Text style={[styles.caption, { color: palette.muted }]}>
-      Define a weekly time budget for a meaningful goal. Planned reservations and recorded Focus are shown separately.
-      Nested goals count toward their parent's allocation.
+      Set hours for a goal you want to protect. Reserved and focused time are tracked separately.
     </Text>
     {error ? <Text style={{ color: palette.foreground }}>{error}</Text> : null}
     {budgets.length ? budgets.map((b) => <View key={b.goalId}
@@ -171,6 +176,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
   caption: { fontSize: 12, lineHeight: 19 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  impactRow: { gap: 8, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  impactHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  impactTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingVertical: 7, gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   add: { minHeight: 48, minWidth: 48, justifyContent: 'center', paddingHorizontal: 5 },
   budget: { gap: 9, borderWidth: 1, borderRadius: 15, padding: 15 },
