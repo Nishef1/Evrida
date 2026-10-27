@@ -3,11 +3,8 @@ import { HORIZON_TITLES, type Horizon } from '../../domain/horizons';
 import type { Goal } from '../../domain/goals';
 import type { PerspectiveSection } from '../../domain/perspective';
 import { colors, depth, radius, type Palette } from '../../theme/tokens';
-import Check from 'lucide-react-native/icons/check';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import Circle from 'lucide-react-native/icons/circle';
-import Plus from 'lucide-react-native/icons/plus';
 import { CompletionProgress } from '../shared/CompletionProgress';
+import { Check, ChevronRight, Circle, Plus } from '../../theme/icons';
 
 
 

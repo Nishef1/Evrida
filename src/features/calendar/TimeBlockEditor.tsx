@@ -6,9 +6,8 @@ import { localClock, localDayKey, timeRangeFromInput, type BlockInput, type Bloc
 import { colors, radius, spacing, semantic, type Palette, scrim } from '../../theme/tokens';
 import { DateTimeField } from '../shared/DateTimeField';
 import { useReducedMotion } from '../../theme/useReducedMotion';
-import Check from 'lucide-react-native/icons/check';
-import X from 'lucide-react-native/icons/x';
 import { type } from '../../theme/type';
+import { Check, X } from '../../theme/icons';
 
 
 

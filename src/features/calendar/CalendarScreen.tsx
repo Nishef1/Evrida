@@ -10,12 +10,6 @@ import {
 import { createGoal, getGoal, listAllGoals } from '../../storage/goals';
 import { listRangeBlocks, removeBlock, saveBlock } from '../../storage/timeblocks';
 import { colors, depth, radius, spacing, type Palette } from '../../theme/tokens';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import Plus from 'lucide-react-native/icons/plus';
-import ArrowUpRight from 'lucide-react-native/icons/arrow-up-right';
-import X from 'lucide-react-native/icons/x';
-import Minimize2 from 'lucide-react-native/icons/minimize-2';
 import { DayTimeline } from './DayTimeline';
 import { RecoverySheet } from './RecoverySheet';
 import { applyReplan, canUndoReplan, undoReplan } from '../../storage/replan';
@@ -31,12 +25,12 @@ import { GoalEditor } from '../horizons/GoalEditor';
 import { DateTimeField } from '../shared/DateTimeField';
 import { type } from '../../theme/type';
 import { EmptyState } from '../shared/EmptyState';
-import CalendarClock from 'lucide-react-native/icons/calendar-clock';
 import { useDockInset, useSetDockHidden } from '../shell/DockInset';
 import Animated from 'react-native-reanimated';
 import { listMotion } from '../../theme/motion';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import { longDayText, shortDayText } from '../shared/dates';
+import { ArrowUpRight, CalendarClock, ChevronLeft, ChevronRight, Minimize2, Plus, X } from '../../theme/icons';
 
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];

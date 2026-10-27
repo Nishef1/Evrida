@@ -4,10 +4,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { parseDateInput, periodKey } from '../../domain/horizons';
 import { fullDateText } from './dates';
 import { colors, radius } from '../../theme/tokens';
-import CalendarDays from 'lucide-react-native/icons/calendar-days';
-import ChevronDown from 'lucide-react-native/icons/chevron-down';
-import Clock3 from 'lucide-react-native/icons/clock-3';
-import X from 'lucide-react-native/icons/x';
+import { CalendarDays, ChevronDown, Clock3, X } from '../../theme/icons';
 
 /** Native civil-date/time selection. Never converts a planning date through UTC. */
 export function DateTimeField({ value, mode = 'date', label, placeholder = 'Choose a date', onChange, onClear, variant = 'field', displayValue }: {

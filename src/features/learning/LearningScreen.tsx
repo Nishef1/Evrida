@@ -19,12 +19,9 @@ import { colors, radius, spacing, type Palette } from '../../theme/tokens';
 import { type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
 import { EmptyState } from '../shared/EmptyState';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import Plus from 'lucide-react-native/icons/plus';
-import BookOpenCheck from 'lucide-react-native/icons/book-open-check';
 import { REMINDER_HOURS, WEEKDAYS, getReminder, reminderText, resyncReminder, setReminder, type ReminderPref } from './reminder';
 import { Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, dateName, useBusy } from '../money/ui';
+import { BookOpenCheck, Calendar, ChevronLeft, ChevronRight, GraduationCap, Plus } from '../../theme/icons';
 
 type Tab = 'topics' | 'week';
 const hours = (minutes: number) => minutes >= 60 ? `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ''}` : `${minutes} min`;
@@ -129,7 +126,7 @@ export function LearningScreen() {
   return <SafeAreaView edges={['top']} style={[styles.screen, { backgroundColor: palette.background }]}>
     <ScrollView contentContainerStyle={[styles.page, { paddingBottom: 40 + dockInset }]} keyboardShouldPersistTaps="handled">
       {header(addButton)}
-      <Segments palette={palette} value={tab} onChange={setTab} options={[{ id: 'topics', label: 'Topics' }, { id: 'week', label: 'Weekly review' }]} />
+      <Segments palette={palette} value={tab} onChange={setTab} options={[{ id: 'topics', label: 'Topics', icon: GraduationCap }, { id: 'week', label: 'Weekly review', icon: Calendar }]} />
 
       {tab === 'topics' ? (open.length === 0
         ? <EmptyState Icon={BookOpenCheck} title="Track what you are learning" palette={palette}

@@ -8,14 +8,6 @@ import { useEvridaDatabase } from '../../storage/use-database';
 import { EmptyState } from '../shared/EmptyState';
 import { CompletionProgress } from '../shared/CompletionProgress';
 import { colors, depth, radius, spacing, semantic, scrim } from '../../theme/tokens';
-import Check from 'lucide-react-native/icons/check';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import Circle from 'lucide-react-native/icons/circle';
-import Clock3 from 'lucide-react-native/icons/clock-3';
-import FolderOpen from 'lucide-react-native/icons/folder-open';
-import Plus from 'lucide-react-native/icons/plus';
-import X from 'lucide-react-native/icons/x';
 import { HORIZON_TITLES } from '../../domain/horizons';
 import { createGoal, listAllGoals, setGoalCompleted } from '../../storage/goals';
 import type { Goal, GoalInput } from '../../domain/goals';
@@ -23,6 +15,7 @@ import { GoalEditor } from '../horizons/GoalEditor';
 import { useFocusSession } from '../focus/FocusProvider';
 import { type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
+import { Check, ChevronLeft, ChevronRight, Circle, Clock3, FolderOpen, Plus, X } from '../../theme/icons';
 import {
   addGoalToBoard, createBoard, deleteBoard, editBoard, getBoard, listBoardGoals,
   listBoards, removeGoalFromBoard, type Board, type BoardGoal,

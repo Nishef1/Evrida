@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Coins, PiggyBank } from '../../theme/icons';
 import { Pressable, Text, View } from 'react-native';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { saveCategory, setCategoryArchived, type FinanceSnapshot } from '../../storage/finance';
@@ -51,7 +52,7 @@ export function CategoriesSheet({ data, visible, palette, onClose, onChanged }: 
   return <Sheet visible={visible} title="Categories" onClose={close} palette={palette}
     footer={<PrimaryButton label="Add a category" onPress={() => open('new')} palette={palette} />}>
     {error ? <Text style={{ color: '#C0392B' }}>{error}</Text> : null}
-    <Segments palette={palette} value={kind} onChange={setKind} options={[{ id: 'expense', label: 'Spending' }, { id: 'income', label: 'Income' }]} />
+    <Segments palette={palette} value={kind} onChange={setKind} options={[{ id: 'expense', label: 'Spending', icon: Coins }, { id: 'income', label: 'Income', icon: PiggyBank }]} />
     {groups.map((g) => <View key={g} style={{ gap: 6 }}>
       <Label palette={palette}>{g.toUpperCase()}</Label>
       {list.filter((c) => c.group === g).map((c) => <Pressable key={c.id} accessibilityRole="button" accessibilityLabel={`Edit ${c.name}`} onPress={() => open(c)}

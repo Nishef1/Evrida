@@ -11,9 +11,9 @@ import { type Palette } from '../../theme/tokens';
 import { type } from '../../theme/type';
 import { DateTimeField } from '../shared/DateTimeField';
 import { EmptyState } from '../shared/EmptyState';
-import Target from 'lucide-react-native/icons/target';
 import { GoalPicker } from '../shared/GoalPicker';
 import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Sheet, TextButton, dateName, useBusy } from './ui';
+import { Target } from '../../theme/icons';
 
 const dateLabel = dateName;
 

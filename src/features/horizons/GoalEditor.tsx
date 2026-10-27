@@ -9,16 +9,8 @@ import { REPEAT_LABELS, REPEAT_RULES, type RepeatRule } from '../../domain/plann
 import { colors, radius, spacing, type Palette, scrim } from '../../theme/tokens';
 import { DateTimeField } from '../shared/DateTimeField';
 import { useReducedMotion } from '../../theme/useReducedMotion';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import ChevronDown from 'lucide-react-native/icons/chevron-down';
-import ChevronUp from 'lucide-react-native/icons/chevron-up';
-import Check from 'lucide-react-native/icons/check';
-import CalendarDays from 'lucide-react-native/icons/calendar-days';
-import Inbox from 'lucide-react-native/icons/inbox';
-import Layers3 from 'lucide-react-native/icons/layers';
-import X from 'lucide-react-native/icons/x';
 import { type } from '../../theme/type';
+import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Inbox, Layers3, X } from '../../theme/icons';
 
 
 

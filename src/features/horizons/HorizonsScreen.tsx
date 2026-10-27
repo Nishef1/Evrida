@@ -10,32 +10,19 @@ import { availableGoalParents, type Goal, type GoalInput } from '../../domain/go
 import { buildPerspectiveSections } from '../../domain/perspective';
 import { archiveGoal, createGoal, editGoal, getGoal, listAllGoals, listArchivedGoals, listChildGoals, listGoalAncestors, listGoals, listInboxGoals, listPerspectiveGoals, moveGoal, planGoal, restoreGoal, setGoalCompleted } from '../../storage/goals';
 import { colors, depth, radius, spacing, semantic, type Palette, scrim } from '../../theme/tokens';
-import Archive from 'lucide-react-native/icons/archive';
-import Check from 'lucide-react-native/icons/check';
-import ChevronDown from 'lucide-react-native/icons/chevron-down';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import Clock3 from 'lucide-react-native/icons/clock-3';
-import Inbox from 'lucide-react-native/icons/inbox';
-import Layers3 from 'lucide-react-native/icons/layers';
-import MoreHorizontal from 'lucide-react-native/icons/ellipsis';
-import Plus from 'lucide-react-native/icons/plus';
-import Search from 'lucide-react-native/icons/search';
-import Settings2 from 'lucide-react-native/icons/settings-2';
-import X from 'lucide-react-native/icons/x';
 import { CompletionProgress } from '../shared/CompletionProgress';
 import { GoalDetails } from './GoalDetails';
 import { GoalCard } from './GoalCard';
 import { GoalEditor } from './GoalEditor';
 import { GuidedPlansSheet } from './GuidedPlansSheet';
 import { createGuidedPlan } from '../../storage/guided-plans';
-import BookOpenCheck from 'lucide-react-native/icons/book-open-check';
 import { PerspectiveView } from './PerspectiveView';
 import { ArchiveView } from './ArchiveView';
 import { useFocusSession } from '../focus/FocusProvider';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import { type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
+import { Archive, BookOpenCheck, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Inbox, Layers3, MoreHorizontal, Plus, Search, Settings2, X } from '../../theme/icons';
 
 
 export function HorizonsScreen() {

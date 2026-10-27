@@ -5,8 +5,8 @@ import { colors, type Palette, scrim } from '../../theme/tokens';
 import { localClock, type TimeBlock } from '../../domain/timeblocks';
 import { previewReplan, type ReplanPreview } from '../../domain/replan';
 import { useReducedMotion } from '../../theme/useReducedMotion';
-import RefreshCw from 'lucide-react-native/icons/refresh-cw';
 import { type } from '../../theme/type';
+import { RefreshCw } from '../../theme/icons';
 
 
 interface Props {

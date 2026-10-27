@@ -11,15 +11,9 @@ import { useFocusSession } from '../focus/FocusProvider';
 import { motion } from '../../theme/motion';
 import { colors, glass, radius, semantic, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
-import CalendarDays from 'lucide-react-native/icons/calendar-days';
-import ChartNoAxesCombined from 'lucide-react-native/icons/chart-no-axes-combined';
-import LayoutGrid from 'lucide-react-native/icons/layout-grid';
-import ListTodo from 'lucide-react-native/icons/list-todo';
-import Timer from 'lucide-react-native/icons/timer';
-import Pause from 'lucide-react-native/icons/pause';
-import Play from 'lucide-react-native/icons/play';
 import { type } from '../../theme/type';
 import { BlurView } from 'expo-blur';
+import { CalendarDays, ChartNoAxesCombined, LayoutGrid, ListTodo, Pause, Play, Timer } from '../../theme/icons';
 
 const routes = [
   { path: '/', label: 'Plan', icon: ListTodo },

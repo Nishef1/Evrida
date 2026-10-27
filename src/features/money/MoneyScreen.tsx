@@ -15,11 +15,6 @@ import { colors, radius, spacing, withAlpha, type Palette } from '../../theme/to
 import { fonts, type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
 import { EmptyState } from '../shared/EmptyState';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import Plus from 'lucide-react-native/icons/plus';
-import Settings2 from 'lucide-react-native/icons/settings-2';
-import Wallet from 'lucide-react-native/icons/wallet';
 import { TransactionSheet, type TxPreset } from './TransactionSheet';
 import { GoalsPanel } from './GoalsPanel';
 import { PlanPanel } from './PlanPanel';
@@ -27,6 +22,7 @@ import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet,
 import { fetchUsdRate } from './rates';
 import { CategoriesSheet } from './CategoriesSheet';
 import { budgetAlertsOn, checkBudgetAlerts, setBudgetAlerts } from './alerts';
+import { Calendar, ChevronLeft, ChevronRight, Plus, Receipt, Settings2, Target, TrendUp, Wallet } from '../../theme/icons';
 
 type Tab = 'overview' | 'ledger' | 'goals' | 'plan';
 const monthLabel = monthName;
@@ -86,7 +82,7 @@ export function MoneyScreen() {
           style={[styles.round, { backgroundColor: palette.accent, borderColor: palette.accent }]}><Plus size={22} color={palette.onAccent} strokeWidth={1.9} /></Pressable>
       </>)}
       <Segments palette={palette} value={tab} onChange={setTab}
-        options={[{ id: 'overview', label: 'Overview' }, { id: 'ledger', label: 'Ledger' }, { id: 'goals', label: 'Goals' }, { id: 'plan', label: 'Plan' }]} />
+        options={[{ id: 'overview', label: 'Overview', icon: TrendUp }, { id: 'ledger', label: 'Ledger', icon: Receipt }, { id: 'goals', label: 'Goals', icon: Target }, { id: 'plan', label: 'Plan', icon: Calendar }]} />
       {tab === 'overview' || tab === 'ledger' ? <MonthNav month={month} onChange={setMonth} palette={palette} /> : null}
       {tab === 'overview' ? <Overview data={data} month={month} palette={palette} onAdd={openAdd} onAccount={setAccount} /> : null}
       {tab === 'ledger' ? <Ledger data={data} month={month} palette={palette} onEdit={(tx) => setEditing({ tx })} onAdd={openAdd} /> : null}

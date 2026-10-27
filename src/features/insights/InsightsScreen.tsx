@@ -11,12 +11,11 @@ import { localDayKey, shiftLocalDay } from '../../domain/timeblocks';
 import { listFocusHistory, listFocusHistorySince } from '../../storage/focus';
 import { archiveGoal, completedGoalsSince, listOpenPastGoals, reviewPastGoal } from '../../storage/goals';
 import { colors, depth } from '../../theme/tokens';
-import RefreshCw from 'lucide-react-native/icons/refresh-cw';
-import Sprout from 'lucide-react-native/icons/sprout';
 import { useFocusSession } from '../focus/FocusProvider';
 import { TimeArchitecture } from './TimeArchitecture';
 import { type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
+import { ChevronRight, GraduationCap, RefreshCw, Sprout, Wallet } from '../../theme/icons';
 
 function duration(ms: number): string {
   const minutes = Math.floor(ms / 60000), hours = Math.floor(minutes / 60);
@@ -134,19 +133,21 @@ export function InsightsScreen() {
       </>}
       <Pressable accessibilityRole="button" accessibilityLabel="Open Learning, rate what you are learning and see your trend" onPress={() => router.push('/learning' as never)}
         style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 72 }]}>
+        <View style={[styles.emptyEmblem, { backgroundColor: palette.accentSoft, width: 44, height: 44 }]}><GraduationCap size={24} color={palette.accent} /></View>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '700' }}>Learning</Text>
           <Text style={[styles.caption, { color: palette.muted }]}>Rate what you know from 1 to 10, review weekly and see your trend.</Text>
         </View>
-        <Text style={{ color: palette.accent, fontWeight: '700' }}>Open →</Text>
+        <ChevronRight size={20} color={palette.accent} strokeWidth={2} />
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Open Money, optional personal finance" onPress={() => router.push('/money' as never)}
         style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 72 }]}>
+        <View style={[styles.emptyEmblem, { backgroundColor: palette.accentSoft, width: 44, height: 44 }]}><Wallet size={24} color={palette.accent} /></View>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '700' }}>Money</Text>
           <Text style={[styles.caption, { color: palette.muted }]}>Optional. Track spending, budgets and goals on this device.</Text>
         </View>
-        <Text style={{ color: palette.accent, fontWeight: '700' }}>Open →</Text>
+        <ChevronRight size={20} color={palette.accent} strokeWidth={2} />
       </Pressable>
     </ScrollView>
   </SafeAreaView>;

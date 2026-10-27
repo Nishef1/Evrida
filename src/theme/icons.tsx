@@ -1,0 +1,151 @@
+import type { ComponentType } from 'react';
+import type { IconProps as PhosphorProps } from 'phosphor-react-native';
+import { ArchiveIcon } from 'phosphor-react-native/src/icons/Archive';
+import { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
+import { BookOpenTextIcon } from 'phosphor-react-native/src/icons/BookOpenText';
+import { CalendarDotsIcon } from 'phosphor-react-native/src/icons/CalendarDots';
+import { CalendarBlankIcon } from 'phosphor-react-native/src/icons/CalendarBlank';
+import { ChartLineUpIcon } from 'phosphor-react-native/src/icons/ChartLineUp';
+import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
+import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown';
+import { CaretLeftIcon } from 'phosphor-react-native/src/icons/CaretLeft';
+import { CaretRightIcon } from 'phosphor-react-native/src/icons/CaretRight';
+import { CaretUpIcon } from 'phosphor-react-native/src/icons/CaretUp';
+import { CaretDoubleDownIcon } from 'phosphor-react-native/src/icons/CaretDoubleDown';
+import { CircleIcon } from 'phosphor-react-native/src/icons/Circle';
+import { ClockIcon } from 'phosphor-react-native/src/icons/Clock';
+import { FolderOpenIcon } from 'phosphor-react-native/src/icons/FolderOpen';
+import { DotsSixVerticalIcon } from 'phosphor-react-native/src/icons/DotsSixVertical';
+import { TrayIcon } from 'phosphor-react-native/src/icons/Tray';
+import { InfoIcon } from 'phosphor-react-native/src/icons/Info';
+import { StackIcon } from 'phosphor-react-native/src/icons/Stack';
+import { SquaresFourIcon } from 'phosphor-react-native/src/icons/SquaresFour';
+import { ListChecksIcon } from 'phosphor-react-native/src/icons/ListChecks';
+import { LockIcon } from 'phosphor-react-native/src/icons/Lock';
+import { ArrowsOutSimpleIcon } from 'phosphor-react-native/src/icons/ArrowsOutSimple';
+import { ArrowsInSimpleIcon } from 'phosphor-react-native/src/icons/ArrowsInSimple';
+import { DotsThreeIcon } from 'phosphor-react-native/src/icons/DotsThree';
+import { PauseIcon } from 'phosphor-react-native/src/icons/Pause';
+import { PlayIcon } from 'phosphor-react-native/src/icons/Play';
+import { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
+import { ArrowsClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsClockwise';
+import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass';
+import { SlidersIcon } from 'phosphor-react-native/src/icons/Sliders';
+import { PlantIcon } from 'phosphor-react-native/src/icons/Plant';
+import { TargetIcon } from 'phosphor-react-native/src/icons/Target';
+import { TimerIcon } from 'phosphor-react-native/src/icons/Timer';
+import { WalletIcon } from 'phosphor-react-native/src/icons/Wallet';
+import { XIcon } from 'phosphor-react-native/src/icons/X';
+import { GearIcon } from 'phosphor-react-native/src/icons/Gear';
+import { BellIcon } from 'phosphor-react-native/src/icons/Bell';
+import { GraduationCapIcon } from 'phosphor-react-native/src/icons/GraduationCap';
+import { PiggyBankIcon } from 'phosphor-react-native/src/icons/PiggyBank';
+import { ExportIcon } from 'phosphor-react-native/src/icons/Export';
+import { DownloadSimpleIcon } from 'phosphor-react-native/src/icons/DownloadSimple';
+import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
+import { HeartbeatIcon } from 'phosphor-react-native/src/icons/Heartbeat';
+import { TrashIcon } from 'phosphor-react-native/src/icons/Trash';
+import { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
+import { FlagIcon } from 'phosphor-react-native/src/icons/Flag';
+import { StarIcon } from 'phosphor-react-native/src/icons/Star';
+import { CoinsIcon } from 'phosphor-react-native/src/icons/Coins';
+import { FireIcon } from 'phosphor-react-native/src/icons/Fire';
+import { CalendarCheckIcon } from 'phosphor-react-native/src/icons/CalendarCheck';
+import { TagIcon } from 'phosphor-react-native/src/icons/Tag';
+import { ReceiptIcon } from 'phosphor-react-native/src/icons/Receipt';
+import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
+import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
+import { LightbulbIcon } from 'phosphor-react-native/src/icons/Lightbulb';
+import { EyeIcon } from 'phosphor-react-native/src/icons/Eye';
+import { EyeSlashIcon } from 'phosphor-react-native/src/icons/EyeSlash';
+import { GlobeIcon } from 'phosphor-react-native/src/icons/Globe';
+import { ClockCountdownIcon } from 'phosphor-react-native/src/icons/ClockCountdown';
+import { FoldersIcon } from 'phosphor-react-native/src/icons/Folders';
+import { NotebookIcon } from 'phosphor-react-native/src/icons/Notebook';
+import { RepeatIcon } from 'phosphor-react-native/src/icons/Repeat';
+import { ArrowCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowCounterClockwise';
+import { LinkSimpleIcon } from 'phosphor-react-native/src/icons/LinkSimple';
+
+/** Phosphor icons behind one small API. `strokeWidth` (the old Lucide prop) maps to a weight, so call sites keep working. */
+export interface IconProps { size?: number; color?: string; strokeWidth?: number; weight?: PhosphorProps['weight']; style?: PhosphorProps['style'] }
+function make(Icon: ComponentType<PhosphorProps>) {
+  return function EvridaIcon({ size = 20, color, strokeWidth, weight, style }: IconProps) {
+    return <Icon size={size} color={color} style={style} weight={weight ?? (strokeWidth !== undefined && strokeWidth >= 2 ? 'bold' : 'regular')} />;
+  };
+}
+
+export const Archive = make(ArchiveIcon);
+export const ArrowUpRight = make(ArrowUpRightIcon);
+export const BookOpenCheck = make(BookOpenTextIcon);
+export const CalendarClock = make(CalendarDotsIcon);
+export const CalendarDays = make(CalendarBlankIcon);
+export const ChartNoAxesCombined = make(ChartLineUpIcon);
+export const Check = make(CheckIcon);
+export const ChevronDown = make(CaretDownIcon);
+export const ChevronLeft = make(CaretLeftIcon);
+export const ChevronRight = make(CaretRightIcon);
+export const ChevronUp = make(CaretUpIcon);
+export const ChevronsDown = make(CaretDoubleDownIcon);
+export const Circle = make(CircleIcon);
+export const Clock3 = make(ClockIcon);
+export const FolderOpen = make(FolderOpenIcon);
+export const GripVertical = make(DotsSixVerticalIcon);
+export const Inbox = make(TrayIcon);
+export const Info = make(InfoIcon);
+export const Layers3 = make(StackIcon);
+export const LayoutGrid = make(SquaresFourIcon);
+export const ListTodo = make(ListChecksIcon);
+export const Lock = make(LockIcon);
+export const Maximize2 = make(ArrowsOutSimpleIcon);
+export const Minimize2 = make(ArrowsInSimpleIcon);
+export const MoreHorizontal = make(DotsThreeIcon);
+export const Pause = make(PauseIcon);
+export const Play = make(PlayIcon);
+export const Plus = make(PlusIcon);
+export const RefreshCw = make(ArrowsClockwiseIcon);
+export const Search = make(MagnifyingGlassIcon);
+export const Settings2 = make(SlidersIcon);
+export const Sprout = make(PlantIcon);
+export const Target = make(TargetIcon);
+export const Timer = make(TimerIcon);
+export const Wallet = make(WalletIcon);
+export const X = make(XIcon);
+export const Gear = make(GearIcon);
+export const Bell = make(BellIcon);
+export const GraduationCap = make(GraduationCapIcon);
+export const PiggyBank = make(PiggyBankIcon);
+export const Export = make(ExportIcon);
+export const Download = make(DownloadSimpleIcon);
+export const ShieldCheck = make(ShieldCheckIcon);
+export const Heartbeat = make(HeartbeatIcon);
+export const Trash = make(TrashIcon);
+export const Pencil = make(PencilSimpleIcon);
+export const Flag = make(FlagIcon);
+export const Star = make(StarIcon);
+export const Coins = make(CoinsIcon);
+export const Fire = make(FireIcon);
+export const Calendar = make(CalendarCheckIcon);
+export const Tag = make(TagIcon);
+export const Receipt = make(ReceiptIcon);
+export const ArrowsLeftRight = make(ArrowsLeftRightIcon);
+export const TrendUp = make(TrendUpIcon);
+export const Lightbulb = make(LightbulbIcon);
+export const Eye = make(EyeIcon);
+export const EyeSlash = make(EyeSlashIcon);
+export const Globe = make(GlobeIcon);
+export const ClockCountdown = make(ClockCountdownIcon);
+export const Folders = make(FoldersIcon);
+export const Notebook = make(NotebookIcon);
+export const Repeat = make(RepeatIcon);
+export const ArrowCounterClockwise = make(ArrowCounterClockwiseIcon);
+export const Link = make(LinkSimpleIcon);
+
+export type IconComponent = (props: IconProps) => React.JSX.Element;
+const LABEL_ICONS: [RegExp, IconComponent][] = [
+  [/focus/i, Flag], [/remov\w* the rate|delete|remove/i, Trash], [/unarchive|restore/i, ArrowCounterClockwise], [/archive/i, Archive],
+  [/export|share/i, Export], [/categor/i, Tag], [/alert|reminder|notification/i, Bell], [/internet|suggest a rate/i, Globe],
+  [/calendar|study session|add to my plan|plan a/i, Calendar], [/^edit|rename/i, Pencil], [/^(add|new|create)/i, Plus],
+  [/settings/i, Gear], [/check in|^save|^done|^record|^apply|^confirm|^use /i, Check], [/retry|refresh|again/i, RefreshCw],
+];
+/** A matching icon for a button label, or null. A button can pass its own `icon` (or `icon={null}`) to override. */
+export const iconForLabel = (label: string): IconComponent | null => LABEL_ICONS.find(([pattern]) => pattern.test(label))?.[1] ?? null;

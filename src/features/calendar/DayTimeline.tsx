@@ -5,12 +5,7 @@ import { blockClockRangeForDay, layoutBlocks, localClock, localDayBounds, localD
 import { colors, radius, semantic, withAlpha, type Palette } from '../../theme/tokens';
 import { getFocusElapsedMs, type FocusSession } from '../../domain/focus';
 import { pixelsToQuarterHours, previewTimelineEdit, type TimelineEditMode, type TimelineEditPreview } from '../../domain/timeline-edit';
-import ChevronsDown from 'lucide-react-native/icons/chevrons-down';
-import GripVertical from 'lucide-react-native/icons/grip-vertical';
-import Info from 'lucide-react-native/icons/info';
-import Lock from 'lucide-react-native/icons/lock';
-import Timer from 'lucide-react-native/icons/timer';
-import Maximize2 from 'lucide-react-native/icons/maximize-2';
+import { ChevronsDown, GripVertical, Info, Lock, Maximize2, Timer } from '../../theme/icons';
 
 
 

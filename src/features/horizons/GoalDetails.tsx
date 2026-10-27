@@ -6,17 +6,9 @@ import { dateFromPeriodKey, HORIZON_TITLES } from '../../domain/horizons';
 import type { Goal } from '../../domain/goals';
 import { colors, radius, spacing, semantic, type Palette, scrim } from '../../theme/tokens';
 import { useReducedMotion } from '../../theme/useReducedMotion';
-import CalendarDays from 'lucide-react-native/icons/calendar-days';
-import Check from 'lucide-react-native/icons/check';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import Circle from 'lucide-react-native/icons/circle';
-import Layers3 from 'lucide-react-native/icons/layers';
-import Play from 'lucide-react-native/icons/play';
-import Plus from 'lucide-react-native/icons/plus';
-import X from 'lucide-react-native/icons/x';
 import { type } from '../../theme/type';
 import { CompletionProgress } from '../shared/CompletionProgress';
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Circle, Layers3, Play, Plus, X } from '../../theme/icons';
 
 
 

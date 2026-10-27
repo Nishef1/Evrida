@@ -4,9 +4,9 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { radius, scrim, spacing, type Palette } from '../../theme/tokens';
 import { fonts, type } from '../../theme/type';
 import { useReducedMotion } from '../../theme/useReducedMotion';
-import X from 'lucide-react-native/icons/x';
 import { formatAmount, formatUsd, groupDigits, parseAmount, toUsd, type FinSettings } from '../../domain/finance';
 import { keyText } from '../shared/dates';
+import { X, iconForLabel, type IconComponent } from '../../theme/icons';
 
 /** Bottom sheet with a fixed footer, shared by every Money editor. */
 export function Sheet({ visible, title, onClose, palette, children, footer }: {
@@ -79,11 +79,12 @@ export const ChipRow = ({ children }: { children: ReactNode }) => <View style={s
 
 /** Equal-width segmented control. */
 export function Segments<T extends string>({ options, value, onChange, palette }: {
-  options: { id: T; label: string }[]; value: T; onChange: (id: T) => void; palette: Palette;
+  options: { id: T; label: string; icon?: IconComponent }[]; value: T; onChange: (id: T) => void; palette: Palette;
 }) {
   return <View accessibilityRole="tablist" style={[styles.segments, { backgroundColor: palette.inset }]}>
     {options.map((o) => <Pressable key={o.id} accessibilityRole="tab" accessibilityState={{ selected: value === o.id }} onPress={() => onChange(o.id)}
-      style={[styles.segment, value === o.id && { backgroundColor: palette.surface }]}>
+      style={[styles.segment, value === o.id && { backgroundColor: palette.surface }, o.icon ? { flexDirection: 'row', gap: 6 } : null]}>
+      {o.icon ? <o.icon size={16} color={value === o.id ? palette.accent : palette.muted} /> : null}
       <Text style={{ color: value === o.id ? palette.foreground : palette.muted, fontSize: 13, fontWeight: value === o.id ? '700' : '500' }}>{o.label}</Text>
     </Pressable>)}
   </View>;
@@ -96,15 +97,21 @@ export function Card({ palette, children, onPress, label }: { palette: Palette; 
     : <View style={style}>{children}</View>;
 }
 
-export function PrimaryButton({ label, onPress, palette, disabled, tone }: { label: string; onPress: () => void; palette: Palette; disabled?: boolean; tone?: 'danger' }) {
+export function PrimaryButton({ label, onPress, palette, disabled, tone, icon }: { label: string; onPress: () => void; palette: Palette; disabled?: boolean; tone?: 'danger'; icon?: IconComponent | null }) {
+  const color = tone === 'danger' ? '#C0392B' : palette.onAccent;
+  const Icon = icon === undefined ? iconForLabel(label) : icon;
   return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
-    style={[styles.primary, { backgroundColor: tone === 'danger' ? 'transparent' : palette.accent, borderWidth: tone === 'danger' ? 1 : 0, borderColor: palette.border, opacity: disabled ? 0.45 : 1 }]}>
-    <Text style={{ color: tone === 'danger' ? '#C0392B' : palette.onAccent, fontSize: 15, fontWeight: '700' }}>{label}</Text>
+    style={[styles.primary, { backgroundColor: tone === 'danger' ? 'transparent' : palette.accent, borderWidth: tone === 'danger' ? 1 : 0, borderColor: palette.border, opacity: disabled ? 0.45 : 1, flexDirection: 'row', gap: 8 }]}>
+    {Icon ? <Icon size={19} color={color} strokeWidth={2} /> : null}
+    <Text style={{ color, fontSize: 15, fontWeight: '700' }}>{label}</Text>
   </Pressable>;
 }
-export function TextButton({ label, onPress, palette, muted }: { label: string; onPress: () => void; palette: Palette; muted?: boolean }) {
-  return <Pressable accessibilityRole="button" onPress={onPress} style={styles.textButton}>
-    <Text style={{ color: muted ? palette.muted : palette.accent, fontSize: 14, fontWeight: '700' }}>{label}</Text>
+export function TextButton({ label, onPress, palette, muted, icon }: { label: string; onPress: () => void; palette: Palette; muted?: boolean; icon?: IconComponent | null }) {
+  const color = muted ? palette.muted : palette.accent;
+  const Icon = icon === undefined ? iconForLabel(label) : icon;
+  return <Pressable accessibilityRole="button" onPress={onPress} style={[styles.textButton, { flexDirection: 'row', gap: 8 }]}>
+    {Icon ? <Icon size={18} color={color} /> : null}
+    <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{label}</Text>
   </Pressable>;
 }
 

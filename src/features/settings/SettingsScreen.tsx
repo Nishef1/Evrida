@@ -10,12 +10,19 @@ import Constants from 'expo-constants';
 import { MAX_BACKUP_BYTES, parseBackup } from '../../domain/backup';
 import { exportBackup, previewBackupMerge, restoreBackup } from '../../storage/backup';
 import { checkLocalHealth, type LocalHealth } from '../../storage/health';
-import { colors } from '../../theme/tokens';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
+import { colors, type Palette } from '../../theme/tokens';
 import { type } from '../../theme/type';
 import { useDockInset } from '../shell/DockInset';
 import { setCalendarStyle, useCalendarStyle } from '../shared/calendarStyle';
 import { formatJalali } from '../../domain/jalali';
+import { Bell, Calendar as CalendarBlank, ChevronLeft, Export, Heartbeat, ShieldCheck, type IconComponent } from '../../theme/icons';
+
+/** Card heading with a small leading icon. */
+function Heading({ Icon, text, palette }: { Icon: IconComponent; text: string; palette: Palette }) {
+  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+    <Icon size={22} color={palette.accent} /><Text style={[styles.heading, { color: palette.foreground }]}>{text}</Text>
+  </View>;
+}
 
 export function SettingsScreen() {
   const dockInset = useDockInset();
@@ -95,7 +102,7 @@ export function SettingsScreen() {
       <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel="Back to Plan" onPress={() => router.back()} style={styles.back}><ChevronLeft size={23} color={palette.foreground} strokeWidth={1.8} /></Pressable><Text style={[styles.title, { color: palette.foreground }]}>Your data & settings</Text></View>
       <Text style={[styles.copy, { color: palette.muted }]}>Your plans live on this device. Export a backup to keep them safe or move them.</Text>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <Text style={[styles.heading, { color: palette.foreground }]}>Backup & restore</Text>
+        <Heading Icon={Export} text="Backup & restore" palette={palette} />
         <Text style={[styles.copy, { color: palette.muted }]}>Goals, boards, schedules and recorded progress. Running focus timers are not included.</Text>
         <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(exportData); }} style={[styles.primary, { backgroundColor: palette.accent, opacity: busy ? .5 : 1 }]}><Text style={{ color: palette.onAccent, fontWeight: '700' }}>{busy ? 'Working…' : 'Export backup'}</Text></Pressable>
         <Pressable accessibilityRole="button" disabled={busy} onPress={() => { void run(pickBackup); }} style={[styles.secondary, { borderColor: palette.border }]}><Text style={{ color: palette.foreground, fontWeight: '700' }}>Restore from a file</Text></Pressable>
@@ -103,7 +110,7 @@ export function SettingsScreen() {
       </View>
       {notice ? <Text accessibilityRole="alert" style={[styles.copy, { color: palette.accent }]}>{notice}</Text> : null}
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <Text style={[styles.heading, { color: palette.foreground }]}>Local data check</Text>
+        <Heading Icon={Heartbeat} text="Local data check" palette={palette} />
         <Text style={[styles.copy, { color: palette.muted }]}>
           A read-only check of your local data. It changes nothing and is not a backup.
         </Text>
@@ -117,7 +124,7 @@ export function SettingsScreen() {
         </Text> : null}
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <Text style={[styles.heading, { color: palette.foreground }]}>Calendar</Text>
+        <Heading Icon={CalendarBlank} text="Calendar" palette={palette} />
         <Text style={[styles.copy, { color: palette.muted }]}>Show dates in the Gregorian or the Shamsi (Jalali) calendar. Your data is stored the same way either way, so you can switch at any time.</Text>
         {(['gregorian', 'jalali'] as const).map((style) => <Pressable key={style} accessibilityRole="radio" accessibilityState={{ selected: calendar === style }}
           onPress={() => setCalendarStyle(style)} style={[styles.secondary, { borderColor: calendar === style ? palette.accent : palette.border, borderWidth: calendar === style ? 2 : 1 }]}>
@@ -128,12 +135,12 @@ export function SettingsScreen() {
         <Text style={[styles.caption, { color: palette.muted }]}>Months, quarters and years in Plan, and monthly budgets in Money, stay Gregorian periods. Where you type a date, you can type either form (for example 2026-10-27 or 1405/08/05).</Text>
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <Text style={[styles.heading, { color: palette.foreground }]}>Focus alerts</Text>
+        <Heading Icon={Bell} text="Focus alerts" palette={palette} />
         <Text style={[styles.copy, { color: palette.muted }]}>{Platform.OS === 'ios' ? 'iOS' : 'Android'} controls notifications; Focus works with alerts off.{Platform.OS === 'android' ? ' On Android 14+ also allow Alarms & reminders under Special app access. Battery limits can delay alerts.' : ''}</Text>
         <Pressable accessibilityRole="button" onPress={() => { void Linking.openSettings().catch(() => Alert.alert('Open system settings', 'Choose Evrida → Notifications in your device settings.')); }} style={[styles.secondary, { borderColor: palette.border }]}><Text style={{ color: palette.foreground }}>Open app settings</Text></Pressable>
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <Text style={[styles.heading, { color: palette.foreground }]}>Private by design</Text>
+        <Heading Icon={ShieldCheck} text="Private by design" palette={palette} />
         <Text style={[styles.copy, { color: palette.muted }]}>No account, ads, analytics or cloud sync. Your goals and focus history stay on this device.</Text>
         <Text style={[styles.copy, { color: palette.muted }]}>Your phone's own backups may include app data. Removing the app or clearing its storage deletes your plans, so export first.</Text>
         <Text style={[styles.caption, { color: palette.muted }]}>Evrida · {Constants.expoConfig?.version ?? '0.1.0'} · Every day with Evrida.</Text>
