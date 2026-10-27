@@ -154,7 +154,7 @@ test('finance storage records a ledger atomically and backs up, validates and re
       /original amount in each category/);
     await saveTransaction(source.db, spend({ type: 'transfer', amount: 1000000, toAccountId: cash, categoryId: null }));
     await assert.rejects(() => saveAccount(source.db, { id: cash, name: 'Wallet', kind: 'liability', opening: 0 }), /type is locked/);
-    await assert.rejects(() => saveAccount(source.db, { id: main.id, name: 'Main', kind: 'bank', opening: 9999999 }), /opening balance is locked/);
+    await assert.rejects(() => saveAccount(source.db, { id: main.id, name: 'Main', kind: 'bank', opening: 9999999 }), /opening balance is locked/i);
     await assert.rejects(() => saveTransaction(source.db, spend({ type: 'income', amount: 5, refundOfId: salary })), /refund must refer to an expense/);
     await assert.rejects(() => saveTransaction(source.db, spend({ amount: 10, categoryId: null, splits: [{ categoryId: cat('Groceries'), amount: 4 }, { categoryId: cat('Health'), amount: 4 }] })), /add up/);
     await setBudget(source.db, cat('Groceries'), 3000000);
