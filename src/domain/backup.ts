@@ -19,7 +19,7 @@ export const BACKUP_COLUMNS = {
 export type BackupTable = keyof typeof BACKUP_COLUMNS;
 export type BackupRow = Record<string, string | number | null>;
 export interface Backup {
-  format: 'eonward-backup'; version: 2; schemaVersion: 8; createdAt: string;
+  format: 'evrida-backup' | 'eonward-backup'; version: 2; schemaVersion: 8; createdAt: string;
   tables: Record<BackupTable, BackupRow[]>;
 }
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
@@ -41,7 +41,7 @@ export function parseBackup(text: string): Backup {
   try { data = JSON.parse(text) as Backup; } catch { return fail('not valid JSON.'); }
   const incomingVersion: number = data?.version;
   const incomingSchema: number = data?.schemaVersion;
-  if (!data || data.format !== 'eonward-backup' ||
+  if (!data || !['eonward-backup', 'evrida-backup'].includes(data.format) ||
     !((incomingVersion === 1 && incomingSchema === 7) || (incomingVersion === 2 && incomingSchema === 8)) ||
     !stamp(data.createdAt) || !data.tables || Array.isArray(data.tables)) fail('unsupported format or version.');
   if (incomingVersion === 1) {
