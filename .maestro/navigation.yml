@@ -1,9 +1,9 @@
-# Requires the isolated Eonward QA native build (com.nishef.eonward.qa).
-appId: com.nishef.eonward.qa
+# Requires the isolated Evrida QA native build (com.nishef.evrida.qa).
+appId: com.nishef.evrida.qa
 ---
 - launchApp:
     clearState: true
-- assertVisible: 'EONWARD'
+- assertVisible: 'EVRIDA'
 - tapOn: 'Calendar'
 - assertVisible: 'Calendar'
 - tapOn: 'Boards'
@@ -11,4 +11,4 @@ appId: com.nishef.eonward.qa
 - tapOn: 'Review'
 - assertVisible: 'This week'
 - tapOn: 'Plan'
-- assertVisible: 'EONWARD'
+- assertVisible: 'EVRIDA'
