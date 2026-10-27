@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Evrida",
+    "description": "Every day with Evrida",
     "slug": "evrida",
     "scheme": "evrida",
     "version": "0.1.0",
