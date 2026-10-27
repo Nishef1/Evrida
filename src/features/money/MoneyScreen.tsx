@@ -359,10 +359,11 @@ function SettingsSheet({ data, visible, palette, onClose, onChanged }: { data: F
       <Field label={`Price of 1 US dollar (in ${unit.trim() || 'your unit'})`} value={rate} onChangeText={(t) => { setRate(groupDigits(t, 2)); setRateMeta(null); }} palette={palette}
         keyboardType="decimal-pad" suffix={unit.trim() || undefined}
         hint={rateMeta ? `${rateMeta.source} · ${dateName(rateMeta.date)}. Amounts show a dollar value using this rate; stored amounts never change.`
-          : 'Optional. Type today’s rate, or fetch it. Amount fields then show their dollar value.'} />
-      <PrimaryButton label={fetching ? 'Fetching…' : 'Get today’s rate online'} onPress={() => void fetchRate()} palette={palette} disabled={fetching} />
+          : 'Optional. Type the rate you trust. Leave it empty and no dollar values are shown.'} />
+      <TextButton label={fetching ? 'Fetching…' : 'Suggest a rate from the internet'} onPress={() => void fetchRate()} palette={palette} />
+      {rate ? <TextButton label="Remove the rate (hide dollar values)" onPress={() => { setRate(''); setRateMeta(null); }} palette={palette} muted /> : null}
       <Text style={[type.caption, { color: palette.muted }]}>
-        Only a request for the public rate is sent; none of your records leave this device. For Toman and Rial the rate is the market price of a dollar-pegged token (USDT) on a public exchange, which tracks the open-market dollar but is not an official or guaranteed rate. Review it before saving.</Text>
+        Only a request for the public rate is sent; none of your records leave this device. For Toman and Rial the rate is the market price of a dollar-pegged token (USDT) on a public exchange, which tracks the open-market dollar but may be wrong or out of date. A fetched number only fills the box; nothing changes until you press Save, and you can overwrite it with your own.</Text>
     </>}
     <Field label="General inflation scenario (per year)" value={inflation} onChangeText={setInflation} palette={palette} keyboardType="decimal-pad" suffix="%"
       hint={s.inflationBp === null ? 'Optional. Your own assumption, used only to express future amounts in today’s purchasing power. Evrida does not look up inflation figures.'

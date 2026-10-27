@@ -40,7 +40,9 @@ export function usdNote(value: string, settings: FinSettings): string | null {
   const parsed = parseAmount(value, settings.decimals);
   const usd = parsed === null ? null : toUsd(parsed, settings);
   if (usd === null || !settings.usdRateX100 || !settings.usdRateDate) return null;
-  return `≈ ${formatUsd(usd)} at ${formatAmount(settings.usdRateX100, { decimals: 2 }).replace(/\.00$/, '')} ${settings.unit} per $ · ${dateName(settings.usdRateDate)}`;
+  const age = Math.floor((Date.now() - new Date(`${settings.usdRateDate}T12:00:00`).getTime()) / 86400000);
+  const stale = Number.isFinite(age) && age > 7 ? ` · ${age} days old, update it in Settings` : '';
+  return `≈ ${formatUsd(usd)} at ${formatAmount(settings.usdRateX100, { decimals: 2 }).replace(/\.00$/, '')} ${settings.unit} per $ · ${dateName(settings.usdRateDate)}${stale}`;
 }
 
 export function Field({ label, value, onChangeText, palette, placeholder, keyboardType, multiline, suffix, maxLength, hint, money, negative }: {
