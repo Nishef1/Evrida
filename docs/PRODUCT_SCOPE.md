@@ -1,6 +1,6 @@
 # Product scope
 
-Eonward is an offline-first personal planning application for mobile. The intent is a coherent experience across short and long planning horizons, not a collection of unrelated feature demos.
+Evrida is an offline-first personal planning application for mobile. The intent is a coherent experience across short and long planning horizons, not a collection of unrelated feature demos.
 
 ## Core workflows
 
@@ -11,6 +11,18 @@ Eonward is an offline-first personal planning application for mobile. The intent
 5. Complete, reschedule, annotate, or revisit plans without losing history.
 6. Review progress over time.
 7. Export and restore personal data without depending on an account.
+
+## Learning Projects (planned core workflow)
+
+Evrida should support learning as a measurable, long-running project rather than a note or a loose list of tasks. A Learning Project links one outcome to its resources, units, scheduled study sessions, actual time, review sessions and evidence of learning.
+
+- Define the outcome (for example, improving spoken English), optional target date, weekly capacity, preferred study days and session length.
+- Add resources such as books, chapters, video series, courses, vocabulary sets and exercises. Each resource can be split into ordered units with estimated effort, prerequisites and completion state.
+- Calculate remaining effort from unfinished units, practice and review. Show a provisional range and confidence, not a falsely precise completion date. Calibrate estimates against the user's actual session history.
+- Turn the plan into linked Calendar Timeboxes and Focus sessions while preserving the same goal identity across Horizons, Boards and Calendar.
+- Remind the user about upcoming sessions and review dates. If a session is missed, optionally replan flexible learning blocks into available time. Never silently move fixed commitments, active Focus sessions or user-locked blocks.
+- Track content completed, actual minutes, assessment/recall results and long-range milestones. Time spent alone must not be represented as proof of mastery.
+- Keep the core workflow local/offline. Resource parsing with AI, cloud sync and external calendar integration are later optional decisions, not prerequisites.
 
 ## Capability map
 
