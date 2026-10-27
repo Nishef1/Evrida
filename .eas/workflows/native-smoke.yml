@@ -1,6 +1,6 @@
 # Manual by default: requires linking this repository to the owner's EAS project.
 # EAS Maestro workflows are alpha. Do not interpret passing JS exports as a pass here.
-name: Eonward Android and iOS Native Smoke
+name: Evrida Android and iOS Native Smoke
 jobs:
   build_android:
     name: Build isolated QA Android APK
