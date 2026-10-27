@@ -1,4 +1,4 @@
-# Eonward development roadmap
+# Evrida development roadmap
 
 Last reviewed: 2026-10-16
 Status: **M0 complete; M1–M6 partially implemented and verified at the levels below. Store release is not approved.**
@@ -23,7 +23,7 @@ This file is the single source of truth for **planned vs completed** work. It is
 | M1 — Product UX | Information architecture, design tokens, prototypes | Studio direction implemented; Android renders sampled; user aesthetic acceptance open | Approved screen map and verified interactions |
 | M2 — Goals & horizons | Persistent data, hierarchy, seven horizons | SQLite v8; real SQLite integration and sampled native flows pass | Complete device acceptance matrix |
 | M3 — Planning views | Boards, calendar, time blocks, fast capture | Implemented; native keyboard, time editing and cross-view Focus sampled | Full cross-view and device matrix |
-| M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates deferred | Accepted offline workflow scope |
+| M4 — Personal systems | Notes, repeating items, habits, templates, reviews | Plain notes, recurrence, weekly Review and four guided starters; habits/user-saved templates and Learning Projects remain planned | Accepted offline workflow scope |
 | M5 — Mobile integration | Notifications, widgets, localization, backup | Native picker/backup/reminders implemented; widgets/localization remain open | Physical-device and Apple acceptance |
 | M6 — Quality & release | Performance, accessibility, testing, release build | Isolated Android release QA APK built; iOS JS export passes | Store signing, native iOS, physical-device and accessibility gates |
 
@@ -57,14 +57,14 @@ Checked: TypeScript, all 20 domain/real-SQLite cases, the shared database/design
 **Remaining platform or product-dependent gates, intentionally OPEN:**
 
 - [ ] Clock tampering/reboot/suspend: a durable monotonic cross-restart clock has not been implemented, because native elapsed-time semantics, boot detection, date-change behavior, and persisted paused segments need proven Android/iOS API behavior. `Date.now` remains vulnerable to arbitrary manual jumps. A warning alone is not a verified timer fix.
-- [ ] Exact-alarm permission and reboot: Test Android 14/15 with separate Notifications permission, Special app access → Alarms & reminders, denied/granted/revoked, force stop, restart and battery optimization. Eonward cannot guarantee OS delivery. Source now retains old reminder until new schedule succeeds.
+- [ ] Exact-alarm permission and reboot: Test Android 14/15 with separate Notifications permission, Special app access → Alarms & reminders, denied/granted/revoked, force stop, restart and battery optimization. Evrida cannot guarantee OS delivery. Source now retains old reminder until new schedule succeeds.
 - [ ] OS-managed backup: Expo Android defaults to `allowBackup: true`; Android may back up app SQLite independently of user-exported readable JSON (Apple's device backup is also OS-managed). **Do not turn off native auto backup without a privacy vs recovery product decision and native migration acceptance**; existing UI explains the possibility.
 - [ ] Actual restore of a large 10-MB snapshot on weak Android hardware: benchmark CPU, UI responsiveness, corruption rollback, cancellation and process interruption, not only the 152-row SQLite CI sample. Batching currently optimizes *preview*, not native insert throughput.
 - [ ] Review cross-midnight accuracy: current historical `focused_ms` aggregates paused/running segments but does not persist exact intervals per day. Precise split requires a schema migration, backup v3, and multi-zone semantics; don't invent per-day times from session start/end.
 - [ ] Timezone “floating” scheduling mode: existing stable UTC instant is explicit; switching reservations to local 09:00 across travel would require a new timezone-anchor field and migration, not a cosmetic clock conversion.
 - [ ] Concurrent navigation refresh and deeply overlapping Native gesture layouts: current React focus/revision guards and source overlap count reduce risk but don't replace EAS Maestro/device recordings.
 - [ ] Real-world privacy of plaintext exported JSON and OS cloud backup status: verify with an isolated QA installation; never test destructive restore on the only copy of a user's plans.
-- [ ] Android Native expo-sqlite P0 [#2](https://github.com/Nishef1/Eonward/issues/2) and visual/gesture Native acceptance [#3](https://github.com/Nishef1/Eonward/issues/3) remain release blockers.
+- [ ] Android Native expo-sqlite P0 [#2](https://github.com/Nishef1/Evrida/issues/2) and visual/gesture Native acceptance [#3](https://github.com/Nishef1/Evrida/issues/3) remain release blockers.
 
 **Self-critique:** Don't equate prepared test cases and passing TypeScript/SQLite simulations with real native reboot, wall-clock tampering, animation responsiveness, notification delivery or store readiness. Avoid adding more general-purpose state, sync or AI features until the native acceptance matrix is proven.
 
@@ -86,7 +86,7 @@ The prior cross-feature audit covered many happy paths. This pass checks *format
 | Focus duration | User launches an existing Timebox days after its scheduled date | Define whether a Timebox is a reusable duration or a reservation in clock time; test in-app language |
 | Clock manipulation | System clock jumps backward while Focus is running; deadline-based `Date.now` extends remaining time unexpectedly | Native monotonic-clock experiments, including restart and suspend; avoid assuming background JS execution |
 | Notifications | Permission revoked, system reboot, OS exact-alarm limits, expired alert during rescheduling | Real Android/iOS tests with Focus stopped, paused and replaced; Expo notifications queue uses separate OS state |
-| OS backups | Device backup may copy SQLite app database even if Eonward has no sync, depending on native backup settings | Verify app configuration and wording on Android 12+/iOS device backup |
+| OS backups | Device backup may copy SQLite app database even if Evrida has no sync, depending on native backup settings | Verify app configuration and wording on Android 12+/iOS device backup |
 | Large imports | A bounded valid 10-MB JSON backup may carry thousands of rows and slow a transaction or exhaust memory | Benchmark real native restore, interrupted import and “no partial write” rollback |
 | App lifecycle | Two overlapping refreshes return data across a mutation; page may briefly pair stale goals with fresh blocks | Measure and decide whether an atomic read snapshot is necessary, rather than adding a second global store |
 | Dense UI | Three-lane ribbon represents fourth+ overlapping items on an already occupied lane | Device screenshots with 4–12 overlapping reservations; show density/overflow rather than hiding actual conflicts |
@@ -151,7 +151,7 @@ This sweep is intentionally **cross-boundary**, not another palette refactor. It
 
 **Deliberately not generalized:** React Native's `StyleSheet.create` is local to each screen by design: flex structures and page-specific dimensions are not duplicated concepts just because their numeric values match. A global "CSS class for every row" would add complexity and conceal intent. Standard `colors`, `spacing`, `radius`, `depth`, `semantic` and the shared `Palette` type are the appropriate cross-screen contract.
 
-**Remaining acceptance and risks:** Text at maximum OS font scale may still need responsive restructuring (not blanket fontSize replacement), especially Calendar ribbon, compact blocks, Board lens and Review graph. Native dynamic font scaling, TalkBack/VoiceOver, clipped flex layouts and gesture negotiation must be checked on Android/iOS. The native SQLite SIGSEGV remains [P0 issue #2](https://github.com/Nishef1/Eonward/issues/2), unrelated to StyleSheet tokens. UI appearance has not been physically screenshot-reviewed. This source audit is not a claim of full visual polish or store readiness.
+**Remaining acceptance and risks:** Text at maximum OS font scale may still need responsive restructuring (not blanket fontSize replacement), especially Calendar ribbon, compact blocks, Board lens and Review graph. Native dynamic font scaling, TalkBack/VoiceOver, clipped flex layouts and gesture negotiation must be checked on Android/iOS. The native SQLite SIGSEGV remains [P0 issue #2](https://github.com/Nishef1/Evrida/issues/2), unrelated to StyleSheet tokens. UI appearance has not been physically screenshot-reviewed. This source audit is not a claim of full visual polish or store readiness.
 
 ## Premium daily time interaction: design correction pass (2026-10-15)
 
@@ -168,7 +168,7 @@ This sweep is intentionally **cross-boundary**, not another palette refactor. It
 - [ ] Android native touch test for long drag grips vs parent scroll, short/dense item long-press, cancel, and Save after zoom; run at 56, 76, 104dp/hour, 100%, 130%, 200% fonts, both themes, TalkBack and landscape.
 - [ ] iOS Simulator/real-device review for responder negotiation, VoiceOver's increment/decrement actions, day ribbon safe area, low-end rendering and reduced-motion.
 - [ ] Visual user acceptance: live screenshots/videos of Plan, Boards, Calendar (empty/dense) and Review; no automatic claim that these changes make every screen finished.
-- [ ] The Android SQLite native lifecycle P0 [issue #2](https://github.com/Nishef1/Eonward/issues/2) remains open; successful CI does not clear release.
+- [ ] The Android SQLite native lifecycle P0 [issue #2](https://github.com/Nishef1/Evrida/issues/2) remains open; successful CI does not clear release.
 
 **Self-critique:** Native long-block grips are not identical to a polished physics-based draggable calendar. The deliberate fallback for sub-hour and overlapping blocks is a stepper / exact editor so controls do not occlude data. Gesture latency, accessibility, hit-testing and user aesthetic preference have not been confirmed by on-device recordings.
 
@@ -177,12 +177,12 @@ This sweep is intentionally **cross-boundary**, not another palette refactor. It
 **Implemented and verified in source/JS CI, not yet accepted on an Android/iOS device.**
 
 - [x] Resolve a real missed raw SQLite access in `AppDock`: goal-path reads now use the same guarded per-handle connection as Plan, Boards, Calendar, Focus, Review and Settings.
-- [x] Add a zero-dependency source rule (`scripts/check-database-access.mjs`) to the domain workflow and npm script. A new feature component cannot silently bypass `useEonwardDatabase`.
+- [x] Add a zero-dependency source rule (`scripts/check-database-access.mjs`) to the domain workflow and npm script. A new feature component cannot silently bypass `useEvridaDatabase`.
 - [x] Keep the already-existing `app.config.js` QA variant, without introducing duplicate native configuration. Add an EAS `e2e-test` profile and CI assertion that both QA IDs have a `.qa` suffix while production IDs remain unchanged.
-- [x] Prepare separate Android APK and iOS Simulator build/test jobs through EAS Workflows and isolated Maestro navigation/quick-capture flows; outputs target `com.nishef.eonward.qa`. See [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md).
+- [x] Prepare separate Android APK and iOS Simulator build/test jobs through EAS Workflows and isolated Maestro navigation/quick-capture flows; outputs target `com.nishef.evrida.qa`. See [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md).
 - [x] Add emulator-only Android font/theme stress script, native crash-buffer collection and local-only `.qa-evidence/` ignore rule; never alter phone settings or wipe main app data from scripts.
 - [ ] **EAS project authentication/linking** and actual native Android/iOS smoke run. Existing CI validates the files and identities; it does not execute the EAS Maestro jobs.
-- [ ] Reproduce/diagnose issue [#2](https://github.com/Nishef1/Eonward/issues/2) with emulator/physical native evidence before a release or any claim of crash resolution.
+- [ ] Reproduce/diagnose issue [#2](https://github.com/Nishef1/Evrida/issues/2) with emulator/physical native evidence before a release or any claim of crash resolution.
 - [ ] Complete manual Focus, Recovery, backup, accessibility and store signing gates in [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md).
 
 **Self-critique:** Passing TypeScript and exporting Android/iOS JavaScript previously allowed the team to overestimate coverage. Native E2E workflows are now prepared, but it would be inaccurate to call them passing until an actual simulator/device build is run. The QA variant existed already; rebuilding it from scratch would have been redundant and riskier than extending its EAS profile.
@@ -232,7 +232,7 @@ This sweep is intentionally **cross-boundary**, not another palette refactor. It
 - [ ] P0 Android SQLite crash remains unresolved. A passing on-demand health check is not a native lifecycle stress test.
 - [ ] End-to-end Android/iOS native accessibility and screen orientation checks remain open.
 
-**Self-criticism:** The extra on-screen budget guidance is deliberately deterministic and descriptive. It does not claim to predict energy, psychological productivity or task urgency. Cached plaintext JSON is still readable until the OS clears it or a later export cleans up; Eonward does not implement end-to-end encrypted backup or secure deletion.
+**Self-criticism:** The extra on-screen budget guidance is deliberately deterministic and descriptive. It does not claim to predict energy, psychological productivity or task urgency. Cached plaintext JSON is still readable until the OS clears it or a later export cleans up; Evrida does not implement end-to-end encrypted backup or secure deletion.
 
 ## Cohesive planning follow-up — source and CI slice (2026-10-15)
 
@@ -269,7 +269,7 @@ The following items describe code merged into `main`, **not independently accept
 - [ ] Validate daylight-saving transition days, timezone changes, overnight sessions and backup migration from native test data.
 - [x] Regenerate locked Expo 57/Expo Router patch dependencies; clean npm ci, SDK compatibility, TypeScript, 20/20 tests and both JS exports passed in the one-time verification workflow.
 - [x] Introduce a per-handle SQLite statement/transaction serialization boundary shared by all seven feature/Focus consumers; maintain 20 tests including a 40-call concurrency assertion. Source-only crash mitigation, not a native fix.
-- [ ] Reproduce, diagnose and close the observed Android native SQLite configuration-change crash. P0 tracked in [issue #2](https://github.com/Nishef1/Eonward/issues/2); SDK 57 native lifetime reports are suspicious but not proven identical.
+- [ ] Reproduce, diagnose and close the observed Android native SQLite configuration-change crash. P0 tracked in [issue #2](https://github.com/Nishef1/Evrida/issues/2); SDK 57 native lifetime reports are suspicious but not proven identical.
 
 **Product boundary:** No AI scheduler, automatic task deletion, invisible reshuffle, implicit promotion of existing events to flexible, or cross-midnight move is implemented. The current week budget is a target, not a hard restriction; overlapping planned reservations are not deduplicated. Older Focus entries without goal IDs cannot be retroactively assigned reliably.
 
@@ -433,6 +433,21 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the full implementation inventory, in
 
 **Exit gate:** a reproducible build and completed acceptance checklist. Publishing to a store is a separate explicit decision.
 
+## Learning Projects — planned product milestone (2026-10-27)
+
+**Status: specified, implementation not started.** The current Guided Plans are four fixed starter paths; they are not a resource-aware learning planner.
+
+- [ ] Model a Learning Project and ordered resources/units (books, chapters, videos, courses, exercises) linked to one canonical goal.
+- [ ] Ask for weekly capacity, preferred days, session size, optional target date and per-unit effort; produce a transparent initial effort and completion-date range.
+- [ ] Schedule linked study sessions through the existing Calendar/Timebox/Focus system and use local reminders where permissions allow.
+- [ ] Add opt-in missed-session recovery: propose or automatically place only flexible learning sessions; preserve fixed/locked blocks and explain when the target date is no longer feasible.
+- [ ] Record actual time and meaningful learning evidence (recall/quiz or self-assessment); recalibrate estimates from observed pace without equating time spent with mastery.
+- [ ] Add spaced review sessions and long-range progress rollups across week/month/year horizons.
+- [ ] Version backup/import and add a schema migration before storing learning resources; preserve old Evrida and legacy Eonward backups.
+- [ ] Keep the 20-test budget: extend/replace existing meaningful tests rather than adding redundant cases. Complete Android native persistence, notification and accessibility acceptance before calling the feature reliable.
+
+**Product guardrails:** no mandatory AI, login, cloud backend or new bottom-navigation destination for the first version. The first release should use explicit user inputs and deterministic scheduling; optional resource extraction can be evaluated after the workflow is proven.
+
 ## Deferred (not quietly added to the current scope)
 
 - Authentication, accounts, cloud sync and realtime collaboration.
@@ -500,7 +515,7 @@ React Native Android Alert supports at most three actions. The first proposed fo
 - [ ] **Verify these layout changes with fresh screenshots on the Android emulator**, both with and without the keyboard.
 - [ ] Test real goal CRUD, archive/restore, ordering and data persistence; screenshots of an empty state do not prove these.
 
-**Self-critique:** Our earlier modal design relied on a long scroll to reach Save, and even duplicated a first-goal call-to-action below a fixed footer. Both are avoidable design errors; fixing layout and action hierarchy is more valuable than another feature screen. The grey/blue floating Tools gear in the screenshot is not rendered anywhere by Eonward's source; investigate the emulator/development overlay separately if it interferes with testing.
+**Self-critique:** Our earlier modal design relied on a long scroll to reach Save, and even duplicated a first-goal call-to-action below a fixed footer. Both are avoidable design errors; fixing layout and action hierarchy is more valuable than another feature screen. The grey/blue floating Tools gear in the screenshot is not rendered anywhere by Evrida's source; investigate the emulator/development overlay separately if it interferes with testing.
 
 ## Current implementation checkpoint
 
