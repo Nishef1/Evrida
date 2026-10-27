@@ -144,8 +144,47 @@ export interface TxInput {
   tagNames: string[]; splits: { categoryId: string; amount: number }[];
 }
 
-type Writer = Pick<SQLiteDatabase, 'getFirstAsync' | 'runAsync'>;
+type Writer = Pick<SQLiteDatabase, 'getFirstAsync' | 'getAllAsync' | 'runAsync'>;
+type CategoryLine = { categoryId: string; amount: number };
 
+async function storedLines(tx: Writer, id: string, amount: number, categoryId: string | null): Promise<CategoryLine[]> {
+  const splits = await tx.getAllAsync<{ category_id: string; amount: number }>(
+    'SELECT category_id, amount FROM fin_splits WHERE tx_id = ?', [id]);
+  return splits.length ? splits.map((s) => ({ categoryId: s.category_id, amount: s.amount }))
+    : categoryId ? [{ categoryId, amount }] : [];
+}
+function inputLines(input: TxInput): CategoryLine[] {
+  return input.splits.length ? input.splits.map((s) => ({ categoryId: s.categoryId, amount: s.amount }))
+    : input.categoryId ? [{ categoryId: input.categoryId, amount: input.amount }] : [];
+}
+async function existingRefunds(tx: Writer, originalId: string, exceptId?: string): Promise<{ total: number; lines: CategoryLine[] }> {
+  const rows = await tx.getAllAsync<{ id: string; amount: number; category_id: string | null }>(
+    exceptId
+      ? 'SELECT id, amount, category_id FROM fin_transactions WHERE refund_of_id = ? AND id <> ?'
+      : 'SELECT id, amount, category_id FROM fin_transactions WHERE refund_of_id = ?',
+    exceptId ? [originalId, exceptId] : [originalId]);
+  const result = { total: 0, lines: [] as CategoryLine[] };
+  for (const row of rows) {
+    result.total += row.amount;
+    const lines = await storedLines(tx, row.id, row.amount, row.category_id);
+    if (lines.reduce((sum, line) => sum + line.amount, 0) !== row.amount) {
+      throw new Error('An existing refund has invalid category details. Review the ledger before changing it.');
+    }
+    result.lines.push(...lines);
+  }
+  return result;
+}
+function assertRefundDistribution(originalLines: CategoryLine[], refundLines: CategoryLine[]): void {
+  const capacity = new Map<string, number>();
+  for (const line of originalLines) capacity.set(line.categoryId, (capacity.get(line.categoryId) ?? 0) + line.amount);
+  const used = new Map<string, number>();
+  for (const line of refundLines) {
+    if (!capacity.has(line.categoryId)) throw new Error('A refund must use the original expense categories.');
+    const next = (used.get(line.categoryId) ?? 0) + line.amount;
+    if (next > capacity.get(line.categoryId)!) throw new Error('Refunds cannot exceed the original amount in each category.');
+    used.set(line.categoryId, next);
+  }
+}
 function prepareTransaction(input: TxInput, accountCount: number): string[] {
   const tagNames = [...new Map(input.tagNames.map((n) => n.trim().replace(/\s+/g, ' ')).filter(Boolean)
     .map((n) => [n.toLowerCase(), n])).values()];
@@ -161,23 +200,32 @@ async function writeTransaction(tx: Writer, input: TxInput, tagNames: string[], 
   const txId = id ?? randomUUID();
   const category = input.splits.length ? null : input.categoryId;
   if (input.refundOfId) {
-    const original = await tx.getFirstAsync<{ type: string; amount: number }>(
-      'SELECT type, amount FROM fin_transactions WHERE id = ?', [input.refundOfId]);
+    if (id && input.refundOfId === id) throw new Error('A transaction cannot be a refund of itself.');
+    const original = await tx.getFirstAsync<{ id: string; type: string; amount: number; category_id: string | null }>(
+      'SELECT id, type, amount, category_id FROM fin_transactions WHERE id = ?', [input.refundOfId]);
     if (original?.type !== 'expense') throw new Error('A refund must refer to an expense.');
-    const prior = await tx.getFirstAsync<{ total: number }>(
-      'SELECT COALESCE(SUM(amount), 0) AS total FROM fin_transactions WHERE refund_of_id = ? AND id <> ?',
-      [input.refundOfId, id ?? '']);
-    if ((prior?.total ?? 0) + input.amount > original.amount) {
-      throw new Error('Refunds cannot exceed the original expense.');
+    const prior = await existingRefunds(tx, input.refundOfId, id);
+    if (prior.total + input.amount > original.amount) throw new Error('Refunds cannot exceed the original expense.');
+    const originalLines = await storedLines(tx, original.id, original.amount, original.category_id);
+    if (originalLines.reduce((sum, line) => sum + line.amount, 0) !== original.amount) {
+      throw new Error('The original expense has invalid category details. Review it before recording a refund.');
     }
+    assertRefundDistribution(originalLines, [...prior.lines, ...inputLines(input)]);
   }
   if (id) {
-    const current = await tx.getFirstAsync<{ type: string }>('SELECT type FROM fin_transactions WHERE id = ?', [id]);
+    const current = await tx.getFirstAsync<{ type: string; amount: number; category_id: string | null }>(
+      'SELECT type, amount, category_id FROM fin_transactions WHERE id = ?', [id]);
     if (!current) throw new Error('This transaction no longer exists.');
-    const refunds = await tx.getFirstAsync<{ total: number }>(
-      'SELECT COALESCE(SUM(amount), 0) AS total FROM fin_transactions WHERE refund_of_id = ? AND id <> ?', [id, id]);
-    if ((refunds?.total ?? 0) > 0 && (input.type !== 'expense' || input.amount < (refunds?.total ?? 0))) {
-      throw new Error('This expense has refunds. Keep it as an expense and do not reduce it below the total refunded amount.');
+    const refunds = await existingRefunds(tx, id);
+    if (refunds.total > 0) {
+      if (input.type !== 'expense' || input.amount < refunds.total) {
+        throw new Error('This expense has refunds. Keep it as an expense and do not reduce it below the total refunded amount.');
+      }
+      const revisedLines = inputLines(input);
+      if (revisedLines.reduce((sum, line) => sum + line.amount, 0) !== input.amount) {
+        throw new Error('This expense has refunds. Keep its category details valid.');
+      }
+      assertRefundDistribution(revisedLines, refunds.lines);
     }
     const changed = await tx.runAsync(`UPDATE fin_transactions SET type = ?, amount = ?, date = ?, account_id = ?, to_account_id = ?,
       category_id = ?, refund_of_id = ?, payee = ?, note = ?, updated_at = ? WHERE id = ?`,
@@ -219,11 +267,14 @@ export async function saveTransaction(db: SQLiteDatabase, input: TxInput, id?: s
   return txId;
 }
 export async function deleteTransaction(db: SQLiteDatabase, id: string): Promise<void> {
-  // Deleting the original would turn its refund into ordinary income and inflate the month.
-  if (await db.getFirstAsync('SELECT 1 FROM fin_transactions WHERE refund_of_id = ?', [id])) {
-    throw new Error('This expense has a refund. Delete the refund first.');
-  }
-  await db.runAsync('DELETE FROM fin_transactions WHERE id = ?', [id]);
+  // Check and delete in the same exclusive transaction so a concurrent refund cannot race this guard.
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    if (await tx.getFirstAsync('SELECT 1 FROM fin_transactions WHERE refund_of_id = ? LIMIT 1', [id])) {
+      throw new Error('This expense has a refund. Delete the refund first.');
+    }
+    const deleted = await tx.runAsync('DELETE FROM fin_transactions WHERE id = ?', [id]);
+    if (!deleted.changes) throw new Error('This transaction no longer exists.');
+  });
 }
 
 export interface FinGoalInput {
