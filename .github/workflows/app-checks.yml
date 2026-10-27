@@ -27,6 +27,8 @@ jobs:
         run: |
           EXPO_NO_GIT_STATUS=1 npx expo prebuild --platform all --no-install --clean
           grep -q 'android.permission.SCHEDULE_EXACT_ALARM' android/app/src/main/AndroidManifest.xml
+          grep -q '^android.enableMinifyInReleaseBuilds=true$' android/gradle.properties
+          grep -q '^android.enableShrinkResourcesInReleaseBuilds=true$' android/gradle.properties
           test -f ios/Evrida.xcodeproj/project.pbxproj
           test -f ios/Evrida/Info.plist
       - name: Verify Android JavaScript bundle

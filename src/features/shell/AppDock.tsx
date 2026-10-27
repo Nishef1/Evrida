@@ -36,7 +36,7 @@ function NavPill({ selected, color, reduced }: { selected: boolean; color: strin
   return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: color, borderRadius: 16 }, style]} />;
 }
 
-export function AppDock({ blurTarget, onHeight }: { blurTarget: RefObject<ComponentRef<typeof View> | null>; onHeight: (height: number) => void }) {
+export function AppDock({ blurTarget, onHeight, hidden = false }: { blurTarget: RefObject<ComponentRef<typeof View> | null>; onHeight: (height: number) => void; hidden?: boolean }) {
   const reducedMotion = useReducedMotion();
   const router = useRouter();
   const db = useEvridaDatabase();
@@ -47,21 +47,26 @@ export function AppDock({ blurTarget, onHeight }: { blurTarget: RefObject<Compon
   const [expanded, setExpanded] = useState(false);
   const [goalPath, setGoalPath] = useState<string[]>([]);
   const [typing, setTyping] = useState(() => Keyboard.isVisible());
-  useEffect(() => { if (typing) onHeight(0); }, [typing, onHeight]);
+  const [foreground, setForeground] = useState(() => AppState.currentState === 'active');
+  useEffect(() => { if (typing || hidden) onHeight(0); }, [typing, hidden, onHeight]);
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setTyping(true));
     const hide = Keyboard.addListener('keyboardDidHide', () => setTyping(false));
     return () => { show.remove(); hide.remove(); };
   }, []);
   useEffect(() => {
-    setClock(Date.now());
-    if (!session || session.status !== 'running') return;
-    const timer = setInterval(() => setClock(Date.now()), 1000);
     const listener = AppState.addEventListener('change', (state) => {
+      setForeground(state === 'active');
       if (state === 'active') setClock(Date.now());
     });
-    return () => { clearInterval(timer); listener.remove(); };
-  }, [session?.status, session?.deadlineMs, session?.blockId]);
+    return () => listener.remove();
+  }, []);
+  useEffect(() => {
+    setClock(Date.now());
+    if (!session || session.status !== 'running' || hidden || typing || !foreground) return;
+    const timer = setInterval(() => setClock(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [session?.status, session?.deadlineMs, session?.blockId, hidden, typing, foreground]);
   useEffect(() => { if (!session) setExpanded(false); }, [session]);
   useEffect(() => {
     if (!session?.goalId) { setGoalPath([]); return; }
@@ -94,9 +99,9 @@ export function AppDock({ blurTarget, onHeight }: { blurTarget: RefObject<Compon
 
   return (
     <>
-      <View style={[styles.floating, typing && { display: 'none' }]}
+      <View style={[styles.floating, (typing || hidden) && { display: 'none' }]}
         onLayout={(event) => onHeight(event.nativeEvent.layout.height)}>
-      <BlurView blurTarget={blurTarget} blurMethod="dimezisBlurView" intensity={60}
+      <BlurView blurTarget={blurTarget} blurMethod={typing || hidden || !foreground ? 'none' : 'dimezisBlurView'} intensity={60}
         tint={palette === colors.dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: palette === colors.dark ? glass.dark : glass.light }]} />
       <SafeAreaView edges={['bottom']} style={[styles.dock, { borderTopColor: palette.border }]}>

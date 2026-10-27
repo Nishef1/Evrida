@@ -11,6 +11,8 @@ export const spacing = {
 } as const;
 
 export const radius = {
+  timeline: 8,
+  timeBlock: 6,
   md: 14,
   lg: 20,
   xl: 28,

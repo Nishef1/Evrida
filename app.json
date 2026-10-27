@@ -11,6 +11,7 @@
     "plugins": [
       "./plugins/with-windows-cmake.cjs",
       "./plugins/with-gradle-memory.cjs",
+      "./plugins/with-android-release.cjs",
       "expo-notifications",
       "expo-sharing",
       "expo-system-ui",

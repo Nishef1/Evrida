@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, AppState, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import type { Goal, GoalInput } from '../../domain/goals';
@@ -15,6 +15,7 @@ import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import Plus from 'lucide-react-native/icons/plus';
 import ArrowUpRight from 'lucide-react-native/icons/arrow-up-right';
 import X from 'lucide-react-native/icons/x';
+import Minimize2 from 'lucide-react-native/icons/minimize-2';
 import { DayTimeline } from './DayTimeline';
 import { RecoverySheet } from './RecoverySheet';
 import { applyReplan, canUndoReplan, undoReplan } from '../../storage/replan';
@@ -31,7 +32,7 @@ import { DateTimeField } from '../shared/DateTimeField';
 import { type } from '../../theme/type';
 import { EmptyState } from '../shared/EmptyState';
 import CalendarClock from 'lucide-react-native/icons/calendar-clock';
-import { useDockInset } from '../shell/DockInset';
+import { useDockInset, useSetDockHidden } from '../shell/DockInset';
 import Animated from 'react-native-reanimated';
 import { listMotion } from '../../theme/motion';
 import { useReducedMotion } from '../../theme/useReducedMotion';
@@ -61,6 +62,8 @@ function durationLabel(minutes: number) {
 
 export function CalendarScreen() {
   const dockInset = useDockInset();
+  const setDockHidden = useSetDockHidden();
+  const [fullScreen, setFullScreen] = useState(false);
   const db = useEvridaDatabase();
   const focus = useFocusSession();
   const router = useRouter();
@@ -115,6 +118,15 @@ export function CalendarScreen() {
   }, [refresh]);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    setDockHidden(fullScreen);
+    const back = fullScreen ? BackHandler.addEventListener('hardwareBackPress', () => {
+      setFullScreen(false);
+      setChromeHidden(false);
+      return true;
+    }) : null;
+    return () => { back?.remove(); setDockHidden(false); };
+  }, [fullScreen, setDockHidden]));
   useEffect(() => {
     if (!hasUndo) return;
     // Keep the ephemeral Undo action aligned with the five-minute SQLite safety window.
@@ -173,6 +185,7 @@ export function CalendarScreen() {
   const ordered = useMemo(() => [...blocks].sort((a, b) => a.startAt.localeCompare(b.startAt)), [blocks]);
   const localDayHours = (Date.parse(dayBounds.to) - Date.parse(dayBounds.from)) / 3_600_000;
   const displayMode = mode === 'timeline' && localDayHours !== 24 ? 'list' : mode;
+  useEffect(() => { if (displayMode !== 'timeline') setFullScreen(false); }, [displayMode]);
   const compact = chromeHidden && displayMode === 'timeline';
   const dayLoad = useMemo(() => analyzeDayLoad(blocks, day), [blocks, key]);
   // All calendar headers use the same occupied-wall-time accounting as their cards.
@@ -293,9 +306,17 @@ export function CalendarScreen() {
   }
   const foreground = palette.foreground;
   return (
-    <SafeAreaView edges={['top', 'left', 'right']}
-      style={[styles.screen, { backgroundColor: palette.background, paddingBottom: dockInset }]}>
-      <View style={styles.top}>
+    <SafeAreaView edges={fullScreen ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
+      style={[styles.screen, { backgroundColor: palette.background, paddingBottom: fullScreen ? 0 : dockInset }]}>
+      {fullScreen ? <View style={[styles.top, styles.fullScreenHeader]}>
+        <Text style={[styles.fullScreenDate, { color: foreground }]}>{shortDateHeading(day)}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Exit full screen timeline"
+          onPress={() => { setFullScreen(false); setChromeHidden(false); }}
+          style={[styles.fullScreenExit, { borderColor: palette.border, backgroundColor: palette.surface }]}>
+          <Minimize2 size={18} color={palette.accent} strokeWidth={1.8} />
+          <Text style={{ color: palette.accent, fontSize: 12, fontWeight: '600', flexShrink: 1 }}>Exit full screen</Text>
+        </Pressable>
+      </View> : <View style={styles.top}>
         <View style={styles.dateTitleRow}>
           <View style={styles.dateTitleGroup}>
             <DateTimeField value={key} label="Calendar date" variant="inline"
@@ -387,7 +408,7 @@ export function CalendarScreen() {
             <Text style={[styles.chipText, { color: palette.accent }]}>{untimed.length} unscheduled</Text>
           </Pressable> : null}
         </Animated.View> : null}
-      </View>
+      </View>}
       {mode === 'timeline' && localDayHours !== 24 ? (
         <View accessibilityRole="summary" style={[styles.clockChangeNotice,
           { backgroundColor: palette.surface, borderColor: palette.border }]}>
@@ -406,11 +427,12 @@ export function CalendarScreen() {
           </Pressable>
         </View>
       ) : displayMode === 'timeline' ? (
-        <View style={styles.timelineArea}>
+        <View style={[styles.timelineArea, fullScreen && styles.fullScreenArea]}>
           <DayTimeline date={day} blocks={ordered} palette={palette}
             actualByBlock={actualByBlock} activeSession={focus.session}
             busy={busy} onApplyTimeEdit={(preview, onSaved) => { void commitTimelineEdit(preview, onSaved); }}
-            onChromeHidden={setChromeHidden}
+            expanded={fullScreen} onExpand={() => setFullScreen(true)}
+            onChromeHidden={fullScreen ? undefined : setChromeHidden}
             onEdit={edit} onQuickAdd={(hour) => createAt(hour)}
             onOpenGoal={(id) => router.push({ pathname: '/', params: { goalId: id } })} />
         </View>
@@ -529,6 +551,10 @@ const styles = StyleSheet.create({
   error: { borderWidth: 1, borderRadius: radius.lg, margin: 16, padding: 22, gap: 12 },
   retry: { minHeight: 46, justifyContent: 'center' },
   timelineArea: { flex: 1, paddingHorizontal: spacing.gutter, paddingBottom: 8 },
+  fullScreenArea: { paddingHorizontal: 8, paddingBottom: 0 },
+  fullScreenHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  fullScreenDate: { fontSize: 16, fontWeight: '600', flex: 1 },
+  fullScreenExit: { minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: radius.timeline, flexShrink: 1 },
   clockChangeNotice: { minHeight: 48, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: 13, paddingVertical: 9, justifyContent: 'center' },
   clockChangeText: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
   listScroll: { flex: 1 },

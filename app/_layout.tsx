@@ -14,7 +14,7 @@ import { useFonts } from 'expo-font';
 import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
 import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
 import { BlurTargetView } from 'expo-blur';
-import { DockInsetContext } from '../src/features/shell/DockInset';
+import { DockInsetContext, DockVisibilityContext } from '../src/features/shell/DockInset';
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   useEffect(() => { void SplashScreen.hideAsync().catch(() => {}); }, []);
@@ -34,14 +34,17 @@ function DatabaseContent({ reducedMotion }: { reducedMotion: boolean }) {
   // target, and each one reserves the measured dock height at its bottom.
   const blurTarget = useRef<ComponentRef<typeof View>>(null);
   const [dockHeight, setDockHeight] = useState(0);
+  const [dockHidden, setDockHidden] = useState(false);
   return <FocusProvider>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <DockInsetContext.Provider value={dockHeight}>
+      <DockVisibilityContext.Provider value={setDockHidden}>
+      <DockInsetContext.Provider value={dockHidden ? 0 : dockHeight}>
         <BlurTargetView ref={blurTarget} style={{ flex: 1 }}>
           <Stack screenOptions={{ headerShown: false, ...(reducedMotion ? { animation: 'none' as const } : {}) }} />
         </BlurTargetView>
       </DockInsetContext.Provider>
-      <AppDock blurTarget={blurTarget} onHeight={setDockHeight} />
+      </DockVisibilityContext.Provider>
+      <AppDock blurTarget={blurTarget} onHeight={setDockHeight} hidden={dockHidden} />
     </KeyboardAvoidingView>
   </FocusProvider>;
 }

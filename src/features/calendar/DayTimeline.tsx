@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentRef } from 'react';
-import { Alert, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, AppState, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { blockClockRangeForDay, layoutBlocks, localClock, localDayBounds, localDayKey, peakOverlap, type TimeBlock } from '../../domain/timeblocks';
 import { colors, radius, semantic, withAlpha, type Palette } from '../../theme/tokens';
 import { getFocusElapsedMs, type FocusSession } from '../../domain/focus';
@@ -10,6 +10,7 @@ import GripVertical from 'lucide-react-native/icons/grip-vertical';
 import Info from 'lucide-react-native/icons/info';
 import Lock from 'lucide-react-native/icons/lock';
 import Timer from 'lucide-react-native/icons/timer';
+import Maximize2 from 'lucide-react-native/icons/maximize-2';
 
 
 
@@ -47,8 +48,11 @@ interface Props {
   onApplyTimeEdit: (preview: TimelineEditPreview, onSaved: () => void) => void;
   /** True once the reader scrolls down into the day; false when they scroll back up. */
   onChromeHidden?: (hidden: boolean) => void;
+  expanded?: boolean;
+  onExpand: () => void;
 }
-export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit, onChromeHidden }: Props) {
+export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit, onChromeHidden, expanded = false, onExpand }: Props) {
+  const { fontScale } = useWindowDimensions();
   const ref = useRef<ComponentRef<typeof ScrollView>>(null);
   const didScroll = useRef<string | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -63,6 +67,11 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
   const dateKey = localDayKey(date);
   const isToday = localDayKey(now) === dateKey;
   const offset = now.getTimezoneOffset();
+  useEffect(() => {
+    // Resizing the viewport must not count as the reader scrolling into the day.
+    userScrolled.current = false;
+    travel.current = 0;
+  }, [expanded]);
   useEffect(() => {
     setNow(new Date());
     const interval = setInterval(() => setNow(new Date()), 60000);
@@ -188,9 +197,14 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
             <Text style={[styles.nowText, { color: palette.foreground }]}>Now</Text>
           </Pressable>
         ) : null}
+        {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Show timeline full screen"
+          onPress={onExpand} style={[styles.expandButton, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+          <Maximize2 size={18} color={palette.accent} strokeWidth={1.8} />
+          <Text style={[styles.expandLabel, { color: palette.accent }]}>Full screen</Text>
+        </Pressable> : null}
       </View>
 
-      {ribbon ? <View style={styles.ribbonRegion}>
+      {ribbon && !expanded ? <View style={styles.ribbonRegion}>
         {ribbonPeak > 3 ? <Text accessibilityRole="summary"
           style={[styles.ribbonSummary, { color: palette.foreground }]}>
           Peak: {ribbonPeak} simultaneous plans · strip displays 3 layers. Open the full timeline for every overlap.
@@ -273,7 +287,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
           Preview only · Fixed commitments never move automatically. Existing overlaps are shown, not hidden.
         </Text>
       </View> : null}
-      <View style={[styles.canvasFrame, { borderColor: palette.border, backgroundColor: palette.surface }]}>
+      <View style={[styles.canvasFrame, expanded && styles.expandedFrame, { borderColor: palette.border, backgroundColor: palette.surface }]}>
         <ScrollView key={dateKey} ref={ref} nestedScrollEnabled showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.canvasScrollContent, { minHeight: hourHeight * 24 + 10 }]}
           scrollEventThrottle={32}
@@ -332,8 +346,9 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
               {positioned.map(({ block, top, height, lane, lanes }) => {
                 // Three or more side-by-side blocks have no room for a full range or icons.
                 const crowded = lanes >= 3;
-                const compact = height < 52;
-                const veryCompact = height < 39;
+                // Keep labels within true time geometry when the system enlarges text.
+                const compact = height < 60 * fontScale;
+                const veryCompact = height < 39 * fontScale;
                 const tone = blockTone(block, palette);
                 const isDark = palette === colors.dark;
                 const past = isToday && Date.parse(block.endAt) <= now.getTime();
@@ -369,11 +384,11 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                           <Text numberOfLines={1} style={[styles.eventTime, { color: palette.muted }]}>
                             {crowded ? visibleRange(block).split(' – ')[0] : visibleRange(block)}
                           </Text>
-                          {crowded ? null : block.kind === 'box' ? <Timer size={12} color={tone} strokeWidth={2.2} /> : null}
-                          {!crowded && !block.flexible ? <Lock size={11} color={palette.muted} strokeWidth={2.4} /> : null}
-                          {height >= 52 && !crowded ? <Text style={[styles.eventDuration, { color: palette.muted }]}>{blockMinutes(block)}</Text> : null}
+                          {lanes === 1 && block.kind === 'box' ? <Timer size={12} color={tone} strokeWidth={2.2} /> : null}
+                          {lanes === 1 && !block.flexible ? <Lock size={11} color={palette.muted} strokeWidth={2.4} /> : null}
+                          {height >= 52 && lanes === 1 ? <Text style={[styles.eventDuration, { color: palette.muted }]}>{blockMinutes(block)}</Text> : null}
                         </View>
-                        <Text numberOfLines={height < 75 ? 1 : 2}
+                        <Text numberOfLines={compact ? 1 : 2}
                           style={[styles.eventTitle, { color: ink }, block.goalCompleted && styles.doneTitle]}>
                           {block.goalTitle}
                         </Text>
@@ -468,7 +483,7 @@ const styles = StyleSheet.create({
   toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 4, flexWrap: 'wrap' },
   toolbarCopy: { flex: 1, gap: 4 },
   summaryLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  heading: { fontSize: 17, fontWeight: '700', letterSpacing: -0.4 },
+  heading: { fontSize: 17, fontWeight: '700', letterSpacing: -0.4, flexShrink: 1 },
   zoom: { height: 44, flexDirection: 'row', alignItems: 'center', borderRadius: radius.full, borderWidth: 1 },
   zoomButton: { minWidth: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   zoomGlyph: { fontSize: 18, fontWeight: '700' },
@@ -476,7 +491,10 @@ const styles = StyleSheet.create({
   nowButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: 13 },
   nowDot: { height: 7, width: 7, borderRadius: 4 },
   nowText: { fontSize: 12, fontWeight: '700' },
-  canvasFrame: { flex: 1, overflow: 'hidden', borderWidth: 1, borderRadius: radius.xl },
+  expandButton: { minHeight: 48, minWidth: 64, paddingHorizontal: 6, paddingVertical: 4, alignItems: 'center', justifyContent: 'center', gap: 3, borderWidth: 1, borderRadius: radius.timeline },
+  expandLabel: { fontSize: 10, fontWeight: '600' },
+  canvasFrame: { flex: 1, overflow: 'hidden', borderWidth: 1, borderRadius: radius.timeline },
+  expandedFrame: { borderRadius: 0 },
   canvasScrollContent: { flexGrow: 1 },
   canvas: { position: 'relative' },
   workHours: { position: 'absolute', left: GUTTER, right: 0 },
@@ -487,7 +505,7 @@ const styles = StyleSheet.create({
   emptyHour: { position: 'absolute', left: GUTTER, right: 6, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 10 },
   plusHint: { fontSize: 13, opacity: 0.24 },
   events: { position: 'absolute', top: 0, bottom: 0, left: GUTTER + 2, right: 7 },
-  event: { position: 'absolute', borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 11, paddingVertical: 6, overflow: 'hidden' },
+  event: { position: 'absolute', borderRadius: radius.timeBlock, borderWidth: 1.5, paddingHorizontal: 11, paddingVertical: 6, overflow: 'hidden' },
   eventDot: { width: 7, height: 7, borderRadius: 4 },
   eventHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   eventDuration: { marginLeft: 'auto', fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] },
@@ -496,7 +514,7 @@ const styles = StyleSheet.create({
   resizeGrip: { position: 'absolute', bottom: 0, right: 0, width: 46, height: 48,
     justifyContent: 'center', alignItems: 'center', borderRadius: 11 },
   dragGlyph: { fontSize: 20, color: '#FFFFFF', fontWeight: '800' },
-  ghost: { position: 'absolute', borderWidth: 2, borderStyle: 'dashed', borderRadius: 12,
+  ghost: { position: 'absolute', borderWidth: 2, borderStyle: 'dashed', borderRadius: radius.timeBlock,
     zIndex: 10, justifyContent: 'center', padding: 10, opacity: 0.92 },
   ghostTitle: { fontSize: 13, fontWeight: '800' },
   ghostClock: { fontSize: 12, fontWeight: '600', marginTop: 4 },
