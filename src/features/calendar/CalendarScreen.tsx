@@ -76,13 +76,10 @@ export function CalendarScreen() {
   const [chosenGoal, setChosenGoal] = useState<string | null>(null);
   const [suggestedHour, setSuggestedHour] = useState<number | null>(null);
   const [mode, setMode] = useState<'timeline' | 'week' | 'month' | 'list'>('timeline');
-  // Scrolling the timeline down hands the week strip, view toggle and chips back to the day itself.
-  const [chromeHidden, setChromeHidden] = useState(false);
   const reduced = useReducedMotion();
   const motionProps = listMotion(reduced);
   const usedGoalParam = useRef<string | null>(null);
   const key = localDayKey(day);
-  useEffect(() => { setChromeHidden(false); }, [mode, key]);
   const week = useMemo(() => weekOf(day), [key]);
   const dayBounds = localDayBounds(day);
   const weekFromMs = Date.parse(localDayBounds(week[0]).from);
@@ -112,7 +109,6 @@ export function CalendarScreen() {
     setDockHidden(fullScreen);
     const back = fullScreen ? BackHandler.addEventListener('hardwareBackPress', () => {
       setFullScreen(false);
-      setChromeHidden(false);
       return true;
     }) : null;
     return () => { back?.remove(); setDockHidden(false); };
@@ -176,7 +172,6 @@ export function CalendarScreen() {
   const localDayHours = (Date.parse(dayBounds.to) - Date.parse(dayBounds.from)) / 3_600_000;
   const displayMode = mode === 'timeline' && localDayHours !== 24 ? 'list' : mode;
   useEffect(() => { if (displayMode !== 'timeline') setFullScreen(false); }, [displayMode]);
-  const compact = chromeHidden && displayMode === 'timeline';
   const dayLoad = useMemo(() => analyzeDayLoad(blocks, day), [blocks, key]);
   // All calendar headers use the same occupied-wall-time accounting as their cards.
   const weekLoad = analyzeRangeLoad(weekBlocks, weekFromMs, weekToMs);
@@ -251,11 +246,15 @@ export function CalendarScreen() {
     });
   }
   function remove(block: TimeBlock) {
-    Alert.alert('Remove this time block?', 'The linked goal will remain in Horizons and Boards.', [
+    Alert.alert('Remove this time block?', block.id === focus.session?.blockId
+      ? 'The active Focus session will end. The linked goal will remain in Horizons and Boards.'
+      : 'The linked goal will remain in Horizons and Boards.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove time', style: 'destructive', onPress: () => void write(async () => {
         await removeBlock(db, block.id);
         await focus.refresh();
+        setEditorOpen(false);
+        setEditingBlock(null);
       }) },
     ]);
   }
@@ -301,7 +300,7 @@ export function CalendarScreen() {
       {fullScreen ? <View style={[styles.top, styles.fullScreenHeader]}>
         <Text style={[styles.fullScreenDate, { color: foreground }]}>{shortDateHeading(day)}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Exit full screen timeline"
-          onPress={() => { setFullScreen(false); setChromeHidden(false); }}
+          onPress={() => setFullScreen(false)}
           style={[styles.fullScreenExit, { borderColor: palette.border, backgroundColor: palette.surface }]}>
           <Minimize2 size={18} color={palette.accent} strokeWidth={1.8} />
           <Text style={{ color: palette.accent, fontSize: 12, fontWeight: '600', flexShrink: 1 }}>Exit full screen</Text>
@@ -335,7 +334,7 @@ export function CalendarScreen() {
             <Plus size={23} color={palette.onAccent} strokeWidth={1.8} />
           </Pressable>
         </View>
-        {mode !== 'month' && !compact ? <Animated.View {...motionProps} style={styles.weekStrip}>
+        {mode !== 'month' ? <Animated.View {...motionProps} style={styles.weekStrip}>
           {week.map((date, index) => {
             const selected = localDayKey(date) === key;
             const today = localDayKey(date) === todayKey;
@@ -355,7 +354,7 @@ export function CalendarScreen() {
             );
           })}
         </Animated.View> : null}
-        {compact ? null : <Animated.View {...motionProps} style={[styles.summaryRow, { borderColor: palette.border }]}>
+        <Animated.View {...motionProps} style={[styles.summaryRow, { borderColor: palette.border }]}>
           {displayMode !== 'timeline' ? <View style={styles.summaryStats}>
             <Text style={[styles.summaryValue, { color: foreground }]}>{durationLabel(activeLoad.occupiedMinutes)}
               <Text style={[styles.summaryLabel, { color: palette.muted }]}> occupied</Text>
@@ -382,8 +381,8 @@ export function CalendarScreen() {
               </Pressable>
             ))}
           </View>
-        </Animated.View>}
-        {!compact && ((displayMode === 'timeline' && key === todayKey && blocks.length > 0) || (untimed.length > 0 && (mode === 'timeline' || mode === 'list'))) ? <Animated.View {...motionProps} style={styles.chipRow}>
+        </Animated.View>
+        {((displayMode === 'timeline' && key === todayKey && blocks.length > 0) || (untimed.length > 0 && (mode === 'timeline' || mode === 'list'))) ? <Animated.View {...motionProps} style={styles.chipRow}>
           {displayMode === 'timeline' && key === todayKey && blocks.length > 0 ? <Pressable accessibilityRole="button" onPress={() => setRecoveryOpen(true)}
             accessibilityLabel="Preview day recovery" style={[styles.chip, { backgroundColor: palette.surface, borderColor: palette.border }]}>
             <Text style={[styles.chipText, { color: palette.accent }]}>Preview recovery</Text>
@@ -422,7 +421,6 @@ export function CalendarScreen() {
             actualByBlock={actualByBlock} activeSession={focus.session}
             busy={busy} onApplyTimeEdit={(preview, onSaved) => { void commitTimelineEdit(preview, onSaved); }}
             expanded={fullScreen} onExpand={() => setFullScreen(true)}
-            onChromeHidden={fullScreen ? undefined : setChromeHidden}
             onEdit={edit} onQuickAdd={(hour) => createAt(hour)}
             onOpenGoal={(id) => router.push({ pathname: '/', params: { goalId: id } })} />
         </View>
@@ -500,7 +498,8 @@ export function CalendarScreen() {
         suggestedStartHour={suggestedHour}
         palette={palette} saving={busy} activeBlockId={focus.session?.blockId ?? null}
         onCancel={() => { if (!busy) { setEditorOpen(false); setEditingBlock(null); } }}
-        onSave={save} onStartFocus={startFocus} />
+        onSave={save} onStartFocus={startFocus} onRemove={remove}
+        onOpenGoal={(id) => { setEditorOpen(false); router.push({ pathname: '/', params: { goalId: id } }); }} />
     </SafeAreaView>
   );
 }

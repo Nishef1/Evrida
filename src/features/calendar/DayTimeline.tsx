@@ -41,12 +41,10 @@ interface Props {
   activeSession: FocusSession | null;
   busy: boolean;
   onApplyTimeEdit: (preview: TimelineEditPreview, onSaved: () => void) => void;
-  /** True once the reader scrolls down into the day; false when they scroll back up. */
-  onChromeHidden?: (hidden: boolean) => void;
   expanded?: boolean;
   onExpand: () => void;
 }
-export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit, onChromeHidden, expanded = false, onExpand }: Props) {
+export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit, expanded = false, onExpand }: Props) {
   const { fontScale } = useWindowDimensions();
   const ref = useRef<ComponentRef<typeof ScrollView>>(null);
   const didScroll = useRef<string | null>(null);
@@ -55,18 +53,11 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
   const hourHeight = ZOOM_LEVELS[zoomIndex];
   const zoomedHeight = useRef<number>(hourHeight);
   const scrollOffset = useRef(0);
-  const userScrolled = useRef(false);
-  const travel = useRef(0);
   const dragOriginY = useRef(0);
   const [draft, setDraft] = useState<{ id: string; mode: TimelineEditMode; delta: number; sourceRevision?: string } | null>(null);
   const dateKey = localDayKey(date);
   const isToday = localDayKey(now) === dateKey;
   const offset = now.getTimezoneOffset();
-  useEffect(() => {
-    // Resizing the viewport must not count as the reader scrolling into the day.
-    userScrolled.current = false;
-    travel.current = 0;
-  }, [expanded]);
   useEffect(() => {
     setNow(new Date());
     const interval = setInterval(() => setNow(new Date()), 60000);
@@ -95,8 +86,6 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
   }, [draft, editing, blocks, dateKey, activeSession?.blockId]);
   useEffect(() => {
     setDraft(null);
-    // A fresh day starts with its own programmatic scroll; only a finger counts as reading.
-    userScrolled.current = false;
     scrollOffset.current = 0;
   }, [dateKey]);
   const ghost = useMemo(() => {
@@ -286,17 +275,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
         <ScrollView key={dateKey} ref={ref} nestedScrollEnabled showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.canvasScrollContent, { minHeight: hourHeight * 24 + 10 }]}
           scrollEventThrottle={32}
-          onScrollBeginDrag={() => { userScrolled.current = true; travel.current = 0; }}
-          onScroll={(event) => {
-            const y = event.nativeEvent.contentOffset.y;
-            const delta = y - scrollOffset.current;
-            scrollOffset.current = y;
-            if (!userScrolled.current || !onChromeHidden) return;
-            // Accumulate travel in one direction so a small wobble never flips the header.
-            travel.current = Math.sign(delta) === Math.sign(travel.current) ? travel.current + delta : delta;
-            if (travel.current > 36 && y > 60) onChromeHidden(true);
-            else if (travel.current < -36 || y < 8) onChromeHidden(false);
-          }}
+          onScroll={(event) => { scrollOffset.current = event.nativeEvent.contentOffset.y; }}
           onContentSizeChange={() => {
             if (didScroll.current !== dateKey) {
               didScroll.current = dateKey;

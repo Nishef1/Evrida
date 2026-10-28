@@ -24,8 +24,10 @@ interface Props {
   onCancel: () => void;
   onSave: (input: BlockInput) => Promise<void>;
   onStartFocus: (block: TimeBlock) => void;
+  onRemove: (block: TimeBlock) => void;
+  onOpenGoal: (id: string) => void;
 }
-export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId, suggestedStartHour, palette, saving, activeBlockId, onCancel, onSave, onStartFocus }: Props) {
+export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId, suggestedStartHour, palette, saving, activeBlockId, onCancel, onSave, onStartFocus, onRemove, onOpenGoal }: Props) {
   const reducedMotion = useReducedMotion();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [showGoals, setShowGoals] = useState(false);
@@ -208,8 +210,22 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                   </Text>
                 </Pressable>
               ) : null}
+              {initial ? <Pressable accessibilityRole="button" accessibilityLabel={`Open ${initial.goalTitle} to edit or archive`}
+                disabled={saving} onPress={() => {
+                  if (!changed) onOpenGoal(initial.goalId);
+                  else Alert.alert('Discard these changes?', 'Open the goal without saving this time block?', [
+                    { text: 'Keep editing', style: 'cancel' },
+                    { text: 'Discard changes', style: 'destructive', onPress: () => onOpenGoal(initial.goalId) },
+                  ]);
+                }} style={styles.removeAction}>
+                <Text style={{ color: palette.accent, fontWeight: '700' }}>Edit or archive goal</Text>
+              </Pressable> : null}
+              {initial ? <Pressable accessibilityRole="button" accessibilityLabel="Remove this time block"
+                disabled={saving} onPress={() => onRemove(initial)} style={styles.removeAction}>
+                <Text style={{ color: palette === colors.dark ? semantic.dark.danger : semantic.light.danger, fontWeight: '700' }}>Remove time block</Text>
+              </Pressable> : null}
               <Pressable disabled={!valid} accessibilityRole="button" accessibilityState={{ disabled: !valid }}
-                onPress={() => { if (valid && goalId) void onSave({ goalId, date: dayText, start, end, endsNextDay, kind: 'box', intention, flexible }); }}
+                onPress={() => { if (valid && goalId) void onSave({ goalId, date: dayText, start, end, endsNextDay, kind: initial?.kind ?? 'box', intention, flexible }); }}
                 style={[styles.save, { backgroundColor: palette.accent, opacity: valid ? 1 : 0.45 }]}>
                 <Text style={[styles.saveText, { color: palette.onAccent }]}>{saving ? 'Saving…' : initial ? 'Save changes' : 'Add to timeline'}</Text>
               </Pressable>
@@ -253,6 +269,7 @@ const styles = StyleSheet.create({
   notes: { height: 85, paddingTop: 13, textAlignVertical: 'top' },
   validation: { fontSize: 12 },
   footer: { borderTopWidth: 1, paddingTop: 12, paddingHorizontal: spacing.lg, paddingBottom: 8 },
+  removeAction: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   focusAction: { minHeight: 50, borderRadius: radius.lg, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 9 },
   focusActionText: { fontSize: 14, fontWeight: '700' },
   save: { minHeight: 54, borderRadius: radius.lg, justifyContent: 'center', alignItems: 'center' },
