@@ -32,6 +32,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
   const [goalId, setGoalId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [showGoals, setShowGoals] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [search, setSearch] = useState('');
   const [dayText, setDayText] = useState('');
   const [start, setStart] = useState('09:00');
@@ -58,6 +59,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
     setFlexible(initial?.flexible ?? false);
     setIntention(initial?.intention ?? '');
     setShowGoals(false);
+    setShowDetails(!!initial?.intention || !!initial?.flexible);
     setSearch('');
     originalDraft.current = JSON.stringify([initial?.goalId ?? suggestedGoalId ?? null, localDayKey(begin),
       initial ? localClock(new Date(initial.startAt)) : `${String(hour).padStart(2, '0')}:00`,
@@ -126,15 +128,18 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                   style={[styles.input, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.foreground }]} />
                 <Text style={[styles.hint, { color: palette.muted }]}>A new goal will also appear in Plan.</Text>
               </> : null}
-              <Text style={[styles.label, { color: palette.muted }]}>{!initial && !goalId ? 'OR CHOOSE AN EXISTING GOAL' : 'GOAL'}</Text>
+              {goalId ? <Text style={[styles.label, { color: palette.muted }]}>GOAL</Text> : null}
               <Pressable onPress={() => setShowGoals(!showGoals)} accessibilityRole="button"
                 style={[styles.select, { backgroundColor: palette.surface, borderColor: palette.border }]}>
                 {goal ? <View style={[styles.horizonDot, { backgroundColor: palette.horizon[goal.horizon] }]} /> : null}
                 <Text numberOfLines={2} style={[styles.selectText, { color: palette.foreground }]}>
-                  {goal?.title ?? 'Choose a goal'}
+                  {goal?.title ?? 'Choose an existing goal'}
                 </Text>
                 <Text style={{ color: palette.muted }}>{showGoals ? '⌃' : '⌄'}</Text>
               </Pressable>
+              {!initial && goalId ? <Pressable accessibilityRole="button" onPress={() => { setGoalId(null); setShowGoals(false); }} style={styles.inlineAction}>
+                <Text style={{ color: palette.accent, fontWeight: '600' }}>Use a new title instead</Text>
+              </Pressable> : null}
               {showGoals ? (
                 <View style={[styles.choices, { backgroundColor: palette.surface, borderColor: palette.border }]}>
                   <TextInput value={search} onChangeText={setSearch}
@@ -179,6 +184,11 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                   <Text style={[styles.overnightTitle, { color: palette.foreground }]}>Ends the next day</Text>
                 </Pressable> : null}
               </View>
+              <Pressable accessibilityRole="button" accessibilityState={{ expanded: showDetails }}
+                onPress={() => setShowDetails((open) => !open)} style={styles.detailsToggle}>
+                <Text style={{ color: palette.accent, fontWeight: '700' }}>{showDetails ? 'Hide details −' : 'More details +'}</Text>
+              </Pressable>
+              {showDetails ? <>
               <Text style={[styles.label, { color: palette.muted }]}>OUTCOME (OPTIONAL)</Text>
               <TextInput value={intention} onChangeText={setIntention} multiline maxLength={500}
                 placeholder="What should be done when time is up?"
@@ -197,6 +207,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                   trackColor={{ true: palette.accent, false: palette.border }}
                   thumbColor="#FFFFFF" />
               </View>
+              </> : null}
               {validation ? <Text style={[styles.validation, { color: palette === colors.dark ? semantic.dark.danger : semantic.light.danger }]}>{validation}</Text> : null}
               {(goal?.completed || initial?.goalCompleted) ? <Text style={[styles.validation, { color: palette.muted }]}>
                 This goal is complete. Reopen it in Plan before scheduling new time.
@@ -255,6 +266,8 @@ const styles = StyleSheet.create({
   heading: { ...type.title },
   close: { width: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
   form: { gap: 13, paddingHorizontal: spacing.lg, paddingTop: 20, paddingBottom: 22 },
+  inlineAction: { minHeight: 44, justifyContent: 'center' },
+  detailsToggle: { minHeight: 48, justifyContent: 'center' },
   label: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginTop: 8 },
   select: { borderRadius: radius.lg, borderWidth: 1, minHeight: 55, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 15 },
   selectText: { flex: 1, fontSize: 15, fontWeight: '600' },

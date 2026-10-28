@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
 import { shortDayText, weekdayText } from '../shared/dates';
 import { analyzeDayLoad, blockClockRangeForDay, blockOverlapsRange, localDayBounds, localDayKey, type TimeBlock } from '../../domain/timeblocks';
@@ -17,6 +18,8 @@ const duration = (minutes: number) => {
   return h ? `${h}h${m ? ` ${m}m` : ''}` : `${m}m`;
 };
 export function WeekOverview({ days, blocks, selectedDay, palette, onSelectDay, onAdd, onEdit }: Props) {
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set());
+  const [showReport, setShowReport] = useState(false);
   const today = localDayKey(new Date());
   const summaries = days.map((day) => {
     const bounds = localDayBounds(day), from = Date.parse(bounds.from), to = Date.parse(bounds.to);
@@ -36,12 +39,28 @@ export function WeekOverview({ days, blocks, selectedDay, palette, onSelectDay, 
   }
   const ranked = [...activities.values()].sort((a, b) => b.minutes - a.minutes);
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-    <View style={styles.intro}>
-      <Text style={[styles.title, { color: palette.foreground }]}>Your week</Text>
-      <Text style={[styles.caption, { color: palette.muted }]}>Add a block, then tap it to change the time as your day unfolds.</Text>
+    <View style={[styles.weekSummary, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text style={[styles.dayName, { color: palette.foreground }]}>Week so far</Text>
+        <Text style={[styles.caption, { color: palette.muted }]}>{elapsed.length ? `${duration(occupied)} scheduled · ${duration(occupied / elapsed.length)} per day` : 'This week has not started yet'}</Text>
+      </View>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: showReport }}
+        accessibilityLabel={showReport ? 'Hide weekly time details' : 'Show weekly time details'}
+        onPress={() => setShowReport((open) => !open)} style={styles.action}>
+        <Text style={{ color: palette.accent, fontWeight: '700' }}>{showReport ? 'Hide' : 'Details'}</Text>
+      </Pressable>
     </View>
+    {showReport ? <View style={[styles.report, { borderColor: palette.border, backgroundColor: palette.surface }]}>
+      {ranked.length ? ranked.map((item) => <View key={item.title.toLocaleLowerCase()} style={styles.reportRow}>
+        <Text style={{ color: palette.foreground, flex: 1 }} numberOfLines={2}>{item.title}</Text>
+        <Text style={{ color: palette.foreground, fontWeight: '700' }}>{duration(item.minutes)}</Text>
+      </View>) : <Text style={[styles.caption, { color: palette.muted }]}>No time has been scheduled so far.</Text>}
+      <Text style={[styles.caption, { color: palette.muted }]}>Based on calendar blocks through today, including today's estimates. Future days are excluded. Empty days may mean time was not recorded. Overlapping activities are counted in each activity; the total counts shared time once.</Text>
+    </View> : null}
     {summaries.map(({ day, entries, load }) => {
       const key = localDayKey(day), selected = key === selectedDay;
+      const expanded = expandedDays.has(key);
+      const visibleEntries = expanded ? entries : entries.slice(0, 2);
       return <View key={key} style={[styles.card, { backgroundColor: palette.surface, borderColor: selected ? palette.accent : palette.border }]}>
         <View style={styles.cardTop}>
           <Pressable accessibilityRole="button" accessibilityLabel={`${weekdayText(day)}, open day timeline`} onPress={() => onSelectDay(day)} style={styles.dayHeading}>
@@ -52,34 +71,36 @@ export function WeekOverview({ days, blocks, selectedDay, palette, onSelectDay, 
             <Text style={{ color: palette.accent, fontWeight: '700' }}>+ Add</Text>
           </Pressable>
         </View>
-        {entries.length ? entries.map((block) => <Pressable key={block.id} accessibilityRole="button"
+        {entries.length ? visibleEntries.map((block) => <Pressable key={block.id} accessibilityRole="button"
           accessibilityLabel={`Edit ${block.goalTitle}, ${blockClockRangeForDay(block, day)}`} onPress={() => onEdit(block)}
           style={[styles.entry, { borderTopColor: palette.border }]}>
           <Text style={[styles.time, { color: palette.accent }]}>{blockClockRangeForDay(block, day)}</Text>
           <Text numberOfLines={2} style={[styles.entryTitle, { color: palette.foreground }]}>{block.goalTitle}</Text>
           <Text style={{ color: palette.muted }}>›</Text>
         </Pressable>) : null}
+        {entries.length > 2 ? <Pressable accessibilityRole="button" accessibilityState={{ expanded }}
+          accessibilityLabel={expanded ? `Show fewer blocks for ${weekdayText(day)}` : `Show all ${entries.length} blocks for ${weekdayText(day)}`}
+          onPress={() => setExpandedDays((current) => {
+            const next = new Set(current);
+            if (next.has(key)) next.delete(key); else next.add(key);
+            return next;
+          })} style={styles.more}>
+          <Text style={[styles.caption, { color: palette.accent, fontWeight: '700' }]}>{expanded ? 'Show less' : `+ ${entries.length - 2} more`}</Text>
+        </Pressable> : null}
         {load.overlapMinutes > 0 ? <Text style={[styles.caption, { color: palette === colors.dark ? semantic.dark.warning : semantic.light.warning }]}>{duration(load.overlapMinutes)} overlapping time</Text> : null}
       </View>;
     })}
-    <View style={[styles.report, { borderColor: palette.border, backgroundColor: palette.surface }]}>
-      <Text style={[styles.dayName, { color: palette.foreground }]}>Week so far</Text>
-      {elapsed.length ? <Text style={[styles.caption, { color: palette.muted }]}>{duration(occupied)} scheduled · {duration(occupied / elapsed.length)} per day across {elapsed.length} day{elapsed.length === 1 ? '' : 's'}</Text> : <Text style={[styles.caption, { color: palette.muted }]}>This week has not started yet.</Text>}
-      {ranked.map((item) => <View key={item.title.toLocaleLowerCase()} style={styles.reportRow}>
-        <Text style={{ color: palette.foreground, flex: 1 }} numberOfLines={2}>{item.title}</Text>
-        <Text style={{ color: palette.foreground, fontWeight: '700' }}>{duration(item.minutes)}</Text>
-      </View>)}
-      <Text style={[styles.caption, { color: palette.muted }]}>Based on your calendar blocks through today, including today's estimates. Future days are excluded. Empty days may mean time was not recorded. Overlapping activities are counted in each activity; the total counts shared time once.</Text>
-    </View>
   </ScrollView>;
 }
 const styles = StyleSheet.create({
   scroll: { flex: 1 }, content: { paddingHorizontal: spacing.md, paddingTop: 12, paddingBottom: 40, gap: 8 },
-  intro: { gap: 5, paddingBottom: 4 }, title: { fontSize: 20, fontWeight: '800' }, caption: { fontSize: 12, lineHeight: 18 },
+  weekSummary: { borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  caption: { fontSize: 12, lineHeight: 18 },
   card: { borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 3, gap: 2 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 }, dayHeading: { flex: 1, minHeight: 48, justifyContent: 'center', gap: 3 },
   dayName: { fontSize: 15, fontWeight: '700' }, action: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' },
   entry: { minHeight: 48, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
   time: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] }, entryTitle: { flex: 1, fontSize: 14 },
+  more: { minHeight: 48, justifyContent: 'center', alignItems: 'flex-start' },
   report: { borderWidth: 1, borderRadius: radius.lg, padding: 14, gap: 10, marginTop: 6 }, reportRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 });
