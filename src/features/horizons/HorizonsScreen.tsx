@@ -362,6 +362,7 @@ export function HorizonsScreen() {
           onPress: () => void perform(async () => {
             await archiveGoal(db, goal.id);
             void focus.refresh().catch(() => {});
+            setOrganizing(null);
             closeDetails();
           }),
         },
@@ -409,9 +410,8 @@ export function HorizonsScreen() {
 
   function archiveSelectedFromMenu() {
     const goal = organizing;
-    setOrganizing(null);
     if (!goal) return;
-    void perform(async () => { await archiveGoal(db, goal.id); void focus.refresh().catch(() => {}); });
+    confirmArchive(goal);
   }
 
   function restoreSelected(goal: Goal) {
@@ -648,6 +648,14 @@ export function HorizonsScreen() {
             <Text numberOfLines={2} style={[styles.organizeSubtitle, { color: palette.muted }]}>
               {organizing?.title}
             </Text>
+            {organizing ? <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${organizing.title}`}
+              disabled={working} onPress={() => {
+                const goal = organizing;
+                setOrganizing(null);
+                void openEditor(goal, null);
+              }} style={[styles.organizeAction, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+              <Text style={[styles.organizeActionText, { color: palette.accent }]}>Edit goal</Text>
+            </Pressable> : null}
             {planningChoices.length ? <>
               <Text style={{ color: palette.muted, fontSize: 13 }}>Move plan · deadlines and calendar times stay as set</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
