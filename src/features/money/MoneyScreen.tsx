@@ -1,5 +1,6 @@
+import { useAppColorScheme } from '../../theme/appearance';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useEvridaDatabase } from '../../storage/use-database';
@@ -35,7 +36,7 @@ export function MoneyScreen() {
   const db = useEvridaDatabase();
   const router = useRouter();
   const dockInset = useDockInset();
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   const [data, setData] = useState<FinanceSnapshot | null | undefined>(undefined);
   const [failure, setFailure] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('overview');

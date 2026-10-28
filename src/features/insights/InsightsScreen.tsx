@@ -1,7 +1,8 @@
+import { useAppColorScheme } from '../../theme/appearance';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { monthDayText } from '../shared/dates';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, AppState, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import type { FocusHistory } from '../../domain/focus';
@@ -27,7 +28,7 @@ export function InsightsScreen() {
   const dockInset = useDockInset();
   const focus = useFocusSession();
   const db = useEvridaDatabase(), router = useRouter();
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   const [weekHistory, setWeekHistory] = useState<FocusHistory[]>([]);
   const [recent, setRecent] = useState<FocusHistory[]>([]);
   const [past, setPast] = useState<Goal[]>([]);

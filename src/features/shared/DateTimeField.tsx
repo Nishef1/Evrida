@@ -1,5 +1,6 @@
+import { useAppColorScheme } from '../../theme/appearance';
 import { useState } from 'react';
-import { Platform, Pressable, Text, View, useColorScheme } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { parseDateInput, periodKey } from '../../domain/horizons';
 import { fullDateText } from './dates';
@@ -12,7 +13,7 @@ export function DateTimeField({ value, mode = 'date', label, placeholder = 'Choo
   onChange: (value: string) => void; onClear?: () => void;
   variant?: 'field' | 'inline'; displayValue?: string;
 }) {
-  const dark = useColorScheme() === 'dark', palette = dark ? colors.dark : colors.light;
+  const dark = useAppColorScheme() === 'dark', palette = dark ? colors.dark : colors.light;
   const [open, setOpen] = useState(false);
   const selected = mode === 'date' ? parseDateInput(value) ?? new Date() : new Date();
   if (mode === 'time' && /^\d{2}:\d{2}$/.test(value)) selected.setHours(Number(value.slice(0, 2)), Number(value.slice(3)), 0, 0);

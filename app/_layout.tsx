@@ -1,8 +1,9 @@
+import { useAppColorScheme } from '../src/theme/appearance';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentRef } from 'react';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { EvridaDatabaseProvider } from '../src/storage/use-database';
@@ -18,7 +19,7 @@ import { DockInsetContext, DockVisibilityContext } from '../src/features/shell/D
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   useEffect(() => { void SplashScreen.hideAsync().catch(() => {}); }, []);
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: palette.background, justifyContent: 'center', padding: 28, gap: 18 }}>
     <Text style={{ color: palette.foreground, fontSize: 25, fontWeight: '700' }}>Let’s get your plan open.</Text>
     <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 24 }}>Something interrupted Evrida. Try again to reopen it. Retrying does not clear your local data.</Text>
@@ -50,7 +51,7 @@ function DatabaseContent({ reducedMotion }: { reducedMotion: boolean }) {
 }
 
 function LoadingDatabase() {
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.background }}>
       <ActivityIndicator color={palette.accent} size="large" />
@@ -60,12 +61,13 @@ function LoadingDatabase() {
 
 export default function RootLayout() {
   const reducedMotion = useReducedMotion();
+  const scheme = useAppColorScheme();
   // Local font files load in milliseconds; a failure falls back to the system family.
   const [fontsLoaded, fontError] = useFonts({ Fraunces_600SemiBold, Fraunces_700Bold });
   if (!fontsLoaded && !fontError) return <LoadingDatabase />;
   return (
     <SafeAreaProvider>
-      <StatusBar style="auto" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <View style={{ flex: 1 }}>
         {/* The provider never closes the process-wide connection on unmount; a startup
             failure throws to ErrorBoundary and Retry re-attempts the open. */}

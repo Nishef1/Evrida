@@ -1,8 +1,9 @@
+import { useAppColorScheme } from '../../theme/appearance';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { periodText } from '../shared/dates';
 import type { ComponentRef } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, AppState, Keyboard, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Keyboard, Modal, Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { dateFromPeriodKey, HORIZONS, HORIZON_TITLES, periodKey, shiftPeriod, type Horizon } from '../../domain/horizons';
@@ -35,7 +36,7 @@ export function HorizonsScreen() {
   const focus = useFocusSession();
   const { goalId } = useLocalSearchParams<{ goalId?: string }>();
   const openedFromBoard = useRef<string | null>(null);
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   const [horizon, setHorizon] = useState<Horizon>('day');
   const [view, setView] = useState<'focus' | 'perspective' | 'archive' | 'inbox'>('focus');
   const [anchor, setAnchor] = useState(() => new Date());

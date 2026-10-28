@@ -1,6 +1,7 @@
+import { useAppColorScheme } from '../../theme/appearance';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, AppState, BackHandler, PanResponder, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, BackHandler, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import type { Goal } from '../../domain/goals';
@@ -58,7 +59,7 @@ export function CalendarScreen() {
   const focus = useFocusSession();
   const router = useRouter();
   const { goalId } = useLocalSearchParams<{ goalId?: string }>();
-  const palette: Palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette: Palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   const [day, setDay] = useState(() => new Date());
   const [calendarBlocks, setCalendarBlocks] = useState<TimeBlock[]>([]);
   const [actualByBlock, setActualByBlock] = useState<Record<string, number>>({});

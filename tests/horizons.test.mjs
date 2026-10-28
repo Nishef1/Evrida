@@ -1,3 +1,4 @@
+import { parseAppearancePreference, resolveAppearance } from '../src/theme/appearance-model.ts';
 import { calendarSwipeDirection } from '../src/domain/calendar-swipe.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -12,6 +13,13 @@ import { semantic } from '../src/theme/tokens.ts';
 import { pixelsToQuarterHours, previewTimelineEdit } from '../src/domain/timeline-edit.ts';
 
 test('all seven horizon keys use independent periods', () => {
+  assert.equal(parseAppearancePreference(null), 'system');
+  assert.equal(parseAppearancePreference('light'), 'light');
+  assert.equal(parseAppearancePreference('invalid'), 'system');
+  assert.equal(resolveAppearance('system', 'dark'), 'dark');
+  assert.equal(resolveAppearance('system', null), 'light');
+  assert.equal(resolveAppearance('light', 'dark'), 'light');
+  assert.equal(resolveAppearance('dark', 'light'), 'dark');
   const date = new Date(2026, 9, 14, 12);
   assert.equal(periodKey('day', date), '2026-10-14');
   assert.equal(periodKey('week', date), '2026-W42');

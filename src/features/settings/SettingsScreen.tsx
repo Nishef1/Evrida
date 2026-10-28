@@ -1,5 +1,6 @@
+import { setAppearancePreference, useAppearancePreference, useAppColorScheme } from '../../theme/appearance';
 import { useRef, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
@@ -27,11 +28,12 @@ function Heading({ Icon, text, palette }: { Icon: IconComponent; text: string; p
 export function SettingsScreen() {
   const dockInset = useDockInset();
   const db = useEvridaDatabase(), router = useRouter();
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState<string | null>(null);
   const [health, setHealth] = useState<LocalHealth | null>(null);
   const locked = useRef(false);
   const calendar = useCalendarStyle();
+  const appearance = useAppearancePreference();
   async function run(action: () => Promise<void>) {
     if (locked.current) return;
     locked.current = true; setBusy(true); setNotice(null); setHealth(null);
@@ -124,6 +126,22 @@ export function SettingsScreen() {
         </Text> : null}
       </View>
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+        <Text style={[styles.heading, { color: palette.foreground }]}>Appearance</Text>
+        <Text style={[styles.copy, { color: palette.muted }]}>Choose a light or dark appearance, or follow your device settings.</Text>
+        <View accessibilityRole="radiogroup" style={styles.appearanceChoices}>
+          {(['system', 'light', 'dark'] as const).map((option) => <Pressable key={option} accessibilityRole="radio"
+            accessibilityState={{ checked: appearance === option }} onPress={() => {
+              try { setAppearancePreference(option); }
+              catch { Alert.alert('Could not save appearance', 'Please try again.'); }
+            }} style={[styles.appearanceChoice, { backgroundColor: appearance === option ? palette.accentSoft : palette.background,
+              borderColor: appearance === option ? palette.accent : palette.border }]}>
+            <Text style={{ color: appearance === option ? palette.accent : palette.foreground, fontWeight: '700' }}>
+              {option === 'system' ? 'System' : option === 'light' ? 'Light' : 'Dark'}
+            </Text>
+          </Pressable>)}
+        </View>
+      </View>
+      <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <Heading Icon={CalendarBlank} text="Calendar" palette={palette} />
         <Text style={[styles.copy, { color: palette.muted }]}>Show dates in the Gregorian or the Shamsi (Jalali) calendar. Your data is stored the same way either way, so you can switch at any time.</Text>
         {(['gregorian', 'jalali'] as const).map((style) => <Pressable key={style} accessibilityRole="radio" accessibilityState={{ selected: calendar === style }}
@@ -153,5 +171,7 @@ const styles = StyleSheet.create({
   back: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignItems: 'center' }, title: { ...type.title, flex: 1 },
   heading: { ...type.heading }, copy: { fontSize: 14, lineHeight: 22 }, caption: { fontSize: 12, lineHeight: 19 },
   card: { padding: 18, borderRadius: 18, borderWidth: 1, gap: 14 }, primary: { minHeight: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  appearanceChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  appearanceChoice: { flexGrow: 1, minHeight: 48, paddingHorizontal: 12, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   secondary: { minHeight: 50, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
 });

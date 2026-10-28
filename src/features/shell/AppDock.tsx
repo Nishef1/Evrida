@@ -1,9 +1,10 @@
+import { useAppColorScheme } from '../../theme/appearance';
 import { useEffect, useState } from 'react';
 import type { ComponentRef, RefObject } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { getGoalPath } from '../../storage/goals';
-import { AppState, Alert, Keyboard, Linking, Modal, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { AppState, Alert, Keyboard, Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { getFocusRemainingMs, formatFocusTime } from '../../domain/focus';
@@ -35,7 +36,7 @@ export function AppDock({ blurTarget, onHeight, hidden = false }: { blurTarget: 
   const router = useRouter();
   const db = useEvridaDatabase();
   const pathname = usePathname();
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   const { session, busy, error, notificationNotice, pause, resume, finish, refresh } = useFocusSession();
   const [clock, setClock] = useState(() => Date.now());
   const [expanded, setExpanded] = useState(false);

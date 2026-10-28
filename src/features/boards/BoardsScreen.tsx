@@ -1,8 +1,9 @@
+import { useAppColorScheme } from '../../theme/appearance';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { dayTimeText } from '../shared/dates';
 import { useReducedMotion } from '../../theme/useReducedMotion';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Alert, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
+import { Alert, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import { EmptyState } from '../shared/EmptyState';
@@ -27,7 +28,7 @@ export function BoardsScreen() {
   const db = useEvridaDatabase();
   const focus = useFocusSession();
   const router = useRouter();
-  const palette = useColorScheme() === 'dark' ? colors.dark : colors.light;
+  const palette = useAppColorScheme() === 'dark' ? colors.dark : colors.light;
   const [boards, setBoards] = useState<Board[]>([]);
   const [current, setCurrent] = useState<Board | null>(null);
   const [items, setItems] = useState<BoardGoal[]>([]);
