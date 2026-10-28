@@ -3,12 +3,12 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
-import type { Goal, GoalInput } from '../../domain/goals';
+import type { Goal } from '../../domain/goals';
 import {
   analyzeDayLoad, analyzeRangeLoad, blockOverlapsRange, clockWithUtcOffset, localDayBounds, localDayKey, monthGridDays, parseLocalDay, shiftLocalDay, type BlockInput, type TimeBlock,
 } from '../../domain/timeblocks';
-import { createGoal, getGoal, listAllGoals } from '../../storage/goals';
-import { listRangeBlocks, removeBlock, saveBlock } from '../../storage/timeblocks';
+import { getGoal, listAllGoals } from '../../storage/goals';
+import { listRangeBlocks, removeBlock, saveBlock, saveNamedBlock } from '../../storage/timeblocks';
 import { colors, depth, radius, spacing, type Palette } from '../../theme/tokens';
 import { DayTimeline } from './DayTimeline';
 import { RecoverySheet } from './RecoverySheet';
@@ -21,7 +21,6 @@ import { WeekOverview } from './WeekOverview';
 import { MonthOverview } from './MonthOverview';
 import { useFocusSession } from '../focus/FocusProvider';
 import { TimeBlockEditor } from './TimeBlockEditor';
-import { GoalEditor } from '../horizons/GoalEditor';
 import { DateTimeField } from '../shared/DateTimeField';
 import { type } from '../../theme/type';
 import { EmptyState } from '../shared/EmptyState';
@@ -71,11 +70,10 @@ export function CalendarScreen() {
   const [busy, setBusy] = useState(false);
   const writeLock = useRef(false);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [newGoalOpen, setNewGoalOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<TimeBlock | null>(null);
   const [chosenGoal, setChosenGoal] = useState<string | null>(null);
   const [suggestedHour, setSuggestedHour] = useState<number | null>(null);
-  const [mode, setMode] = useState<'timeline' | 'week' | 'month' | 'list'>('timeline');
+  const [mode, setMode] = useState<'timeline' | 'week' | 'month' | 'list'>('week');
   const reduced = useReducedMotion();
   const motionProps = listMotion(reduced);
   const usedGoalParam = useRef<string | null>(null);
@@ -195,40 +193,10 @@ export function CalendarScreen() {
     }
   }
   function createAt(hour: number | null = null) {
-    if (!goals.some((goal) => !goal.completed)) {
-      setSuggestedHour(hour);
-      setNewGoalOpen(true);
-      return;
-    }
     setEditingBlock(null);
     setChosenGoal(null);
     setSuggestedHour(hour);
     setEditorOpen(true);
-  }
-  async function saveNewGoal(input: GoalInput): Promise<void> {
-    if (writeLock.current) return;
-    writeLock.current = true;
-    setBusy(true);
-    try {
-      const id = await createGoal(db, input);
-      const updated = await listAllGoals(db);
-      setGoals(updated);
-      setNewGoalOpen(false);
-      refresh();
-      Alert.alert('Goal created', 'This goal is now available across Evrida.', [
-        { text: 'Keep planning', style: 'cancel' },
-        { text: 'Schedule time', onPress: () => {
-          setEditingBlock(null);
-          setChosenGoal(id);
-          setEditorOpen(true);
-        } },
-      ]);
-    } catch (error) {
-      Alert.alert('Could not create goal', error instanceof Error ? error.message : 'Try again.');
-    } finally {
-      writeLock.current = false;
-      setBusy(false);
-    }
   }
   function edit(block: TimeBlock) {
     setEditingBlock(block);
@@ -236,9 +204,10 @@ export function CalendarScreen() {
     setSuggestedHour(null);
     setEditorOpen(true);
   }
-  function save(input: BlockInput) {
+  function save(input: BlockInput, newTitle?: string) {
     return write(async () => {
-      await saveBlock(db, input, editingBlock?.id, editingBlock ?? undefined);
+      if (newTitle) await saveNamedBlock(db, { title: newTitle, date: input.date, start: input.start, end: input.end, endsNextDay: input.endsNextDay, intention: input.intention, flexible: input.flexible });
+      else await saveBlock(db, input, editingBlock?.id, editingBlock ?? undefined);
       setDay(parseLocalDay(input.date) ?? day);
       setEditorOpen(false);
       setEditingBlock(null);
@@ -334,7 +303,7 @@ export function CalendarScreen() {
             <Plus size={23} color={palette.onAccent} strokeWidth={1.8} />
           </Pressable>
         </View>
-        {mode !== 'month' ? <Animated.View {...motionProps} style={styles.weekStrip}>
+        {mode !== 'month' && mode !== 'week' ? <Animated.View {...motionProps} style={styles.weekStrip}>
           {week.map((date, index) => {
             const selected = localDayKey(date) === key;
             const today = localDayKey(date) === todayKey;
@@ -355,7 +324,7 @@ export function CalendarScreen() {
           })}
         </Animated.View> : null}
         <Animated.View {...motionProps} style={[styles.summaryRow, { borderColor: palette.border }]}>
-          {displayMode !== 'timeline' ? <View style={styles.summaryStats}>
+          {displayMode !== 'timeline' && displayMode !== 'week' ? <View style={styles.summaryStats}>
             <Text style={[styles.summaryValue, { color: foreground }]}>{durationLabel(activeLoad.occupiedMinutes)}
               <Text style={[styles.summaryLabel, { color: palette.muted }]}> occupied</Text>
             </Text>
@@ -426,7 +395,8 @@ export function CalendarScreen() {
         </View>
       ) : mode === 'week' ? (
         <WeekOverview days={week} blocks={weekBlocks} selectedDay={key} palette={palette}
-          onSelectDay={(selected) => { setDay(selected); setMode('timeline'); }} />
+          onSelectDay={(selected) => { setDay(selected); setMode('timeline'); }}
+          onAdd={(selected) => { setDay(selected); createAt(); }} onEdit={edit} />
       ) : mode === 'month' ? (
         <MonthOverview month={day} blocks={monthBlocks} todayKey={todayKey} selectedKey={key}
           palette={palette} onSelectDay={(selected) => { setDay(selected); setMode('timeline'); }} />
@@ -490,9 +460,6 @@ export function CalendarScreen() {
         busy={busy} activeBlockId={focus.session?.blockId ?? null}
         onClose={() => { if (!busy) setRecoveryOpen(false); }}
         onApply={(preview) => { void applyPreview(preview); }} />
-      <GoalEditor visible={newGoalOpen} initial={null} parent={null} parentOptions={goals}
-        defaultHorizon="day" anchorDate={day} palette={palette} saving={busy}
-        onDismiss={() => { if (!busy) setNewGoalOpen(false); }} onSave={saveNewGoal} />
       <TimeBlockEditor visible={editorOpen} date={day} goals={goals}
         initial={editingBlock} suggestedGoalId={chosenGoal}
         suggestedStartHour={suggestedHour}

@@ -10,7 +10,7 @@ import { beginFocusSession, beginQuickFocus, getFocusSession, pauseFocusSession,
 import { safeNativePath } from '../src/domain/links.ts';
 import { previewReplan } from '../src/domain/replan.ts';
 import { applyReplan, undoReplan, canUndoReplan } from '../src/storage/replan.ts';
-import { saveBlock, listDayBlocks } from '../src/storage/timeblocks.ts';
+import { saveBlock, saveNamedBlock, listDayBlocks } from '../src/storage/timeblocks.ts';
 import { setWeeklyCapacity, listWeeklyCapacity } from '../src/storage/capacity.ts';
 import { parseBackup } from '../src/domain/backup.ts';
 import { createGuidedPlan } from '../src/storage/guided-plans.ts';
@@ -196,6 +196,17 @@ test('offline planning lifecycle preserves identity, recurrence, completion hist
     await assert.rejects(() => createGuidedPlan(source.db, 'project', ' '), /needs a title/);
     await assert.rejects(() => createGuidedPlan(source.db, 'nonexistent', 'Valid'), /unavailable/);
     assert.equal(source.sqlite.prepare('SELECT COUNT(*) AS n FROM goals').get().n, beforeInvalidPlan);
+    const quickId = await saveNamedBlock(source.db, { title: 'Morning reading', date: '2026-10-13', start: '09:00', end: '10:30' });
+    const quickBlock = (await listDayBlocks(source.db, new Date(2026, 9, 13, 12))).find((block) => block.id === quickId);
+    assert.equal(quickBlock.goalTitle, 'Morning reading');
+    assert.equal((await getGoal(source.db, quickBlock.goalId)).title, 'Morning reading');
+    const beforeInvalidQuick = source.sqlite.prepare('SELECT COUNT(*) AS n FROM goals').get().n;
+    await assert.rejects(() => saveNamedBlock(source.db, { title: 'Invalid time', date: '2026-10-13', start: '10:00', end: '09:00' }), /End time/);
+    assert.equal(source.sqlite.prepare('SELECT COUNT(*) AS n FROM goals').get().n, beforeInvalidQuick);
+    source.sqlite.exec("CREATE TRIGGER reject_quick BEFORE INSERT ON time_blocks BEGIN SELECT RAISE(ABORT, 'simulated failure'); END");
+    await assert.rejects(() => saveNamedBlock(source.db, { title: 'Must roll back', date: '2026-10-13', start: '09:00', end: '10:00' }), /simulated failure/);
+    assert.equal(source.sqlite.prepare('SELECT COUNT(*) AS n FROM goals').get().n, beforeInvalidQuick);
+    source.sqlite.exec('DROP TRIGGER reject_quick');
     const parent = await createGoal(source.db, { title: 'My direction', notes: '', horizon: 'year', periodKey: '2026' });
     const step = await createGoal(source.db, { title: '  Read   a chapter ', notes: 'Keep this note', horizon: 'day',
       periodKey: '2026-01-31', parentId: parent, dueDate: '2026-02-02', repeatRule: 'monthly' });

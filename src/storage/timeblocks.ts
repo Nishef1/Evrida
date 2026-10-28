@@ -2,6 +2,7 @@ import { randomUUID } from 'expo-crypto';
 import { closeFocusInTransaction } from './focus';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Horizon } from '../domain/horizons';
+import { normalizeGoalTitle } from '../domain/goals';
 import { localDayBounds, timeRangeFromInput, type BlockInput, type BlockKind, type TimeBlock } from '../domain/timeblocks';
 
 interface TimeBlockRow {
@@ -98,6 +99,25 @@ export async function saveBlock(db: SQLiteDatabase, input: BlockInput, id?: stri
   });
   return newId;
 }
+/** One-step capture uses a normal Plan goal and creates the reservation atomically. */
+export async function saveNamedBlock(db: SQLiteDatabase, input: {
+  title: string; date: string; start: string; end: string; endsNextDay?: boolean; intention?: string; flexible?: boolean;
+}): Promise<string> {
+  const title = normalizeGoalTitle(input.title);
+  const { startAt, endAt } = timeRangeFromInput(input);
+  const goalId = randomUUID(), blockId = randomUUID(), now = new Date().toISOString();
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(`INSERT INTO goals (id, title, notes, horizon, period_key, created_at, updated_at, sort_rank)
+      VALUES (?, ?, '', 'day', ?, ?, ?, (SELECT COALESCE(MAX(sort_rank), -1) + 1 FROM goals
+        WHERE horizon = 'day' AND period_key = ? AND archived_at IS NULL))`,
+      [goalId, title, input.date, now, now, input.date]);
+    await tx.runAsync(`INSERT INTO time_blocks (id, goal_id, start_at, end_at, kind, intention, flexible, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'box', ?, ?, ?, ?)`, [blockId, goalId, startAt, endAt, input.intention?.trim() ?? '', input.flexible ? 1 : 0, now, now]);
+    await tx.runAsync('DELETE FROM replan_checkpoint WHERE id = 1');
+  });
+  return blockId;
+}
+
 export async function removeBlock(db: SQLiteDatabase, blockId: string): Promise<void> {
   await db.withExclusiveTransactionAsync(async (tx) => {
     const focusing = await tx.getFirstAsync<{ block_id: string }>(

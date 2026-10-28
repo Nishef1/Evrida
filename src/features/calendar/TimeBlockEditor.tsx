@@ -22,7 +22,7 @@ interface Props {
   saving: boolean;
   activeBlockId: string | null;
   onCancel: () => void;
-  onSave: (input: BlockInput) => Promise<void>;
+  onSave: (input: BlockInput, newTitle?: string) => Promise<void>;
   onStartFocus: (block: TimeBlock) => void;
   onRemove: (block: TimeBlock) => void;
   onOpenGoal: (id: string) => void;
@@ -30,6 +30,7 @@ interface Props {
 export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId, suggestedStartHour, palette, saving, activeBlockId, onCancel, onSave, onStartFocus, onRemove, onOpenGoal }: Props) {
   const reducedMotion = useReducedMotion();
   const [goalId, setGoalId] = useState<string | null>(null);
+  const [newTitle, setNewTitle] = useState('');
   const [showGoals, setShowGoals] = useState(false);
   const [search, setSearch] = useState('');
   const [dayText, setDayText] = useState('');
@@ -44,6 +45,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
     if (!visible) return;
     const begin = initial ? new Date(initial.startAt) : date;
     setGoalId(initial?.goalId ?? suggestedGoalId ?? null);
+    setNewTitle('');
     setDayText(localDayKey(begin));
     const hour = suggestedStartHour ?? 9;
     setStart(initial ? localClock(new Date(initial.startAt)) : `${String(hour).padStart(2, '0')}:00`);
@@ -66,7 +68,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
   function requestCancel() {
     if (saving) return;
     const draft = JSON.stringify([goalId, dayText, start, end, endsNextDay, kind, intention, flexible]);
-    if (draft === originalDraft.current) onCancel();
+    if (draft === originalDraft.current && !newTitle.trim()) onCancel();
     else Alert.alert('Discard these changes?', 'Your saved calendar stays as it is.', [
       { text: 'Keep editing', style: 'cancel' }, { text: 'Discard changes', style: 'destructive', onPress: onCancel },
     ]);
@@ -97,7 +99,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
       endsNextDay !== (localDayKey(new Date(initial.startAt)) !== localDayKey(new Date(initial.endAt))) || goalId !== initial.goalId ||
       intention.trim() !== initial.intention || flexible !== initial.flexible;
   }
-  const valid = !!goalId && !goal?.completed && !initial?.goalCompleted && !validation && !saving && !editingActive && changed;
+  const valid = (!!goalId || (!initial && !!newTitle.trim())) && !goal?.completed && !initial?.goalCompleted && !validation && !saving && !editingActive && changed;
 
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent statusBarTranslucent navigationBarTranslucent onRequestClose={requestCancel}>
@@ -117,7 +119,14 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
               </Pressable>
             </View>
             <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.form}>
-              <Text style={[styles.label, { color: palette.muted }]}>GOAL</Text>
+              {!initial && !goalId ? <>
+                <Text style={[styles.label, { color: palette.muted }]}>WHAT ARE YOU PLANNING?</Text>
+                <TextInput value={newTitle} onChangeText={setNewTitle} maxLength={180}
+                  placeholder="e.g. Reading" placeholderTextColor={palette.muted} accessibilityLabel="Activity title"
+                  style={[styles.input, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.foreground }]} />
+                <Text style={[styles.hint, { color: palette.muted }]}>A new goal will also appear in Plan.</Text>
+              </> : null}
+              <Text style={[styles.label, { color: palette.muted }]}>{!initial && !goalId ? 'OR CHOOSE AN EXISTING GOAL' : 'GOAL'}</Text>
               <Pressable onPress={() => setShowGoals(!showGoals)} accessibilityRole="button"
                 style={[styles.select, { backgroundColor: palette.surface, borderColor: palette.border }]}>
                 {goal ? <View style={[styles.horizonDot, { backgroundColor: palette.horizon[goal.horizon] }]} /> : null}
@@ -225,7 +234,7 @@ export function TimeBlockEditor({ visible, date, goals, initial, suggestedGoalId
                 <Text style={{ color: palette === colors.dark ? semantic.dark.danger : semantic.light.danger, fontWeight: '700' }}>Remove time block</Text>
               </Pressable> : null}
               <Pressable disabled={!valid} accessibilityRole="button" accessibilityState={{ disabled: !valid }}
-                onPress={() => { if (valid && goalId) void onSave({ goalId, date: dayText, start, end, endsNextDay, kind: initial?.kind ?? 'box', intention, flexible }); }}
+                onPress={() => { if (valid) void onSave({ goalId: goalId ?? '', date: dayText, start, end, endsNextDay, kind: initial?.kind ?? 'box', intention, flexible }, goalId ? undefined : newTitle); }}
                 style={[styles.save, { backgroundColor: palette.accent, opacity: valid ? 1 : 0.45 }]}>
                 <Text style={[styles.saveText, { color: palette.onAccent }]}>{saving ? 'Saving…' : initial ? 'Save changes' : 'Add to timeline'}</Text>
               </Pressable>
