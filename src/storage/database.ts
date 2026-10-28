@@ -286,7 +286,20 @@ const V13_SCHEMA = `
   -- A learning topic can support one planning goal. Optional; the goal is never copied.
   ALTER TABLE learn_topics ADD COLUMN goal_id TEXT REFERENCES goals(id) ON DELETE SET NULL;
 `;
-export const SCHEMA_VERSION = 13;
+const V14_SCHEMA = `
+  CREATE TABLE fin_allocation_plan (
+    id TEXT PRIMARY KEY NOT NULL CHECK (id = 'main'),
+    needs INTEGER NOT NULL CHECK (needs BETWEEN 0 AND 100),
+    wants INTEGER NOT NULL CHECK (wants BETWEEN 0 AND 100),
+    future INTEGER NOT NULL CHECK (future BETWEEN 0 AND 100),
+    CHECK (needs + wants + future = 100)
+  );
+  CREATE TABLE fin_category_purpose (
+    id TEXT PRIMARY KEY NOT NULL REFERENCES fin_categories(id) ON DELETE CASCADE,
+    bucket TEXT NOT NULL CHECK (bucket IN ('needs', 'wants', 'future'))
+  );
+`;
+export const SCHEMA_VERSION = 14;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
@@ -312,6 +325,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     if (version <= 10) await tx.execAsync(V11_SCHEMA);
     if (version <= 11) await tx.execAsync(V12_SCHEMA);
     if (version <= 12) await tx.execAsync(V13_SCHEMA);
+    if (version <= 13) await tx.execAsync(V14_SCHEMA);
     await tx.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   });
 }

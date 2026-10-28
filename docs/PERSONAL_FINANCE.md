@@ -1,6 +1,6 @@
 # Personal Finance & Money Goals
 
-**Status:** Finance 1 and the core of Finance 2/3 are implemented as of 2026-10-27 (schema v13, backup v7). The app also supports an optional dated USD comparison rate; historical CPI import, bill/goal due-date reminders, broad what-if scenarios and multi-currency aggregation are not implemented. Opt-in budget-threshold alerts are implemented.  
+**Status:** Finance 1 and the core of Finance 2/3 are implemented as of 2026-10-27 (schema v14, backup v8). The app also supports an optional dated USD comparison rate; historical CPI import, bill/goal due-date reminders, broad what-if scenarios and multi-currency aggregation are not implemented. Opt-in budget-threshold alerts are implemented.
 **Product:** Evrida  
 **Principle:** Every day with Evrida.
 
@@ -59,6 +59,10 @@ Suggested starter categories include Housing (rent, utilities, maintenance), Foo
 - The first usable release may operate in one reporting currency. Do not add or sum a second currency without an explicit, dated exchange rate. Multi-currency reporting and bank imports are later scope unless needed by the user.
 - Record transaction date, amount, currency/unit, type, category, tags, account, optional payee/description, optional note, and optional link to a goal or recurring rule.
 - Local-first storage, export/restore and schema migration are mandatory before real financial use. No financial records may be sent to a server or AI service in the initial implementation.
+
+## Income allocation
+
+The Money overview links to a separate income allocation view. The user explicitly chooses whole-number targets totaling 100%; 50/30/20 is an editable example, not personalized advice. The user classifies expense categories as needs, wants or savings/debt; unclassified expenses stay visible. Current target and category choices are applied to the selected month, and changing a category changes historical group reports. Percentages use recorded income, excluding refunds and transfers. Goal assignments are shown separately as dated net assignments, not automatically treated as income-funded savings or investments. Transfers are never included in classified spending. Version-8 backups include the optional plan and category choices; old backups restore with neither.
 
 ## Cash flow, budgets and spending insights
 

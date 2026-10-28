@@ -1,6 +1,6 @@
 import { useAppColorScheme } from '../../theme/appearance';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useEvridaDatabase } from '../../storage/use-database';
@@ -18,6 +18,7 @@ import { useDockInset } from '../shell/DockInset';
 import { EmptyState } from '../shared/EmptyState';
 import { TransactionSheet, type TxPreset } from './TransactionSheet';
 import { GoalsPanel } from './GoalsPanel';
+import { AllocationPanel } from './AllocationPanel';
 import { PlanPanel } from './PlanPanel';
 import { Bar, Card, Chip, ChipRow, Field, Label, PrimaryButton, Segments, Sheet, TextButton, dateName, monthName, useBusy } from './ui';
 import { fetchUsdRate } from './rates';
@@ -25,7 +26,7 @@ import { CategoriesSheet } from './CategoriesSheet';
 import { budgetAlertsOn, checkBudgetAlerts, setBudgetAlerts } from './alerts';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Receipt, Settings2, Target, TrendUp, Wallet } from '../../theme/icons';
 
-type Tab = 'overview' | 'ledger' | 'goals' | 'plan';
+type Tab = 'overview' | 'ledger' | 'goals' | 'plan' | 'allocation';
 const monthLabel = monthName;
 const KIND_LABEL: Record<AccountKind, string> = { cash: 'Cash', bank: 'Bank', wallet: 'Wallet', liability: 'Debt' };
 const UNITS: { unit: string; decimals: 0 | 2 }[] = [
@@ -47,10 +48,15 @@ export function MoneyScreen() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
 
   const reload = useCallback(() => {
-    loadFinance(db).then((value) => { setData(value); setFailure(null); if (value) void checkBudgetAlerts(value, periodKey('day', new Date())); },
+    return loadFinance(db).then((value) => { setData(value); setFailure(null); if (value) void checkBudgetAlerts(value, periodKey('day', new Date())); },
       (error) => setFailure(error instanceof Error ? error.message : 'Money could not be loaded.'));
   }, [db]);
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
+  useFocusEffect(useCallback(() => {
+    if (tab !== 'allocation') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => { setTab('overview'); return true; });
+    return () => subscription.remove();
+  }, [tab]));
 
   const header = (right?: React.ReactNode) => <View style={styles.top}>
     <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/insights')} accessibilityRole="button" accessibilityLabel="Back"
@@ -76,16 +82,29 @@ export function MoneyScreen() {
   const openAdd = () => setEditing({ tx: null });
   return <SafeAreaView edges={['top', 'left', 'right']} style={[styles.screen, { backgroundColor: palette.background }]}>
     <ScrollView contentContainerStyle={[styles.page, { paddingBottom: 48 + dockInset }]} keyboardShouldPersistTaps="handled">
-      {header(<>
+      {tab === 'allocation' ? <View style={styles.top}>
+        <Pressable onPress={() => setTab('overview')} accessibilityRole="button" accessibilityLabel="Back to Money overview"
+          style={[styles.round, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+          <ChevronLeft size={21} color={palette.foreground} />
+        </Pressable>
+        <Text style={[type.title, { color: palette.foreground, flex: 1 }]} accessibilityRole="header">Income allocation</Text>
+      </View> : header(<>
         <Pressable onPress={() => setSettingsOpen(true)} accessibilityRole="button" accessibilityLabel="Money settings"
           style={[styles.round, { backgroundColor: palette.surface, borderColor: palette.border }]}><Settings2 size={20} color={palette.foreground} strokeWidth={1.8} /></Pressable>
         <Pressable onPress={openAdd} accessibilityRole="button" accessibilityLabel="Add a record"
           style={[styles.round, { backgroundColor: palette.accent, borderColor: palette.accent }]}><Plus size={22} color={palette.onAccent} strokeWidth={1.9} /></Pressable>
       </>)}
-      <Segments palette={palette} value={tab} onChange={setTab}
-        options={[{ id: 'overview', label: 'Overview', icon: TrendUp }, { id: 'ledger', label: 'Ledger', icon: Receipt }, { id: 'goals', label: 'Goals', icon: Target }, { id: 'plan', label: 'Plan', icon: Calendar }]} />
-      {tab === 'overview' || tab === 'ledger' ? <MonthNav month={month} onChange={setMonth} palette={palette} /> : null}
-      {tab === 'overview' ? <Overview data={data} month={month} palette={palette} onAdd={openAdd} onAccount={setAccount} /> : null}
+      {tab !== 'allocation' ? <Segments palette={palette} value={tab} onChange={setTab}
+        options={[{ id: 'overview', label: 'Overview', icon: TrendUp }, { id: 'ledger', label: 'Ledger', icon: Receipt }, { id: 'goals', label: 'Goals', icon: Target }, { id: 'plan', label: 'Plan', icon: Calendar }]} /> : null}
+      {tab === 'overview' || tab === 'ledger' || tab === 'allocation' ? <MonthNav month={month} onChange={setMonth} palette={palette} /> : null}
+      {tab === 'overview' ? <>
+        <Card palette={palette} onPress={() => setTab('allocation')} label="Open income allocation">
+          <Text style={[type.heading, { color: palette.foreground }]}>Income allocation →</Text>
+          <Text style={[type.caption, { color: palette.muted }]}>Choose percentages and compare classified spending with your plan.</Text>
+        </Card>
+        <Overview data={data} month={month} palette={palette} onAdd={openAdd} onAccount={setAccount} />
+      </> : null}
+      {tab === 'allocation' ? <AllocationPanel data={data} month={month} palette={palette} onChanged={reload} /> : null}
       {tab === 'ledger' ? <Ledger data={data} month={month} palette={palette} onEdit={(tx) => setEditing({ tx })} onAdd={openAdd} /> : null}
       {tab === 'goals' ? <GoalsPanel data={data} palette={palette} onChanged={reload} /> : null}
       {tab === 'plan' ? <PlanPanel data={data} month={month} palette={palette} onChanged={reload} /> : null}

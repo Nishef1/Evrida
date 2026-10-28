@@ -2,7 +2,7 @@ import { randomUUID } from 'expo-crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import {
   ACCOUNT_KINDS, CADENCES, DEFAULT_CATEGORIES, NATURES, addMonthsToDate, isDateKey, unallocatedFunds, validateTx,
-  type AccountKind, type Cadence, type FinAccount, type FinAllocation, type FinBudget, type FinCategory,
+  type AllocationBucket, type IncomeAllocation, type AccountKind, type Cadence, type FinAccount, type FinAllocation, type FinBudget, type FinCategory,
   type FinGoal, type FinPlan, type FinSettings, type FinTx, type Nature, type TxType,
 } from '../domain/finance';
 
@@ -11,6 +11,7 @@ export interface FinanceSnapshot {
   settings: FinSettings;
   accounts: FinAccount[]; categories: FinCategory[]; tags: FinTag[]; txs: FinTx[];
   goals: FinGoal[]; allocations: FinAllocation[]; budgets: FinBudget[]; plans: FinPlan[];
+  incomeAllocation: IncomeAllocation | null; categoryPurposes: Record<string, AllocationBucket>;
 }
 type Row = Record<string, any>;
 type Reader = Pick<SQLiteDatabase, 'getFirstAsync' | 'getAllAsync'>;
@@ -38,6 +39,8 @@ export async function loadFinance(db: Reader): Promise<FinanceSnapshot | null> {
   const allocations = await db.getAllAsync<Row>('SELECT * FROM fin_allocations ORDER BY date, created_at');
   const budgets = await db.getAllAsync<Row>('SELECT * FROM fin_budgets');
   const plans = await db.getAllAsync<Row>('SELECT * FROM fin_plans ORDER BY due_date, title');
+  const incomeAllocation = await db.getFirstAsync<IncomeAllocation>("SELECT needs, wants, future FROM fin_allocation_plan WHERE id = 'main'");
+  const purposes = await db.getAllAsync<{ id: string; bucket: AllocationBucket }>('SELECT id, bucket FROM fin_category_purpose');
   const splitsBy = new Map<string, { categoryId: string; amount: number }[]>();
   for (const r of splits) splitsBy.set(r.tx_id, [...(splitsBy.get(r.tx_id) ?? []), { categoryId: r.category_id, amount: r.amount }]);
   const tagsBy = new Map<string, string[]>();
@@ -47,7 +50,7 @@ export async function loadFinance(db: Reader): Promise<FinanceSnapshot | null> {
       usdRateX100: s.usd_rate_x100, usdRateDate: s.usd_rate_date, usdRateSource: s.usd_rate_source },
     accounts: accounts.map((r) => ({ id: r.id, name: r.name, kind: r.kind, opening: r.opening, archived: !!r.archived_at })),
     categories: categories.map((r) => ({ id: r.id, name: r.name, kind: r.kind, group: r.group_name, archived: !!r.archived_at })),
-    tags,
+    tags, incomeAllocation: incomeAllocation ? { needs: incomeAllocation.needs, wants: incomeAllocation.wants, future: incomeAllocation.future } : null, categoryPurposes: Object.fromEntries(purposes.map((p) => [p.id, p.bucket])),
     txs: txRows.map((r) => ({
       id: r.id, type: r.type, amount: r.amount, date: r.date, accountId: r.account_id, toAccountId: r.to_account_id,
       categoryId: r.category_id, refundOfId: r.refund_of_id, payee: r.payee, note: r.note,
@@ -64,6 +67,28 @@ export async function loadFinance(db: Reader): Promise<FinanceSnapshot | null> {
       dueDate: r.due_date, categoryId: r.category_id, accountId: r.account_id, archived: !!r.archived_at,
     })),
   };
+}
+
+/** Save a deliberate, editable plan. Percentages are whole numbers totaling 100. */
+export async function setAllocationPlan(db: SQLiteDatabase, plan: IncomeAllocation): Promise<void> {
+  if (![plan.needs, plan.wants, plan.future].every((n) => Number.isInteger(n) && n >= 0 && n <= 100) ||
+      plan.needs + plan.wants + plan.future !== 100) throw new Error('Percentages must be whole numbers that add up to 100.');
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    if (!await tx.getFirstAsync("SELECT id FROM fin_settings WHERE id = 'main'")) throw new Error('Set up Money first.');
+    await tx.runAsync(`INSERT INTO fin_allocation_plan (id, needs, wants, future) VALUES ('main', ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET needs = excluded.needs, wants = excluded.wants, future = excluded.future`,
+      [plan.needs, plan.wants, plan.future]);
+  });
+}
+export async function setCategoryPurpose(db: SQLiteDatabase, categoryId: string, bucket: AllocationBucket | null): Promise<void> {
+  if (bucket !== null && !['needs', 'wants', 'future'].includes(bucket)) throw new Error('Choose a valid group.');
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    const category = await tx.getFirstAsync<{ kind: string }>('SELECT kind FROM fin_categories WHERE id = ?', [categoryId]);
+    if (!category || category.kind !== 'expense') throw new Error('Choose an expense category.');
+    if (bucket === null) await tx.runAsync('DELETE FROM fin_category_purpose WHERE id = ?', [categoryId]);
+    else await tx.runAsync(`INSERT INTO fin_category_purpose (id, bucket) VALUES (?, ?)
+      ON CONFLICT(id) DO UPDATE SET bucket = excluded.bucket`, [categoryId, bucket]);
+  });
 }
 
 /** Choose the reporting unit once. Decimals are fixed afterwards so stored amounts keep their meaning. */

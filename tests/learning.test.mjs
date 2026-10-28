@@ -99,14 +99,17 @@ test('learning keeps honest self-ratings, separates practice time, reviews weeks
     const badScore = structuredClone(backup); badScore.tables.learn_checkins[0].score = 11;
     assert.throws(() => parseBackup(JSON.stringify(badScore)), /learning check-in/);
     const v6 = structuredClone(backup); v6.version = 6; v6.schemaVersion = 12;
+    delete v6.tables.fin_allocation_plan; delete v6.tables.fin_category_purpose;
     for (const row of v6.tables.learn_topics) delete row.goal_id;
     assert.equal(parseBackup(JSON.stringify(v6)).tables.learn_topics[0].goal_id, null, 'version 6 backups gain an empty goal link');
     const badGoal = structuredClone(backup); badGoal.tables.learn_topics[0].goal_id = 'missing';
     assert.throws(() => parseBackup(JSON.stringify(badGoal)), /learning topic/);
     const v5 = structuredClone(backup); v5.version = 5; v5.schemaVersion = 11;
+    delete v5.tables.fin_allocation_plan; delete v5.tables.fin_category_purpose;
     for (const row of v5.tables.learn_topics) { delete row.target_score; delete row.target_date; delete row.goal_id; }
     assert.equal(parseBackup(JSON.stringify(v5)).tables.learn_topics[0].target_score, null, 'version 5 backups gain empty targets');
     const v4 = structuredClone(backup); v4.version = 4; v4.schemaVersion = 10;
+    delete v4.tables.fin_allocation_plan; delete v4.tables.fin_category_purpose;
     delete v4.tables.learn_topics; delete v4.tables.learn_checkins;
     assert.equal(parseBackup(JSON.stringify(v4)).tables.learn_topics.length, 0, 'version 4 backups gain empty learning tables');
 

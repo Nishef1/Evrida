@@ -201,6 +201,19 @@ export function categoryTotals(txs: FinTx[], month: string): Map<string, number>
   }
   return totals;
 }
+export type AllocationBucket = 'needs' | 'wants' | 'future';
+export interface IncomeAllocation { needs: number; wants: number; future: number }
+/** Classify only recorded net expenses; transfers and goal allocations are not spending. */
+export function allocationSummary(txs: FinTx[], month: string, purposes: Record<string, AllocationBucket>) {
+  const result = { income: monthSummary(txs, month).income, needs: 0, wants: 0, future: 0, unclassified: 0 };
+  for (const [categoryId, amount] of categoryTotals(txs, month)) {
+    const bucket = purposes[categoryId];
+    if (bucket === 'needs' || bucket === 'wants' || bucket === 'future') result[bucket] += amount;
+    else result.unclassified += amount;
+  }
+  return result;
+}
+
 export function tagTotals(txs: FinTx[], month: string): Map<string, number> {
   const totals = new Map<string, number>();
   for (const tx of txs) {

@@ -5,11 +5,11 @@ import { migrateDatabase } from '../src/storage/database.ts';
 import { exportBackup, restoreBackup } from '../src/storage/backup.ts';
 import { parseBackup } from '../src/domain/backup.ts';
 import {
-  accountBalance, categoryChange, categoryTotals, coveredMonths, forecastGoal, formatMoney, monthSummary, netWorth,
+  accountBalance, allocationSummary, categoryChange, categoryTotals, coveredMonths, forecastGoal, formatMoney, monthSummary, netWorth,
   groupDigits, parseAmount, pendingBudgetAlerts, parseRate, tagTotals, toUsd, unallocatedFunds, validateTx,
 } from '../src/domain/finance.ts';
 import {
-  allocate, confirmPlan, deleteTransaction, loadFinance, saveAccount, saveFinGoal, savePlan, saveTransaction, setBudget, setupFinance, updateFinanceSettings,
+  allocate, confirmPlan, deleteTransaction, loadFinance, saveAccount, saveFinGoal, savePlan, saveTransaction, setAllocationPlan, setCategoryPurpose, setBudget, setupFinance, updateFinanceSettings,
 } from '../src/storage/finance.ts';
 
 function realDatabase() {
@@ -54,6 +54,9 @@ test('finance math keeps transfers, refunds, splits, history gaps, inflation and
     tx({ id: 'refund', type: 'income', amount: 100, categoryId: 'food', refundOfId: 'groc' }),
     tx({ id: 'mixed', amount: 300, categoryId: null, splits: [{ categoryId: 'food', amount: 200 }, { categoryId: 'health', amount: 100 }], tagIds: ['trip'] }),
   ];
+  const allocation = allocationSummary(rows, '2026-10', { rent: 'needs', food: 'wants' });
+  assert.deepEqual(allocation, { income: 5000, needs: 1500, wants: 700, future: 0, unclassified: 100 });
+  assert.equal(allocationSummary(rows.filter((row) => row.type !== 'income'), '2026-10', {}).income, 0);
   const summary = monthSummary(rows, '2026-10');
   assert.deepEqual([summary.income, summary.spent, summary.net], [5000, 2300, 2700], 'transfer is neutral; refund lowers spending, not income');
   const byCategory = categoryTotals(rows, '2026-10');
@@ -134,6 +137,15 @@ test('finance storage records a ledger atomically and backs up, validates and re
     for (const { db } of [source, target, legacy]) await migrateDatabase(db);
     await assert.rejects(() => saveTransaction(source.db, { type: 'expense', amount: 5, date: '2026-10-01', accountId: 'nope',
       toAccountId: null, categoryId: null, refundOfId: null, payee: '', note: '', tagNames: [], splits: [] }), /what this money was for|account/);
+    await setupFinance(legacy.db, { unit: 'Toman', decimals: 0, accountName: 'Before upgrade', opening: 1234 });
+    legacy.sqlite.exec('DROP TABLE fin_category_purpose; DROP TABLE fin_allocation_plan; PRAGMA user_version = 13');
+    await migrateDatabase(legacy.db);
+    const migrated = await loadFinance(legacy.db);
+    assert.equal(migrated.accounts[0].opening, 1234);
+    assert.equal(migrated.incomeAllocation, null);
+    assert.deepEqual(migrated.categoryPurposes, {});
+    // The separate pre-finance restore test below uses an empty destination.
+    legacy.sqlite.exec('DELETE FROM fin_accounts; DELETE FROM fin_categories; DELETE FROM fin_settings');
     await setupFinance(source.db, { unit: 'Toman', decimals: 0, accountName: 'Main', opening: 10000000 });
     await assert.rejects(() => setupFinance(source.db, { unit: 'USD', decimals: 2, accountName: 'x', opening: 0 }), /already set up/);
     let data = await loadFinance(source.db);
@@ -146,6 +158,18 @@ test('finance storage records a ledger atomically and backs up, validates and re
     await assert.rejects(() => savePlan(source.db, { title: 'Bad category', direction: 'income', amount: 100, cadence: 'monthly',
       nature: 'fixed', dueDate: '2026-10-31', categoryId: cat('Groceries'), accountId: main.id }), /category matching/);
     await assert.rejects(() => setBudget(source.db, cat('Salary'), 1000), /spending category/);
+    await setAllocationPlan(source.db, { needs: 50, wants: 30, future: 20 });
+    await assert.rejects(() => setAllocationPlan(source.db, { needs: 60, wants: 30, future: 20 }), /100/);
+    await setCategoryPurpose(source.db, cat('Groceries'), 'needs');
+    await assert.rejects(() => setCategoryPurpose(source.db, cat('Salary'), 'needs'), /expense category/);
+    data = await loadFinance(source.db);
+    assert.deepEqual(data.incomeAllocation, { needs: 50, wants: 30, future: 20 });
+    assert.equal(data.categoryPurposes[cat('Groceries')], 'needs');
+    await setCategoryPurpose(source.db, cat('Groceries'), 'wants');
+    assert.equal((await loadFinance(source.db)).categoryPurposes[cat('Groceries')], 'wants');
+    await setCategoryPurpose(source.db, cat('Groceries'), null);
+    assert.equal((await loadFinance(source.db)).categoryPurposes[cat('Groceries')], undefined);
+    await setCategoryPurpose(source.db, cat('Groceries'), 'needs');
     const salary = await saveTransaction(source.db, spend({ type: 'income', amount: 30000000, categoryId: cat('Salary') }));
     const groceries = await saveTransaction(source.db, spend({ amount: 2000000, tagNames: ['Work week', 'work week'] }));
     await saveTransaction(source.db, spend({ type: 'income', amount: 500000, refundOfId: groceries }));
@@ -189,7 +213,9 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(data.txs.filter((t) => t.note === 'Rent').length, 1);
 
     const backup = await exportBackup(source.db);
-    assert.equal(backup.version, 7);
+    assert.equal(backup.version, 8);
+    assert.equal(backup.tables.fin_allocation_plan.length, 1);
+    assert.equal(backup.tables.fin_category_purpose.length, 1);
     await updateFinanceSettings(source.db, { unit: 'Toman', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
     const withRate = await exportBackup(source.db);
     await updateFinanceSettings(source.db, { unit: 'Rial', inflationBp: 3500, usdRateX100: 16000000, usdRateDate: '2026-10-27', usdRateSource: 'Entered by you' });
@@ -199,6 +225,7 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.equal(withRate.tables.fin_settings[0].usd_rate_x100, 16000000);
     const v3 = structuredClone(withRate);
     v3.version = 3; v3.schemaVersion = 9;
+    delete v3.tables.fin_allocation_plan; delete v3.tables.fin_category_purpose;
     delete v3.tables.learn_topics; delete v3.tables.learn_checkins;
     for (const row of v3.tables.fin_settings) { delete row.usd_rate_x100; delete row.usd_rate_date; delete row.usd_rate_source; }
     assert.equal(parseBackup(JSON.stringify(v3)).tables.fin_settings[0].usd_rate_x100, null, 'version 3 backups gain an empty rate');
@@ -218,9 +245,21 @@ test('finance storage records a ledger atomically and backs up, validates and re
     assert.deepEqual(restored.txs.map((t) => [t.id, t.amount, t.tagIds.length, t.splits.length]).sort(),
       data.txs.map((t) => [t.id, t.amount, t.tagIds.length, t.splits.length]).sort());
     assert.equal(restored.allocations.length, 1);
+    assert.deepEqual(restored.incomeAllocation, { needs: 50, wants: 30, future: 20 });
+    assert.equal(restored.categoryPurposes[cat('Groceries')], 'needs');
     assert.equal(restored.settings.unit, 'Toman');
     assert.equal(await restoreBackup(target.db, JSON.stringify(backup)), 0, 'a second restore adds nothing');
 
+    const v7 = structuredClone(backup);
+    v7.version = 7; v7.schemaVersion = 13;
+    delete v7.tables.fin_allocation_plan; delete v7.tables.fin_category_purpose;
+    const parsedV7 = parseBackup(JSON.stringify(v7));
+    assert.equal(parsedV7.tables.fin_allocation_plan.length, 0);
+    assert.equal(parsedV7.tables.fin_category_purpose.length, 0);
+    const badPlan = structuredClone(backup); badPlan.tables.fin_allocation_plan[0].needs = 99;
+    assert.throws(() => parseBackup(JSON.stringify(badPlan)), /allocation plan/);
+    const badPurpose = structuredClone(backup); badPurpose.tables.fin_category_purpose[0].id = cat('Salary');
+    assert.throws(() => parseBackup(JSON.stringify(badPurpose)), /category purpose/);
     const tampered = structuredClone(backup);
     tampered.tables.fin_splits[0].amount += 1;
     assert.throws(() => parseBackup(JSON.stringify(tampered)), /split/);

@@ -470,7 +470,7 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the full implementation inventory, in
 
 ## Personal Finance & Money Goals — implementation status (2026-10-27)
 
-**Status: partially implemented on main (schema v13, backup v7).** The optional Money module now has a manual ledger, accounts, editable categories and tags, budgets, planned items, explicit savings-goal allocations, assumption-based target forecasts, and an optional dated USD comparison rate. The implementation has domain/SQLite test coverage; CI now includes those tests. Native device acceptance and some forecast capabilities remain incomplete. Full rules live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
+**Status: partially implemented on main (schema v14, backup v8).** The optional Money module now has a manual ledger, accounts, editable categories and tags, budgets, planned items, explicit savings-goal allocations, editable income allocation and spending classifications, assumption-based target forecasts, and an optional dated USD comparison rate. The implementation has domain/SQLite test coverage; CI now includes those tests. Native device acceptance and some forecast capabilities remain incomplete. Full rules live in [PERSONAL_FINANCE.md](PERSONAL_FINANCE.md).
 
 ### Finance 1 — Trustworthy manual ledger
 

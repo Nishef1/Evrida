@@ -30,15 +30,17 @@ export const BACKUP_COLUMNS = {
   fin_budgets: ['id', 'category_id', 'amount', 'created_at', 'updated_at'],
   fin_plans: ['id', 'title', 'direction', 'amount', 'cadence', 'nature', 'due_date', 'category_id', 'account_id',
     'archived_at', 'created_at', 'updated_at'],
+  fin_allocation_plan: ['id', 'needs', 'wants', 'future'],
+  fin_category_purpose: ['id', 'bucket'],
   learn_topics: ['id', 'subject', 'name', 'note', 'focus', 'target_score', 'target_date', 'goal_id', 'archived_at', 'created_at', 'updated_at'],
   learn_checkins: ['id', 'topic_id', 'date', 'score', 'minutes', 'covered', 'note', 'created_at', 'updated_at'],
 } as const;
 const LEARNING_TABLES: BackupTable[] = ['learn_topics', 'learn_checkins'];
-const FINANCE_TABLES = Object.keys(BACKUP_COLUMNS).filter((name) => name.startsWith('fin_')) as BackupTable[];
+const FINANCE_TABLES = Object.keys(BACKUP_COLUMNS).filter((name) => name.startsWith('fin_') && !['fin_allocation_plan', 'fin_category_purpose'].includes(name)) as BackupTable[];
 export type BackupTable = keyof typeof BACKUP_COLUMNS;
 export type BackupRow = Record<string, string | number | null>;
 export interface Backup {
-  format: 'evrida-backup' | 'eonward-backup'; version: 2 | 3 | 4 | 5 | 6 | 7; schemaVersion: 8 | 9 | 10 | 11 | 12 | 13; createdAt: string;
+  format: 'evrida-backup' | 'eonward-backup'; version: 2 | 3 | 4 | 5 | 6 | 7 | 8; schemaVersion: 8 | 9 | 10 | 11 | 12 | 13 | 14; createdAt: string;
   tables: Record<BackupTable, BackupRow[]>;
 }
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
@@ -65,7 +67,8 @@ export function parseBackup(text: string): Backup {
       || (incomingVersion === 3 && incomingSchema === 9) || (incomingVersion === 4 && incomingSchema === 10)
       || (incomingVersion === 5 && incomingSchema === 11)
       || (incomingVersion === 6 && incomingSchema === 12)
-      || (incomingVersion === 7 && incomingSchema === 13)) ||
+      || (incomingVersion === 7 && incomingSchema === 13)
+      || (incomingVersion === 8 && incomingSchema === 14)) ||
     !stamp(data.createdAt) || !data.tables || Array.isArray(data.tables)) fail('unsupported format or version.');
   if (incomingVersion === 1) {
     // Validate legacy row shapes before adding the new opt-in columns.
@@ -116,6 +119,12 @@ export function parseBackup(text: string): Backup {
     if (!Array.isArray(data.tables.learn_topics)) fail('invalid learn_topics collection.');
     data = { ...data, version: 7, schemaVersion: 13, tables: { ...data.tables,
       learn_topics: data.tables.learn_topics.map((row) => ({ ...row, goal_id: null })) } };
+  }
+  if (data.version === 7) {
+    if ('fin_allocation_plan' in data.tables || 'fin_category_purpose' in data.tables) fail('unexpected collection.');
+    data = { ...data, version: 8, schemaVersion: 14, tables: {
+      ...data.tables, fin_allocation_plan: [], fin_category_purpose: [],
+    } };
   }
   if (Object.keys(data.tables).some((key) => !(key in BACKUP_COLUMNS))) fail('unexpected collection.');
   for (const table of Object.keys(BACKUP_COLUMNS) as BackupTable[]) {
@@ -205,6 +214,13 @@ export function parseBackup(text: string): Backup {
   for (const row of data.tables.time_budgets) {
     if (!goals.has(row.goal_id) || !Number.isInteger(row.weekly_minutes)
       || Number(row.weekly_minutes) < 30 || Number(row.weekly_minutes) > 10080) fail('invalid weekly time budget.');
+  }
+  for (const row of data.tables.fin_allocation_plan) {
+    if (row.id !== 'main' || ![row.needs, row.wants, row.future].every((n) => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 100) ||
+      Number(row.needs) + Number(row.wants) + Number(row.future) !== 100 || !data.tables.fin_settings.some((s) => s.id === 'main')) fail('invalid income allocation plan.');
+  }
+  for (const row of data.tables.fin_category_purpose) {
+    if (!['needs', 'wants', 'future'].includes(String(row.bucket)) || !data.tables.fin_categories.some((category) => category.id === row.id && category.kind === 'expense')) fail('invalid category purpose.');
   }
   validateFinanceBackup(data.tables, new Set(goals.keys()));
   validateLearningBackup(data.tables, new Set(goals.keys()));

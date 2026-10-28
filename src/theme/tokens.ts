@@ -78,6 +78,10 @@ export const semantic = {
     now: '#9B5F30',
     timeboxEdge: '#E6B579',
   },
+  finance: {
+    light: { needs: '#0E7670', wants: '#8444C0', future: '#956C3F' },
+    dark: { needs: '#5FD3C4', wants: '#B58AF0', future: '#E6B579' },
+  },
   light: { warning: '#865A29', danger: '#A33C3C' },
   dark: { warning: '#E6B579', danger: '#FF9B99' },
 } as const;
