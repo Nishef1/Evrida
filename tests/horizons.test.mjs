@@ -1,3 +1,4 @@
+import { calendarSwipeDirection } from '../src/domain/calendar-swipe.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { isoWeekKey, periodKey, shiftPeriod, startOfWeek, periodLabel, dateFromPeriodKey, parseDateInput } from '../src/domain/horizons.ts';
@@ -147,6 +148,11 @@ test('time blocks validate local day and ordering without confusing calendar wit
 });
 
 test('overlapping time blocks split their timeline lanes, consecutive blocks reuse width', () => {
+  assert.equal(calendarSwipeDirection(-90, 15), 1);
+  assert.equal(calendarSwipeDirection(90, 15), -1);
+  assert.equal(calendarSwipeDirection(40, 0), 0);
+  assert.equal(calendarSwipeDirection(90, 75), 0);
+
   const instant = (hours, minutes) => new Date(2026, 9, 14, hours, minutes).toISOString();
   const make = (id, startAt, endAt) => ({ id, startAt, endAt });
   const blocks = [

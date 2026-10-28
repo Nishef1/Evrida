@@ -43,8 +43,9 @@ interface Props {
   onApplyTimeEdit: (preview: TimelineEditPreview, onSaved: () => void) => void;
   expanded?: boolean;
   onExpand: () => void;
+  onDraftChange: (active: boolean) => void;
 }
-export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit, expanded = false, onExpand }: Props) {
+export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenGoal, actualByBlock, activeSession, busy, onApplyTimeEdit, expanded = false, onExpand, onDraftChange }: Props) {
   const { fontScale } = useWindowDimensions();
   const ref = useRef<ComponentRef<typeof ScrollView>>(null);
   const didScroll = useRef<string | null>(null);
@@ -55,6 +56,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
   const scrollOffset = useRef(0);
   const dragOriginY = useRef(0);
   const [draft, setDraft] = useState<{ id: string; mode: TimelineEditMode; delta: number; sourceRevision?: string } | null>(null);
+  useEffect(() => { onDraftChange(!!draft); return () => onDraftChange(false); }, [draft !== null, onDraftChange]);
   const dateKey = localDayKey(date);
   const isToday = localDayKey(now) === dateKey;
   const offset = now.getTimezoneOffset();
@@ -309,7 +311,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                 }]} />
             ))}
             {HOURS.slice(0, 24).map((hour) => (
-              <Pressable key={`add-${hour}`} accessibilityRole="button"
+              <Pressable key={`add-${hour}`} accessibilityRole="button" disabled={!!draft}
                 accessibilityLabel={`Plan time at ${String(hour).padStart(2, '0')}:00`}
                 onPress={() => onQuickAdd(hour)}
                 style={[styles.emptyHour, { top: hour * hourHeight, height: hourHeight }]}>
@@ -337,8 +339,8 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                 return (
                   <Pressable key={block.id} accessibilityRole="button"
                     accessibilityLabel={`${block.goalTitle}, ${visibleRange(block)}, ${block.kind === 'box' ? 'Timebox' : 'time reservation'}, ${block.flexible ? 'flexible' : 'fixed'}, ${block.goalCompleted ? 'completed' : 'open'}. Tap to edit, hold to adjust.`}
-                    onPress={() => onEdit(block)}
-                    onLongPress={() => setDraft({ id: block.id, mode: 'move', delta: 0, sourceRevision: block.updatedAt })}
+                    onPress={() => { if (!draft) onEdit(block); }}
+                    onLongPress={() => { if (!draft) setDraft({ id: block.id, mode: 'move', delta: 0, sourceRevision: block.updatedAt }); }}
                     hitSlop={compact ? 5 : 0}
                     style={[styles.event, {
                       top: top + 1, height: Math.max(21, height - 3),
@@ -382,6 +384,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                       <View accessibilityRole="adjustable"
                         accessibilityLabel={`Drag ${block.goalTitle} to move its time in 15-minute increments`}
                         onStartShouldSetResponder={() => true}
+                        onResponderTerminationRequest={() => false}
                         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
                         onAccessibilityAction={(e) => setDraft({
                           id: block.id, mode: 'move', delta: e.nativeEvent.actionName === 'increment' ? 15 : -15,
@@ -398,6 +401,7 @@ export function DayTimeline({ date, blocks, palette, onEdit, onQuickAdd, onOpenG
                       <View accessibilityRole="adjustable"
                         accessibilityLabel={`Drag bottom of ${block.goalTitle} to resize its end`}
                         onStartShouldSetResponder={() => true}
+                        onResponderTerminationRequest={() => false}
                         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
                         onAccessibilityAction={(e) => setDraft({
                           id: block.id, mode: 'resize', delta: e.nativeEvent.actionName === 'increment' ? 15 : -15,

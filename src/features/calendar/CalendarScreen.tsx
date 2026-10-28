@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, BackHandler, PanResponder, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEvridaDatabase } from '../../storage/use-database';
 import type { Goal } from '../../domain/goals';
+import { calendarSwipeDirection } from '../../domain/calendar-swipe';
 import {
   analyzeDayLoad, analyzeRangeLoad, blockOverlapsRange, clockWithUtcOffset, localDayBounds, localDayKey, monthGridDays, parseLocalDay, shiftLocalDay, type BlockInput, type TimeBlock,
 } from '../../domain/timeblocks';
@@ -74,6 +75,22 @@ export function CalendarScreen() {
   const [chosenGoal, setChosenGoal] = useState<string | null>(null);
   const [suggestedHour, setSuggestedHour] = useState<number | null>(null);
   const [mode, setMode] = useState<'timeline' | 'week' | 'month' | 'list'>('week');
+  const swipeContext = useRef({ mode, editing: false, enabled: true });
+  swipeContext.current.mode = mode;
+  const setTimelineDraft = useCallback((active: boolean) => { swipeContext.current.editing = active; }, []);
+  const swipe = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_, gesture) => swipeContext.current.enabled && !swipeContext.current.editing &&
+      Math.abs(gesture.dx) > 24 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.8,
+    onPanResponderRelease: (_, gesture) => {
+      const direction = calendarSwipeDirection(gesture.dx, gesture.dy);
+      if (!direction || !swipeContext.current.enabled || swipeContext.current.editing) return;
+      const currentMode = swipeContext.current.mode;
+      setDay((current) => currentMode === 'month'
+        ? new Date(current.getFullYear(), current.getMonth() + direction, 1, 12)
+        : shiftLocalDay(current, direction * (currentMode === 'week' ? 7 : 1)));
+    },
+    onPanResponderTerminationRequest: () => true,
+  }), []);
   const reduced = useReducedMotion();
   const motionProps = listMotion(reduced);
   const usedGoalParam = useRef<string | null>(null);
@@ -262,6 +279,7 @@ export function CalendarScreen() {
       onSaved();
     });
   }
+  swipeContext.current.enabled = !loading && !failure && !editorOpen && !recoveryOpen && !busy;
   const foreground = palette.foreground;
   return (
     <SafeAreaView edges={fullScreen ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
@@ -375,6 +393,7 @@ export function CalendarScreen() {
           </Text>
         </View>
       ) : null}
+      <View style={styles.swipeArea} {...swipe.panHandlers}>
       {loading ? (
         <View style={styles.center}><ActivityIndicator color={palette.accent} /></View>
       ) : failure ? (
@@ -389,7 +408,7 @@ export function CalendarScreen() {
           <DayTimeline date={day} blocks={ordered} palette={palette}
             actualByBlock={actualByBlock} activeSession={focus.session}
             busy={busy} onApplyTimeEdit={(preview, onSaved) => { void commitTimelineEdit(preview, onSaved); }}
-            expanded={fullScreen} onExpand={() => setFullScreen(true)}
+            expanded={fullScreen} onExpand={() => setFullScreen(true)} onDraftChange={setTimelineDraft}
             onEdit={edit} onQuickAdd={(hour) => createAt(hour)}
             onOpenGoal={(id) => router.push({ pathname: '/', params: { goalId: id } })} />
         </View>
@@ -456,6 +475,7 @@ export function CalendarScreen() {
           ))}
         </ScrollView>
       )}
+      </View>
       <RecoverySheet visible={recoveryOpen} day={day} blocks={ordered} palette={palette}
         busy={busy} activeBlockId={focus.session?.blockId ?? null}
         onClose={() => { if (!busy) setRecoveryOpen(false); }}
@@ -473,6 +493,7 @@ export function CalendarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  swipeArea: { flex: 1 },
   top: { paddingHorizontal: 20, paddingTop: 12 },
   navigation: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 6 },
   brandGroup: { flex: 1, gap: 10 },
